@@ -13,13 +13,14 @@ type DashboardClientProps = {
   initialTickets: TicketSummary[]
   page?: number
   totalPages?: number
+  total: number
 }
 
-export function DashboardClient({ initialTickets, page = 1, totalPages = 1 }: DashboardClientProps) {
+export function DashboardClient({ initialTickets, page = 1, totalPages = 1, total }: DashboardClientProps) {
   const [tickets, setTickets] = useState<TicketSummary[]>(initialTickets)
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
   const [isCreating, setIsCreating] = useState(false)
-console.log('initialTickets', initialTickets)
+console.log('total', total)
 
   const handleTicketCreated = (ticket: Ticket) => {
     setTickets([
@@ -62,7 +63,7 @@ console.log('initialTickets', initialTickets)
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-6 py-4">
+        <div className=" mx-auto px-2 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
@@ -81,12 +82,12 @@ console.log('initialTickets', initialTickets)
       </header>
 
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-8">
+      <div className=" mx-auto px-2 py-8">
         <div className="grid gap-6 lg:grid-cols-[350px_1fr]">
           {/* Sidebar - Ticket List */}
           <div className="space-y-4">
             <div className="rounded-lg border border-border bg-card p-4">
-              <h2 className="mb-4 text-lg font-semibold text-foreground">Tickets ({tickets.length})</h2>
+              <h2 className="mb-4 text-lg font-semibold text-foreground">Tickets ({total})</h2>
               <TicketList
                 tickets={tickets}
                 selectedTicket={selectedTicket}

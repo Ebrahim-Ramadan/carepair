@@ -21,6 +21,7 @@ export default async function Home({ searchParams }: { searchParams?: { page?: s
       .toArray(),
     db.collection("tickets").countDocuments({}),
   ])
+console.log('total', total);
 
   const plainTickets = tickets.map((t: any) => ({
     _id: t._id?.toString(),
@@ -31,5 +32,5 @@ export default async function Home({ searchParams }: { searchParams?: { page?: s
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
-  return <DashboardClient initialTickets={plainTickets} page={page} totalPages={totalPages} />
+  return <DashboardClient initialTickets={plainTickets} page={page} totalPages={totalPages} total={total} />
 }

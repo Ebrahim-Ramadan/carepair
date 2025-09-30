@@ -31,7 +31,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <header className="border-b border-border bg-card">
-          <div className="container mx-auto px-4 py-3 sm:px-6">
+          <div className=" mx-auto py-3 px-2">
             <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
               <Link href="/" className="text-base font-semibold text-foreground sm:text-lg">
                 Car Service Dashboard

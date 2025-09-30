@@ -7,26 +7,31 @@ import { TicketView } from "@/components/ticket-view"
 import { Button } from "@/components/ui/button"
 import { Plus, FileText, X } from "lucide-react"
 import * as Dialog from "@radix-ui/react-dialog"
-import type { Ticket } from "@/lib/types"
+import type { Ticket, TicketSummary } from "@/lib/types"
 
 type DashboardClientProps = {
-  initialTickets: Ticket[]
+  initialTickets: TicketSummary[]
+  page?: number
+  totalPages?: number
 }
 
-export function DashboardClient({ initialTickets }: DashboardClientProps) {
-  const [tickets, setTickets] = useState<Ticket[]>(initialTickets)
+export function DashboardClient({ initialTickets, page = 1, totalPages = 1 }: DashboardClientProps) {
+  const [tickets, setTickets] = useState<TicketSummary[]>(initialTickets)
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
   const [isCreating, setIsCreating] = useState(false)
-console.log('initialTickets', initialTickets);
+console.log('initialTickets', initialTickets)
 
   const handleTicketCreated = (ticket: Ticket) => {
-    setTickets([ticket, ...tickets])
+    setTickets([
+      { _id: ticket._id!, plateNumber: ticket.plateNumber, customerName: ticket.customerName, createdAt: new Date(ticket.createdAt).toISOString() },
+      ...tickets,
+    ])
     setIsCreating(false)
     setSelectedTicket(ticket)
   }
 
   const handleTicketUpdated = (updatedTicket: Ticket) => {
-    setTickets(tickets.map((t) => (t._id === updatedTicket._id ? updatedTicket : t)))
+    setTickets(tickets.map((t) => (t._id === updatedTicket._id ? { _id: updatedTicket._id!, plateNumber: updatedTicket.plateNumber, customerName: updatedTicket.customerName, createdAt: new Date(updatedTicket.createdAt).toISOString() } : t)))
     setSelectedTicket(updatedTicket)
   }
 
@@ -34,6 +39,22 @@ console.log('initialTickets', initialTickets);
     setTickets(tickets.filter((t) => t._id !== id))
     if (selectedTicket?._id === id) {
       setSelectedTicket(null)
+    }
+  }
+
+  const handleSelectTicket = async (maybeTicket: Ticket) => {
+    try {
+      if (!maybeTicket._id) return
+
+      // If selection is already the same full ticket, skip
+      if (selectedTicket?._id === maybeTicket._id && selectedTicket?.customerPhone) return
+
+      const res = await fetch(`/api/tickets/${maybeTicket._id}`, { cache: 'no-store' })
+      if (!res.ok) throw new Error('Failed to fetch ticket')
+      const full = await res.json()
+      setSelectedTicket(full)
+    } catch (e) {
+      console.error(e)
     }
   }
 
@@ -48,7 +69,6 @@ console.log('initialTickets', initialTickets);
                 <FileText className="h-5 w-5 text-primary-foreground" />
               </div>  
               <div>
-                <h1 className="text-xl font-semibold text-foreground">Car Service Dashboard</h1>
                 <p className="text-sm text-muted-foreground">Manage vehicle service tickets</p>
               </div>
             </div>
@@ -66,13 +86,30 @@ console.log('initialTickets', initialTickets);
           {/* Sidebar - Ticket List */}
           <div className="space-y-4">
             <div className="rounded-lg border border-border bg-card p-4">
-              <h2 className="mb-4 text-lg font-semibold text-foreground">Tickets</h2>
+              <h2 className="mb-4 text-lg font-semibold text-foreground">Tickets ({tickets.length})</h2>
               <TicketList
                 tickets={tickets}
                 selectedTicket={selectedTicket}
-                onSelectTicket={setSelectedTicket}
+                onSelectTicket={handleSelectTicket}
                 onDeleteTicket={handleTicketDeleted}
               />
+              <div className="mt-4 flex items-center justify-between">
+                <a
+                  href={`/?page=${Math.max(1, page - 1)}`}
+                  className={`text-sm ${page <= 1 ? "pointer-events-none opacity-50" : "text-primary hover:underline"}`}
+                  aria-disabled={page <= 1}
+                >
+                  Previous
+                </a>
+                <span className="text-xs text-muted-foreground">Page {page} of {totalPages}</span>
+                <a
+                  href={`/?page=${Math.min(totalPages, page + 1)}`}
+                  className={`text-sm ${page >= totalPages ? "pointer-events-none opacity-50" : "text-primary hover:underline"}`}
+                  aria-disabled={page >= totalPages}
+                >
+                  Next
+                </a>
+              </div>
             </div>
           </div>
 

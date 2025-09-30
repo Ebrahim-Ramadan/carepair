@@ -12,6 +12,7 @@ type TicketViewProps = {
 }
 
 export function TicketView({ ticket, onUpdate }: TicketViewProps) {
+  // Ticket details are loaded by the parent before rendering this component.
   const handleConditionUpdate = async (points: DamagePoint[]) => {
     try {
       const response = await fetch(`/api/tickets/${ticket._id}`, {

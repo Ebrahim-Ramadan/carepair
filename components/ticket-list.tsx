@@ -4,10 +4,10 @@ import type React from "react"
 
 import { Button } from "@/components/ui/button"
 import { Trash2, Calendar } from "lucide-react"
-import type { Ticket } from "@/lib/types"
+import type { Ticket, TicketSummary } from "@/lib/types"
 
 type TicketListProps = {
-  tickets: Ticket[]
+  tickets: TicketSummary[]
   selectedTicket: Ticket | null
   onSelectTicket: (ticket: Ticket) => void
   onDeleteTicket: (id: string) => void
@@ -51,7 +51,7 @@ export function TicketList({ tickets, selectedTicket, onSelectTicket, onDeleteTi
               ? "border-primary bg-primary/10"
               : "border-border bg-secondary hover:border-primary/50"
           }`}
-          onClick={() => onSelectTicket(ticket)}
+          onClick={() => onSelectTicket({ _id: ticket._id } as unknown as Ticket)}
         >
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 space-y-1">

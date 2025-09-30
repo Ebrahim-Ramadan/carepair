@@ -27,6 +27,13 @@ export interface Ticket {
   updatedAt: Date
 }
 
+export interface TicketSummary {
+  _id: string
+  plateNumber: string
+  customerName: string
+  createdAt: string
+}
+
 export interface CreateTicketInput {
   plateNumber: string
   customerName: string
@@ -45,4 +52,36 @@ export interface UpdateTicketInput {
   vehicleConditionPoints?: DamagePoint[]
   beforePhotos?: Photo[]
   afterPhotos?: Photo[]
+}
+
+// Appointments
+export interface AppointmentCustomer {
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+}
+
+export interface AppointmentVehicle {
+  make: string
+  model: string
+  year: string
+  licensePlate: string
+}
+
+export interface AppointmentService {
+  type: string
+  date: Date
+  time: string
+  notes: string
+}
+
+export interface Appointment {
+  _id?: string
+  customer: AppointmentCustomer
+  vehicle: AppointmentVehicle
+  service: AppointmentService
+  status: "pending" | "confirmed" | "completed" | "cancelled"
+  createdAt: Date
+  updatedAt: Date
 }

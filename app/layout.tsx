@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -28,7 +30,24 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <header className="border-b border-border bg-card">
+          <div className="container mx-auto px-4 py-3 sm:px-6">
+            <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+              <Link href="/" className="text-base font-semibold text-foreground sm:text-lg">
+                Car Service Dashboard
+              </Link>
+              <nav className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                <Button asChild variant="ghost" size="sm" className="justify-start sm:justify-center">
+                  <Link href="/">Home</Link>
+                </Button>
+                <Button asChild variant="ghost" size="sm" className="justify-start sm:justify-center">
+                  <Link href="/appointments">Appointments</Link>
+                </Button>
+              </nav>
+            </div>
+          </div>
+        </header>
+        <main>{children}</main>
       </body>
     </html>
   );

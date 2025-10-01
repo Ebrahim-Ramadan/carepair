@@ -66,6 +66,9 @@ export function AppointmentsClient({ initialAppointments }: AppointmentsClientPr
     const newStatus = changedStatuses[appointmentId]
     if (!newStatus) return
 
+    const appointment = appointments.find(a => a._id === appointmentId)
+    if (!appointment) return
+
     setLoadingIds(prev => new Set(prev).add(appointmentId))
     
     try {
@@ -74,7 +77,16 @@ export function AppointmentsClient({ initialAppointments }: AppointmentsClientPr
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ 
+          status: newStatus,
+          sendEmail: true,
+          customerEmail: appointment.customer.email,
+          customerName: `${appointment.customer.firstName} ${appointment.customer.lastName}`,
+          vehicleInfo: `${appointment.vehicle.make} ${appointment.vehicle.model} ${appointment.vehicle.year}`,
+          serviceType: appointment.service.type,
+          serviceDate: appointment.service.date,
+          serviceTime: appointment.service.time
+        })
       })
 
       if (!response.ok) {
@@ -97,7 +109,7 @@ export function AppointmentsClient({ initialAppointments }: AppointmentsClientPr
       })
 
       // Show success toast
-      toast.success(`Appointment status updated to ${newStatus}`)
+      toast.success(`Appointment status updated to ${newStatus} and email sent to customer`)
     } catch (error) {
       console.error('Error updating appointment:', error)
       toast.error('Failed to update appointment status. Please try again.')
@@ -161,7 +173,13 @@ export function AppointmentsClient({ initialAppointments }: AppointmentsClientPr
                   </td>
                   <td className="px-2 md:px-4 py-1.5 md:py-3">
                     <div className="flex items-center gap-2">
-                      <Badge variant={
+                      <Badge 
+                      className={`${currentStatus === "pending" ? "bg-yellow-100 text-yellow-800" : 
+                                  currentStatus === "confirmed" ? "bg-green-100 text-green-800" : 
+                                  currentStatus === "completed" ? "bg-purple-100 text-purple-800" : 
+                                  "bg-red-100 text-red-800"} 
+                                  px-2 py-1 text-xs font-medium uppercase`}
+                      variant={
                         currentStatus === "pending" ? "secondary" : 
                         currentStatus === "confirmed" ? "default" : 
                         currentStatus === "completed" ? "outline" : 

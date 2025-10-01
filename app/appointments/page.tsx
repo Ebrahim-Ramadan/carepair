@@ -1,27 +1,18 @@
 import { Suspense } from "react"
 import { AppointmentsClient } from "@/components/appointments-client"
-import clientPromise from "@/lib/mongodb"
 
 async function AppointmentsData() {
-  const client = await clientPromise
-  const db = client.db("car_repair")
-  const appointments = await db
-    .collection("appointments")
-    .find({})
-    .sort({ createdAt: -1 })
-    .toArray()
-
-  // Convert MongoDB documents to plain objects
-  const serializedAppointments = appointments.map(appointment => ({
-    _id: appointment._id.toString(),
-    customer: appointment.customer,
-    vehicle: appointment.vehicle,
-    service: appointment.service,
-    status: appointment.status,
-    createdAt: appointment.createdAt.toISOString()
-  }))
-
-  return <AppointmentsClient initialAppointments={serializedAppointments} />
+  const response = await fetch(`${process.env.NEXTAUTH_URL}/api/appointments`, {
+    cache: 'no-store' // Ensure fresh data on each request
+  })
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch appointments')
+  }
+  
+  const appointments = await response.json()
+  
+  return <AppointmentsClient initialAppointments={appointments} />
 }
 
 export default function AppointmentsPage() {
@@ -33,5 +24,3 @@ export default function AppointmentsPage() {
     </div>
   )
 }
-
-

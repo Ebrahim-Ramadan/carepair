@@ -40,6 +40,7 @@ export function MultiSelect({
     } else {
       onChange([...selected, option])
     }
+    // Don't close the popover after selection - let user select multiple items
   }
 
   const handleUnselect = (option: string) => {
@@ -98,8 +99,13 @@ export function MultiSelect({
           className="w-full p-0" 
           align="start" 
           style={{ width: 'var(--radix-popover-trigger-width)' }}
+          onOpenAutoFocus={(e) => e.preventDefault()}
         >
-          <div className="p-3">
+          <div 
+            className="p-3"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             {/* Search Input */}
             <div className="relative mb-3">
               <Input
@@ -107,7 +113,8 @@ export function MultiSelect({
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
                 className="h-9"
-                autoFocus
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
               />
             </div>
 
@@ -125,7 +132,15 @@ export function MultiSelect({
                     <div
                       key={option}
                       className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
-                      onClick={() => handleSelect(option)}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleSelect(option)
+                      }}
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                      }}
                     >
                       <Check
                         className={cn(
@@ -143,9 +158,23 @@ export function MultiSelect({
             {/* Selected Count */}
             {selected.length > 0 && (
               <div className="mt-3 pt-3 border-t">
-                <p className="text-xs text-muted-foreground text-center">
-                  {selected.length} part{selected.length !== 1 ? 's' : ''} selected
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    {selected.length} part{selected.length !== 1 ? 's' : ''} selected
+                  </p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setOpen(false)
+                    }}
+                    className="text-xs h-6 px-2"
+                  >
+                    Done
+                  </Button>
+                </div>
               </div>
             )}
           </div>

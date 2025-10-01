@@ -7,8 +7,8 @@ import nodemailer from "nodemailer"
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.GMAIL_ACC, // Use the same env var as your existing nodemailer.ts
-    pass: process.env.apppassword, // Use the same env var as your existing nodemailer.ts
+    user: process.env.GMAIL_ACC,
+    pass: process.env.apppassword,
   },
 })
 
@@ -30,6 +30,9 @@ const getStatusEmailTemplate = (status: string, customerName: string, vehicleInf
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+        <div style="margin-bottom: 20px;">
+          <img src="${process.env.NEXTAUTH_URL}/dark-logo.jpg" alt="CarePair Logo" style="height: 60px; width: auto; max-width: 200px;" />
+        </div>
         <h1 style="margin: 0; font-size: 28px;">CarePair Auto Service</h1>
         <p style="margin: 10px 0 0 0; opacity: 0.9;">Appointment Status Update</p>
       </div>
@@ -67,9 +70,12 @@ const getStatusEmailTemplate = (status: string, customerName: string, vehicleInf
         </div>
         
         <hr style="border: none; border-top: 1px solid #eee; margin: 25px 0;">
-        <p style="color: #999; font-size: 12px; text-align: center;">
-          This is an automated message. Please do not reply to this email.
-        </p>
+        <div style="text-align: center;">
+          <img src="${process.env.NEXTAUTH_URL}/logo.png" alt="CarePair Logo" style="height: 30px; width: auto; opacity: 0.6; margin-bottom: 10px;" />
+          <p style="color: #999; font-size: 12px; margin: 0;">
+            This is an automated message. Please do not reply to this email.
+          </p>
+        </div>
       </div>
     </div>
   `

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MultiSelect } from "@/components/ui/multi-select"
-import { Edit, Save, X, User, Phone, Mail, Gauge, Car } from "lucide-react"
+import { Edit, Save, X, User, Phone, Mail, Gauge, Car, MessageCircle } from "lucide-react"
 import { toast } from "sonner"
 import type { Ticket } from "@/lib/types"
 
@@ -43,6 +43,22 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
   const [customerEmail, setCustomerEmail] = useState(ticket.customerEmail || "")
   const [mileage, setMileage] = useState(ticket.mileage.toString())
   const [repairParts, setRepairParts] = useState<string[]>(ticket.repairParts)
+
+  const handleEmailClick = (email: string) => {
+    // window.open(`mailto:${email}`, '_blank')
+    window.open(`https://mail.google.com/mail/u/0/?view=cm&fs=1&to=${email}&su=Hello&body=Message&tf=cm`, '_blank')
+
+  }
+
+  const handleWhatsAppClick = (phone: string) => {
+    // Clean phone number (remove spaces, dashes, etc.)
+    const cleanPhone = phone.replace(/\D/g, '')
+    window.open(`https://wa.me/${cleanPhone}`, '_blank')
+  }
+
+  const handlePhoneCall = (phone: string) => {
+    window.open(`tel:${phone}`, '_self')
+  }
 
   const handleEdit = () => {
     setIsEditing(true)
@@ -223,7 +239,6 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
         </div>
         <Button variant="outline" size="sm" onClick={handleEdit}>
           <Edit className="h-4 w-4" />
-          
         </Button>
       </div>
 
@@ -239,11 +254,32 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
             <div className="flex items-center gap-2 text-sm">
               <Phone className="h-4 w-4 text-muted-foreground" />
               <span className="text-foreground">{ticket.customerPhone}</span>
+              <div className="flex gap-1 ml-2">
+                <button
+                  onClick={() => handleWhatsAppClick(ticket.customerPhone)}
+                  className="p-1 rounded hover:bg-green-100 transition-colors"
+                  title="WhatsApp"
+                >
+                  <MessageCircle className="h-3 w-3 text-green-600 hover:text-green-800" />
+                </button>
+                <button
+                  onClick={() => handlePhoneCall(ticket.customerPhone)}
+                  className="p-1 rounded hover:bg-blue-100 transition-colors"
+                  title="Call"
+                >
+                  <Phone className="h-3 w-3 text-blue-600 hover:text-blue-800" />
+                </button>
+              </div>
             </div>
             {ticket.customerEmail && (
               <div className="flex items-center gap-2 text-sm">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="text-foreground">{ticket.customerEmail}</span>
+                <button
+                  onClick={() => handleEmailClick(ticket.customerEmail!)}
+                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                >
+                  {ticket.customerEmail}
+                </button>
               </div>
             )}
           </div>

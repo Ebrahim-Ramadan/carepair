@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Save, RotateCcw } from "lucide-react"
+import { Save, RotateCcw, Mail, Phone, MessageCircle } from "lucide-react"
 import { toast } from "sonner"
 
 type Appointment = {
@@ -44,6 +44,22 @@ export function AppointmentsClient({ initialAppointments }: AppointmentsClientPr
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments)
   const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set())
   const [changedStatuses, setChangedStatuses] = useState<Record<string, string>>({})
+
+  const handleEmailClick = (email: string) => {
+    // window.open(`mailto:${email}`, '_blank')
+    window.open(`https://mail.google.com/mail/u/0/?view=cm&fs=1&to=${email}&su=Hello&body=Message&tf=cm`, '_blank')
+
+  }
+
+  const handleWhatsAppClick = (phone: string) => {
+    // Clean phone number (remove spaces, dashes, etc.)
+    const cleanPhone = phone.replace(/\D/g, '')
+    window.open(`https://wa.me/${cleanPhone}`, '_blank')
+  }
+
+  const handlePhoneCall = (phone: string) => {
+    window.open(`tel:${phone}`, '_self')
+  }
 
   const handleStatusChange = (appointmentId: string, newStatus: string) => {
     const originalStatus = initialAppointments.find(a => a._id === appointmentId)?.status
@@ -160,8 +176,35 @@ export function AppointmentsClient({ initialAppointments }: AppointmentsClientPr
                     {appointment.customer.firstName} {appointment.customer.lastName}
                   </td>
                   <td className="px-2 md:px-4 py-1.5 md:py-3">
-                    <div>{appointment.customer.email}</div>
-                    <div className="text-muted-foreground">{appointment.customer.phone}</div>
+                    <div className="flex items-center gap-1">
+                      <Mail className="h-3 w-3 text-muted-foreground" />
+                      <button
+                        onClick={() => handleEmailClick(appointment.customer.email)}
+                        className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                      >
+                        {appointment.customer.email}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground mt-1">
+                      <Phone className="h-3 w-3" />
+                      <span className="text-foreground">{appointment.customer.phone}</span>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => handleWhatsAppClick(appointment.customer.phone)}
+                          className="p-1 rounded hover:bg-green-100 transition-colors"
+                          title="WhatsApp"
+                        >
+                          <MessageCircle className="h-3 w-3 text-green-600 hover:text-green-800" />
+                        </button>
+                        <button
+                          onClick={() => handlePhoneCall(appointment.customer.phone)}
+                          className="p-1 rounded hover:bg-blue-100 transition-colors"
+                          title="Call"
+                        >
+                          <Phone className="h-3 w-3 text-blue-600 hover:text-blue-800" />
+                        </button>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-2 md:px-4 py-1.5 md:py-3">
                     {appointment.vehicle.make} {appointment.vehicle.model} {appointment.vehicle.year}

@@ -90,6 +90,14 @@ export default function RootLayout({
                   size="sm"
                   className="text-neutral-600 justify-start sm:justify-center"
                 >
+                  <Link href="/customers">Customers</Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="text-neutral-600 justify-start sm:justify-center"
+                >
                   <Link href="/appointments">Appointments</Link>
                 </Button>
               </nav>

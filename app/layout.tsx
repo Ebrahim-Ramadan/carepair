@@ -75,7 +75,7 @@ export default function RootLayout({
                 />
                 Car Service Dashboard
               </Link>
-              <nav className="flex w-full flex-wrap items-center gap-2 sm:w-auto justify-end">
+              <nav className="flex w-full flex-wrap items-center sm:w-auto justify-end">
                 <Button
                   asChild
                   variant="ghost"
@@ -91,6 +91,14 @@ export default function RootLayout({
                   className="text-neutral-600 justify-start sm:justify-center"
                 >
                   <Link href="/customers" prefetch={false}>Customers</Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="text-neutral-600 justify-start sm:justify-center"
+                >
+                  <Link href="/search" prefetch={false}>Search</Link>
                 </Button>
                 <Button
                   asChild

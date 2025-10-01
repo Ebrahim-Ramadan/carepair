@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { TicketForm } from "@/components/ticket-form"
 import { TicketList } from "@/components/ticket-list"
 import { TicketView } from "@/components/ticket-view"
@@ -18,11 +19,25 @@ type DashboardClientProps = {
 }
 
 export function DashboardClient({ initialTickets, page = 1, totalPages = 1, total }: DashboardClientProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const ticketIdParam = searchParams.get("ticketId")
+  
   const [tickets, setTickets] = useState<TicketSummary[]>(initialTickets)
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [isLoadingTicket, setIsLoadingTicket] = useState(false)
   const ticketViewRef = useRef<HTMLDivElement>(null)
+
+  // Load ticket from URL parameter on mount
+  useEffect(() => {
+    if (ticketIdParam && !selectedTicket) {
+      const ticketFromList = tickets.find(t => t._id === ticketIdParam)
+      if (ticketFromList) {
+        handleSelectTicket(ticketFromList as Ticket)
+      }
+    }
+  }, [ticketIdParam, tickets])
 
   const handleTicketCreated = (ticket: Ticket) => {
     setTickets([
@@ -31,6 +46,11 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
     ])
     setIsCreating(false)
     setSelectedTicket(ticket)
+    
+    // Update URL with new ticket ID
+    const url = new URL(window.location.href)
+    url.searchParams.set("ticketId", ticket._id!)
+    router.replace(url.toString())
   }
 
   const handleTicketUpdated = (updatedTicket: Ticket) => {
@@ -42,6 +62,10 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
     setTickets(tickets.filter((t) => t._id !== id))
     if (selectedTicket?._id === id) {
       setSelectedTicket(null)
+      // Remove ticket ID from URL when ticket is deleted
+      const url = new URL(window.location.href)
+      url.searchParams.delete("ticketId")
+      router.replace(url.toString())
     }
   }
 
@@ -49,8 +73,15 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
     try {
       if (!maybeTicket._id) return
 
-      // If selection is already the same full ticket, skip
-      if (selectedTicket?._id === maybeTicket._id && selectedTicket?.customerPhone) return
+      // Update URL immediately when ticket is selected
+      const url = new URL(window.location.href)
+      url.searchParams.set("ticketId", maybeTicket._id)
+      router.replace(url.toString())
+
+      // If selection is already the same full ticket, skip API call but still update URL
+      if (selectedTicket?._id === maybeTicket._id && selectedTicket?.customerPhone) {
+        return
+      }
 
       setIsLoadingTicket(true)
       const res = await fetch(`/api/tickets/${maybeTicket._id}`, { cache: 'no-store' })
@@ -72,10 +103,16 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
     }
   }
 
+  const handleClearSelection = () => {
+    setSelectedTicket(null)
+    // Remove ticket ID from URL
+    const url = new URL(window.location.href)
+    url.searchParams.delete("ticketId")
+    router.replace(url.toString())
+  }
+
   return (
     <div className="min-h-screen bg-background">
-     
-
       {/* Main Content */}
       <div className=" mx-auto px-2">
         <div className="grid gap-6 lg:grid-cols-[350px_1fr]">
@@ -134,7 +171,21 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
                 </div>
               </div>
             ) : selectedTicket ? (
-              <TicketView ticket={selectedTicket} onUpdate={handleTicketUpdated} />
+              <div className="space-y-4">
+                {/* Back button for mobile */}
+                <div className="lg:hidden">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearSelection}
+                    className="gap-2"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Back to list
+                  </Button>
+                </div>
+                <TicketView ticket={selectedTicket} onUpdate={handleTicketUpdated} />
+              </div>
             ) : (
               <div className="flex h-[600px] items-center justify-center rounded-lg border border-dashed border-border bg-card">
                 <div className="text-center">

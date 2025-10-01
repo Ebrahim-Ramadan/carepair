@@ -100,9 +100,9 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
   if (isEditing) {
     return (
       <div className="rounded-lg border border-border bg-card p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-foreground">Edit Ticket Information</h2>
-          <div className="flex gap-2">
+        <div className="mb-4 flex w-full flex-col md:flex-row gap-2 md:items-center items-center justify-between">
+          <h2 className="text-xl w-full font-semibold text-foreground">Edit Ticket Information</h2>
+          <div className="flex gap-2 justify-end w-full">
             <Button
               variant="outline" 
               size="sm"
@@ -216,14 +216,14 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
             {ticket.plateNumber}
           </h2>
           <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Ticket #{ticket._id?.slice(-6)}</span>
+            <span className="font-mono">#{ticket._id?.slice(-6)}</span>
             <span>•</span>
             <span>{new Date(ticket.createdAt).toLocaleDateString()}</span>
           </div>
         </div>
         <Button variant="outline" size="sm" onClick={handleEdit}>
-          <Edit className="h-4 w-4 mr-1" />
-          Edit
+          <Edit className="h-4 w-4" />
+          
         </Button>
       </div>
 
@@ -231,7 +231,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
         {/* Customer Information */}
         <div className="space-y-4">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Customer Information</h3>
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm">
               <User className="h-4 w-4 text-muted-foreground" />
               <span className="text-foreground">{ticket.customerName}</span>
@@ -252,7 +252,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
         {/* Vehicle Information */}
         <div className="space-y-4">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Vehicle Information</h3>
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm">
               <Gauge className="h-4 w-4 text-muted-foreground" />
               <span className="text-foreground">{ticket.mileage.toLocaleString()} km</span>

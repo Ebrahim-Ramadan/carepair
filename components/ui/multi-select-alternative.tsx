@@ -46,17 +46,6 @@ export function MultiSelect({
     onChange(selected.filter(item => item !== option))
   }
 
-  const clearSearch = () => {
-    setSearchValue("")
-  }
-
-  // Clear search when popover closes
-  React.useEffect(() => {
-    if (!open) {
-      clearSearch()
-    }
-  }, [open])
-
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <Popover open={open} onOpenChange={setOpen}>
@@ -66,7 +55,7 @@ export function MultiSelect({
             role="combobox"
             aria-expanded={open}
             className={cn(
-              "w-full justify-between min-h-10 h-auto p-2",
+              "w-full justify-between min-h-10 h-auto",
               !selected.length && "text-muted-foreground"
             )}
           >
@@ -76,7 +65,7 @@ export function MultiSelect({
                   <Badge
                     variant="secondary"
                     key={item}
-                    className="text-xs cursor-pointer hover:bg-secondary/80 transition-colors"
+                    className="text-xs cursor-pointer hover:bg-secondary/80"
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
@@ -84,70 +73,45 @@ export function MultiSelect({
                     }}
                   >
                     {item}
-                    <X className="h-3 w-3 ml-1 hover:bg-destructive/20 rounded-sm" />
+                    <X className="h-3 w-3 ml-1" />
                   </Badge>
                 ))
               ) : (
-                <span className="text-sm">{placeholder}</span>
+                <span>{placeholder}</span>
               )}
             </div>
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent 
-          className="w-full p-0" 
-          align="start" 
-          style={{ width: 'var(--radix-popover-trigger-width)' }}
-        >
-          <div className="p-3">
-            {/* Search Input */}
-            <div className="relative mb-3">
-              <Input
-                placeholder="Search parts..."
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                className="h-9"
-                autoFocus
-              />
-            </div>
-
-            {/* Options List */}
+        <PopoverContent className="w-full p-0" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
+          <div className="p-2">
+            <Input
+              placeholder="Search parts..."
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              className="mb-2"
+            />
             <div className="max-h-64 overflow-auto">
               {filteredOptions.length === 0 ? (
-                <div className="py-6 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    {searchValue ? "No parts found." : "No options available."}
-                  </p>
-                </div>
+                <p className="text-sm text-muted-foreground py-2 text-center">No parts found.</p>
               ) : (
-                <div className="space-y-1">
-                  {filteredOptions.map((option) => (
-                    <div
-                      key={option}
-                      className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
-                      onClick={() => handleSelect(option)}
-                    >
-                      <Check
-                        className={cn(
-                          "h-4 w-4 shrink-0",
-                          selected.includes(option) ? "opacity-100 text-primary" : "opacity-0"
-                        )}
-                      />
-                      <span className="flex-1">{option}</span>
-                    </div>
-                  ))}
-                </div>
+                filteredOptions.map((option) => (
+                  <div
+                    key={option}
+                    className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm"
+                    onClick={() => handleSelect(option)}
+                  >
+                    <Check
+                      className={cn(
+                        "h-4 w-4",
+                        selected.includes(option) ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <span>{option}</span>
+                  </div>
+                ))
               )}
             </div>
-
-            {/* Selected Count */}
-            {selected.length > 0 && (
-              <div className="mt-3 pt-3 border-t">
-                <p className="text-xs text-muted-foreground text-center">
-                  {selected.length} part{selected.length !== 1 ? 's' : ''} selected
-                </p>
-              </div>
-            )}
           </div>
         </PopoverContent>
       </Popover>

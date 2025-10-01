@@ -82,7 +82,7 @@ export default function RootLayout({
                   size="sm"
                   className="text-neutral-600 justify-start sm:justify-center"
                 >
-                  <Link href="/">Tickets</Link>
+                  <Link href="/" prefetch={false}>Tickets</Link>
                 </Button>
                 <Button
                   asChild
@@ -90,7 +90,7 @@ export default function RootLayout({
                   size="sm"
                   className="text-neutral-600 justify-start sm:justify-center"
                 >
-                  <Link href="/customers">Customers</Link>
+                  <Link href="/customers" prefetch={false}>Customers</Link>
                 </Button>
                 <Button
                   asChild
@@ -98,7 +98,7 @@ export default function RootLayout({
                   size="sm"
                   className="text-neutral-600 justify-start sm:justify-center"
                 >
-                  <Link href="/appointments">Appointments</Link>
+                  <Link href="/appointments" prefetch={false}>Appointments</Link>
                 </Button>
               </nav>
             </div>

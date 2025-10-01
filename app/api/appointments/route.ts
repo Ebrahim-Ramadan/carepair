@@ -11,6 +11,7 @@ export async function GET() {
       // .find({}, { projection: { _id: 1, customer: 1, vehicle: 1, service: 1, status: 1, createdAt: 1, updatedAt: 1 } })
       .sort({ createdAt: -1 })
       .toArray()
+console.log('appointments', appointments);
 
     return NextResponse.json(appointments)
   } catch (error) {

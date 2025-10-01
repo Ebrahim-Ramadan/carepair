@@ -139,7 +139,7 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
               <div className="flex h-[600px] items-center justify-center rounded-lg border border-dashed border-border bg-card">
                 <div className="text-center">
                   <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-4 text-lg font-semibold text-foreground">No ticket selected</h3>
+                  <h3 className="mt-4 text-lg font-semibold text-foreground">Hi.</h3>
                   <p className="mt-2 text-sm text-muted-foreground">
                     Select a ticket from the list or create a new one
                   </p>

@@ -28,6 +28,7 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
   const [previewPhotos, setPreviewPhotos] = useState<PreviewPhoto[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [deletingPhotoUrl, setDeletingPhotoUrl] = useState<string | null>(null)
+  const [clearingPhotoUrl, setClearingPhotoUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -123,6 +124,20 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
     }
   }
 
+  const handleClearClick = (photoUrl: string) => {
+    if (clearingPhotoUrl === photoUrl) {
+      // Second click - show confirmation dialog
+      handleRemovePhoto(photoUrl)
+    } else {
+      // First click - show "Clear" state
+      setClearingPhotoUrl(photoUrl)
+      // Auto-revert after 3 seconds if not clicked again
+      setTimeout(() => {
+        setClearingPhotoUrl(prev => prev === photoUrl ? null : prev)
+      }, 3000)
+    }
+  }
+
   const handleRemovePhoto = async (photoUrl: string) => {
     const photoToDelete = localPhotos.find(photo => photo.url === photoUrl)
     if (!photoToDelete) return
@@ -132,9 +147,13 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
       `Are you sure you want to delete "${photoToDelete.name}"?\n\nThis will permanently remove the image from both cloud storage and the database. This action cannot be undone.`
     )
     
-    if (!confirmed) return
+    if (!confirmed) {
+      setClearingPhotoUrl(null)
+      return
+    }
 
     setDeletingPhotoUrl(photoUrl)
+    setClearingPhotoUrl(null)
 
     try {
       const photoType = title.toLowerCase().includes('before') ? 'beforePhotos' : 'afterPhotos'
@@ -274,8 +293,8 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
                     )}
                     
                     {/* Status badge */}
-                    <div className="absolute bottom-2 left-2">
-                      <span className={`text-xs px-2 py-1 rounded-full ${
+                    <div className="absolute bottom-1 left-2">
+                      <span className={`text-[10px] px-2 py-1 rounded-full ${
                         photo.isUploaded 
                           ? 'bg-green-500 text-white' 
                           : 'bg-yellow-500 text-white'
@@ -287,10 +306,10 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
                     <Button
                       variant="destructive"
                       size="icon"
-                      className="absolute text-white right-2 top-2 h-4 rounded-full w-4 opacity-0 transition-opacity group-hover:opacity-100"
+                      className="absolute text-white right-2 top-2 h-6 rounded-full w-6 "
                       onClick={() => handleRemovePreviewPhoto(photo.id)}
                     >
-                      <X className="h-1 w-1" />
+                      <X className="h-2 w-2" />
                     </Button>
                   </div>
                 ))}
@@ -323,15 +342,31 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
                     </div>
                   )}
                   
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute text-white right-2 top-2 h-4 rounded-full w-4 opacity-0 transition-opacity group-hover:opacity-100"
-                    onClick={() => handleRemovePhoto(photo.url)}
-                    disabled={deletingPhotoUrl === photo.url}
-                  >
-                    <X className="h-1 w-1" />
-                  </Button>
+                  {/* Delete Button - X icon or Clear text */}
+                  {/* Delete Button - X icon or Clear text */}
+<div className="absolute right-2 top-2">
+  {clearingPhotoUrl === photo.url ? (
+    <Button
+      variant="destructive" 
+      size="sm"
+      className="text-white px-3 py-1 h-5 text-xs font-medium rounded-full  transform transition-all duration-300 ease-out scale-x-110"
+      onClick={() => handleClearClick(photo.url)}
+      disabled={deletingPhotoUrl === photo.url}
+    >
+      Clear
+    </Button>
+  ) : (
+    <Button
+      variant="destructive"
+      size="icon"
+      className="text-white h-5 rounded-full w-5 "
+      onClick={() => handleClearClick(photo.url)}
+      disabled={deletingPhotoUrl === photo.url}
+    >
+      <X className="h-2 w-2" />
+    </Button>
+  )}
+</div>
                 </div>
               ))}
             </div>

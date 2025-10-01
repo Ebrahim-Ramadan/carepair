@@ -7,10 +7,8 @@ export interface DamagePoint {
 }
 
 export interface Photo {
-  id: string
   url: string
   name: string
-  public_id?: string // Cloudinary public_id for potential deletion/management
 }
 
 export interface Ticket {

@@ -4,6 +4,7 @@ import "./globals.css";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "sonner";
+import Footer from "@/components/footer";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -53,8 +54,12 @@ export default function RootLayout({
             </div>
           </div>
         </header>
-        <main>{children}</main>
-        <Toaster position="top-right" richColors />
+        <main className="w-full pb-12">{children}
+
+        </main>
+<Footer/>
+
+        <Toaster position="bottom-right" richColors />
       </body>
     </html>
   );

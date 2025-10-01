@@ -23,7 +23,6 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
   const [isCreating, setIsCreating] = useState(false)
   const [isLoadingTicket, setIsLoadingTicket] = useState(false)
   const ticketViewRef = useRef<HTMLDivElement>(null)
-console.log('total', total)
 
   const handleTicketCreated = (ticket: Ticket) => {
     setTickets([
@@ -84,13 +83,16 @@ console.log('total', total)
           <div className="space-y-4">
             <div className="rounded-lg border border-border bg-card p-4">
             <div className="flex items-center justify-between pb-2">
-                <h2 className="text-lg font-semibold text-foreground">Tickets ({total}) 
-
-                
+               <div className=" flex items-center gap-1">
+                 <h2 className="text-lg font-semibold text-foreground">Tickets 
               </h2>
+<p className="text-xs font-normal text-neutral-500">
+              ({total}) 
+</p>
+               </div>
                <Button onClick={() => setIsCreating(true)} size="sm">
               <Plus className="w-3" />
-              New Ticket
+              New 
             </Button>
             </div>
               <TicketList

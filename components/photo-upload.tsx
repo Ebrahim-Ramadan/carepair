@@ -3,7 +3,7 @@
 import type React from "react"
 import { useRef, useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Upload, X, Save, Check } from "lucide-react"
+import { Upload, X, Check, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import type { Photo } from "@/lib/types"
 
@@ -26,13 +26,12 @@ type PreviewPhoto = {
 export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: PhotoUploadProps) {
   const [localPhotos, setLocalPhotos] = useState<Photo[]>(photos ?? [])
   const [previewPhotos, setPreviewPhotos] = useState<PreviewPhoto[]>([])
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [deletingPhotoUrl, setDeletingPhotoUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setLocalPhotos(photos ?? [])
-    setHasUnsavedChanges(false)
   }, [photos])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,34 +78,41 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
       
       // Map Cloudinary response to Photo format for local photos
       const formattedPhotos = uploadResults.map(({ uploadResult }) => ({
-        id: uploadResult.id,
         url: uploadResult.url,
-        name: uploadResult.name,
-        public_id: uploadResult.public_id
+        name: uploadResult.name
       }))
+      
+      // Save to MongoDB immediately after successful upload
+      if (ticketId && formattedPhotos.length > 0) {
+        const photoType = title.toLowerCase().includes('before') ? 'beforePhotos' : 'afterPhotos'
+        const updatedPhotos = [...localPhotos, ...formattedPhotos]
+        
+        const response = await fetch(`/api/tickets/${ticketId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            [photoType]: updatedPhotos,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to save photos to database")
+        }
+
+        const updatedTicket = await response.json()
+        onPhotosChange(updatedPhotos) // Update parent component
+      }
       
       // Update local photos with uploaded ones
       setLocalPhotos([...localPhotos, ...formattedPhotos])
-      setHasUnsavedChanges(true)
       
-      // Mark preview photos as uploaded instead of clearing them
-      setPreviewPhotos(prevPhotos => 
-        prevPhotos.map(photo => {
-          const uploadResult = uploadResults.find(({ previewPhoto }) => previewPhoto.id === photo.id)
-          if (uploadResult) {
-            return {
-              ...photo,
-              isUploaded: true,
-              uploadedPhotoId: uploadResult.uploadResult.id
-            }
-          }
-          return photo
-        })
-      )
+      // Clear ALL preview photos after successful upload - clean up memory
+      previewPhotos.forEach(photo => URL.revokeObjectURL(photo.url))
+      setPreviewPhotos([])
 
       // Show success message with Sonner toast
       const count = uploadResults.length
-      const message = `Successfully uploaded ${count} photo${count !== 1 ? 's' : ''} to cloud storage!`
+      const message = `Successfully uploaded ${count} photo${count !== 1 ? 's' : ''} to cloud storage and database!`
       toast.success(message)
       
     } catch (error) {
@@ -117,22 +123,59 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
     }
   }
 
-  const handleRemovePhoto = (id: string) => {
-    setLocalPhotos(localPhotos.filter((photo) => photo.id !== id))
-    setHasUnsavedChanges(true)
+  const handleRemovePhoto = async (photoUrl: string) => {
+    const photoToDelete = localPhotos.find(photo => photo.url === photoUrl)
+    if (!photoToDelete) return
+
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${photoToDelete.name}"?\n\nThis will permanently remove the image from both cloud storage and the database. This action cannot be undone.`
+    )
+    
+    if (!confirmed) return
+
+    setDeletingPhotoUrl(photoUrl)
+
+    try {
+      // Extract public_id from Cloudinary URL
+      const urlParts = photoUrl.split('/')
+      const publicIdWithExtension = urlParts[urlParts.length - 1]
+      const publicId = `carepair/uploads/${publicIdWithExtension.split('.')[0]}`
+      
+      const photoType = title.toLowerCase().includes('before') ? 'beforePhotos' : 'afterPhotos'
+      
+      // Delete from Cloudinary and MongoDB via API
+      const response = await fetch(
+        `/api/images/delete?ticketId=${ticketId}&type=${photoType}&publicId=${publicId}&photoUrl=${encodeURIComponent(photoUrl)}`,
+        {
+          method: 'DELETE',
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to delete image')
+      }
+
+      // Update local state
+      const updatedPhotos = localPhotos.filter((photo) => photo.url !== photoUrl)
+      setLocalPhotos(updatedPhotos)
+      onPhotosChange(updatedPhotos) // Update parent component immediately
+      
+      toast.success('Image deleted successfully from cloud storage and database')
+    } catch (error) {
+      console.error('Error deleting photo:', error)
+      toast.error('Failed to delete image. Please try again.')
+    } finally {
+      setDeletingPhotoUrl(null)
+    }
   }
 
   const handleRemovePreviewPhoto = (id: string) => {
     const photoToRemove = previewPhotos.find(photo => photo.id === id)
-    if (photoToRemove) {
-      URL.revokeObjectURL(photoToRemove.url)
-      
-      // If the photo was uploaded, also remove it from local photos
-      if (photoToRemove.isUploaded && photoToRemove.uploadedPhotoId) {
-        setLocalPhotos(localPhotos.filter(photo => photo.id !== photoToRemove.uploadedPhotoId))
-        setHasUnsavedChanges(true)
-      }
-    }
+    if (!photoToRemove) return
+
+    // Clean up preview (only handling non-uploaded previews now)
+    URL.revokeObjectURL(photoToRemove.url)
     setPreviewPhotos(previewPhotos.filter((photo) => photo.id !== id))
   }
 
@@ -141,22 +184,11 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
     setPreviewPhotos([])
   }
 
-  const handleSave = () => {
-    onPhotosChange(localPhotos)
-    setHasUnsavedChanges(false)
-  }
-
   return (
     <div className="rounded-lg border border-border bg-card p-6">
       <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-          {hasUnsavedChanges && <span className="text-xs text-amber-500">● Unsaved</span>}
-        </div>
-        <Button variant="default" size="sm" onClick={handleSave} disabled={!hasUnsavedChanges} className="gap-2">
-          <Save className="h-4 w-4" />
-          Save
-        </Button>
+                  <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+
       </div>
 
       <div className="space-y-6">
@@ -185,9 +217,9 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
 
           {/* Preview Photos */}
           {previewPhotos.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-3 border-b border-neutral-500 pb-2">
               <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs leading-none text-muted-foreground">
                   {previewPhotos.length} photo{previewPhotos.length !== 1 ? 's' : ''} selected
                   {previewPhotos.filter(p => p.isUploaded).length > 0 && (
                     <span className="ml-2 text-green-600">
@@ -196,17 +228,6 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
                   )}
                 </p>
                 <div className="flex gap-2">
-                  {previewPhotos.filter(p => !p.isUploaded).length > 0 && (
-                    <Button
-                      onClick={handleUploadAll}
-                      size="sm"
-                      disabled={isUploading}
-                      className="gap-2"
-                    >
-                      <Upload className="h-4 w-4" />
-                      {isUploading ? "Uploading..." : `Upload ${previewPhotos.filter(p => !p.isUploaded).length}`}
-                    </Button>
-                  )}
                   <Button
                     type="button"
                     variant="ghost"
@@ -216,6 +237,18 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
                   >
                     Clear All
                   </Button>
+                  {previewPhotos.filter(p => !p.isUploaded).length > 0 && (
+                    <Button
+                      onClick={handleUploadAll}
+                      size="sm"
+                      disabled={isUploading}
+                      className="gap-2"
+                    >
+                      <Upload size={10} />
+                      {isUploading ? "Uploading..." : `Upload`}
+                    </Button>
+                  )}
+                  
                 </div>
               </div>
               
@@ -242,7 +275,7 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
                     
                     {/* Status badge */}
                     <div className="absolute bottom-2 left-2">
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                      <span className={`text-xs px-2 py-1 rounded-full ${
                         photo.isUploaded 
                           ? 'bg-green-500 text-white' 
                           : 'bg-yellow-500 text-white'
@@ -254,10 +287,10 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
                     <Button
                       variant="destructive"
                       size="icon"
-                      className="absolute text-white right-2 top-2 h-5 rounded-full w-5 opacity-0 transition-opacity group-hover:opacity-100"
+                      className="absolute text-white right-2 top-2 h-4 rounded-full w-4 opacity-0 transition-opacity group-hover:opacity-100"
                       onClick={() => handleRemovePreviewPhoto(photo.id)}
                     >
-                      <X className="h-2 w-2" />
+                      <X className="h-1 w-1" />
                     </Button>
                   </div>
                 ))}
@@ -267,26 +300,37 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
         </div>
 
         {/* Uploaded Photos Section */}
-        <div className="space-y-3">
+        <div className="space-y-3 ">
           <h4 className="text-sm font-medium text-foreground">
             Uploaded Photos {localPhotos.length > 0 && `(${localPhotos.length})`}
           </h4>
           
           {localPhotos.length > 0 && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {localPhotos.map((photo) => (
+            <div className="grid gap-3 sm:grid-cols-2 bg-secondary p-2 rounded-lg">
+              {localPhotos.map((photo, index) => (
                 <div
-                  key={photo.id}
+                  key={photo.url}
                   className="group relative aspect-video overflow-hidden rounded-lg border border-border bg-secondary"
                 >
                   <img src={photo.url || "/placeholder.svg"} alt={photo.name} className="h-full w-full object-cover" />
+                  
+                  {/* Loading overlay for deletion */}
+                  {deletingPhotoUrl === photo.url && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <div className="bg-white text-black p-2 rounded-full">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      </div>
+                    </div>
+                  )}
+                  
                   <Button
                     variant="destructive"
                     size="icon"
-                    className="absolute right-2 top-2 h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
-                    onClick={() => handleRemovePhoto(photo.id)}
+                    className="absolute text-white right-2 top-2 h-4 rounded-full w-4 opacity-0 transition-opacity group-hover:opacity-100"
+                    onClick={() => handleRemovePhoto(photo.url)}
+                    disabled={deletingPhotoUrl === photo.url}
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-1 w-1" />
                   </Button>
                 </div>
               ))}

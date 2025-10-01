@@ -21,7 +21,6 @@ export default async function Home({ searchParams }: { searchParams?: { page?: s
       .toArray(),
     db.collection("tickets").countDocuments({}),
   ])
-console.log('total', total);
 
   const plainTickets = tickets.map((t: any) => ({
     _id: t._id?.toString(),

@@ -137,34 +137,34 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
     setDeletingPhotoUrl(photoUrl)
 
     try {
-      // Extract public_id from Cloudinary URL
-      const urlParts = photoUrl.split('/')
-      const publicIdWithExtension = urlParts[urlParts.length - 1]
-      const publicId = `carepair/uploads/${publicIdWithExtension.split('.')[0]}`
-      
       const photoType = title.toLowerCase().includes('before') ? 'beforePhotos' : 'afterPhotos'
       
-      // Delete from Cloudinary and MongoDB via API
+      // Delete from Cloudinary and MongoDB via API - only pass URL and let API extract publicId
       const response = await fetch(
-        `/api/images/delete?ticketId=${ticketId}&type=${photoType}&publicId=${publicId}&photoUrl=${encodeURIComponent(photoUrl)}`,
+        `/api/images/delete?ticketId=${ticketId}&type=${photoType}&photoUrl=${encodeURIComponent(photoUrl)}`,
         {
           method: 'DELETE',
         }
       )
 
       if (!response.ok) {
-        throw new Error('Failed to delete image')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete image')
       }
+
+      const result = await response.json()
 
       // Update local state
       const updatedPhotos = localPhotos.filter((photo) => photo.url !== photoUrl)
       setLocalPhotos(updatedPhotos)
       onPhotosChange(updatedPhotos) // Update parent component immediately
       
-      toast.success('Image deleted successfully from cloud storage and database')
+
+      toast.success(result.message || 'Image deleted successfully from cloud storage and database')
+      
     } catch (error) {
       console.error('Error deleting photo:', error)
-      toast.error('Failed to delete image. Please try again.')
+      toast.error(`Failed to delete image: ${error instanceof Error ? error.message : 'Please try again.'}`)
     } finally {
       setDeletingPhotoUrl(null)
     }

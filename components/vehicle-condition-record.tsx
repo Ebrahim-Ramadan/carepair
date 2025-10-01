@@ -115,13 +115,13 @@ export function VehicleConditionRecord({ points, onPointsChange }: VehicleCondit
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="mb-4 flex flex-col md:flex-row items-center justify-between gap-2">
+        <div className="flex items-center gap-3 w-full">
           <h3 className="text-lg font-semibold text-foreground">Vehicle Condition Record</h3>
           {hasUnsavedChanges && <span className="text-xs text-amber-500">● Unsaved changes</span>}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end w-full">
           <Button variant="default" size="sm" onClick={handleSave} disabled={!hasUnsavedChanges} className="gap-2">
             <Save className="h-4 w-4" />
             Save
@@ -162,7 +162,7 @@ export function VehicleConditionRecord({ points, onPointsChange }: VehicleCondit
               </div>
             ))}
           </div>
-          <p className="mt-2 text-center text-sm text-muted-foreground">
+          <p className="mt-2 text-center text-xs leading-tight">
             Click anywhere on the vehicle to mark condition points
           </p>
         </div>
@@ -170,7 +170,7 @@ export function VehicleConditionRecord({ points, onPointsChange }: VehicleCondit
         {/* Points List */}
         {localPoints.length > 0 && (
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Condition Points</h4>
+            <h4 className="text-sm font-semibold uppercase tracking-wide">Condition Points</h4>
             <div className="space-y-3">
               {localPoints.map((point) => (
                 <div

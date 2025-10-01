@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { toast } from "sonner"
 import type { Ticket, CreateTicketInput } from "@/lib/types"
 
 const REPAIR_PARTS = ["Front Bumper", "Rear Bumper", "Left Door", "Right Door", "Hood", "Trunk"]
@@ -46,10 +47,11 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
       if (!response.ok) throw new Error("Failed to create ticket")
 
       const ticket = await response.json()
+      toast.success("Ticket created successfully!")
       onSuccess(ticket)
     } catch (error) {
       console.error("Error creating ticket:", error)
-      alert("Failed to create ticket. Please try again.")
+      toast.error("Failed to create ticket. Please try again.")
     } finally {
       setIsSubmitting(false)
     }

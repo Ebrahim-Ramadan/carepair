@@ -1,34 +1,57 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { writeFile } from "fs/promises"
-import { join } from "path"
+import { NextRequest, NextResponse } from 'next/server';
+import { v2 as cloudinary } from 'cloudinary';
 import { randomUUID } from "crypto"
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!,
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData()
-    const file = formData.get("file") as File
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
 
     if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 })
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
+    // Convert File to Buffer
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    
+    const originalName = file.name;
+    const ext = originalName ? originalName.split('.').pop() : '';
+    const uniqueId = randomUUID();
+    const publicId = ext
+      ? `carepair/uploads/${uniqueId}.${ext}`
+      : `carepair/uploads/${uniqueId}`;
 
-    // Generate unique filename
-    const fileExtension = file.name.split(".").pop()
-    const fileName = `${randomUUID()}.${fileExtension}`
-    const filePath = join(process.cwd(), "public", "uploads", fileName)
-
-    await writeFile(filePath, buffer)
+    const uploadResult = await new Promise<any>((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'auto', // Auto-detect file type (image, video, raw)
+          public_id: publicId,
+          folder: 'carepair/uploads',
+        },
+        (error: any, result: any) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      ).end(buffer);
+    });
 
     return NextResponse.json({
-      id: randomUUID(),
-      url: `/uploads/${fileName}`,
+      id: uniqueId,
+      url: uploadResult.secure_url,
+      public_id: uploadResult.public_id,
       name: file.name,
-    })
+      success: true,
+      message: 'File uploaded successfully to Cloudinary',
+    });
   } catch (error) {
-    console.error("Error uploading file:", error)
-    return NextResponse.json({ error: "Failed to upload file" }, { status: 500 })
+    console.error('Cloudinary upload error:', error);
+    return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
   }
 }

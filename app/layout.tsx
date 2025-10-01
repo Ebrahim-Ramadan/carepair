@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Toaster } from "sonner";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -32,15 +33,20 @@ export default function RootLayout({
       >
         <header className="border-b border-border bg-card">
           <div className=" mx-auto py-3 px-2">
-            <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-              <Link href="/" className="text-base font-semibold text-foreground sm:text-lg">
+            <div className="flex flex-col items-start justify-between sm:flex-row sm:items-center">
+              <Link href="/" className="flex flex-row items-center text-base font-semibold text-foreground sm:text-lg">
+               <img
+               src="/logo.jpg"
+               alt="Carepair Logo"
+               className="h-12 w-auto"
+               />
                 Car Service Dashboard
               </Link>
-              <nav className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-                <Button asChild variant="ghost" size="sm" className="justify-start sm:justify-center">
-                  <Link href="/">Home</Link>
+              <nav className="flex w-full flex-wrap items-center gap-2 sm:w-auto justify-end">
+                <Button asChild variant="ghost" size="sm" className="text-neutral-600 justify-start sm:justify-center">
+                  <Link href="/">Tickets</Link>
                 </Button>
-                <Button asChild variant="ghost" size="sm" className="justify-start sm:justify-center">
+                <Button asChild variant="ghost" size="sm" className="text-neutral-600 justify-start sm:justify-center">
                   <Link href="/appointments">Appointments</Link>
                 </Button>
               </nav>
@@ -48,6 +54,7 @@ export default function RootLayout({
           </div>
         </header>
         <main>{children}</main>
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );

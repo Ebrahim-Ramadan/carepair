@@ -4,6 +4,7 @@ import type React from "react"
 
 import { Button } from "@/components/ui/button"
 import { Trash2, Calendar } from "lucide-react"
+import { toast } from "sonner"
 import type { Ticket, TicketSummary } from "@/lib/types"
 
 type TicketListProps = {
@@ -26,10 +27,11 @@ export function TicketList({ tickets, selectedTicket, onSelectTicket, onDeleteTi
 
       if (!response.ok) throw new Error("Failed to delete ticket")
 
+      toast.success("Ticket deleted successfully!")
       onDeleteTicket(id)
     } catch (error) {
       console.error("Error deleting ticket:", error)
-      alert("Failed to delete ticket. Please try again.")
+      toast.error("Failed to delete ticket. Please try again.")
     }
   }
 

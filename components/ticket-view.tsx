@@ -4,6 +4,7 @@ import { VehicleConditionRecord } from "@/components/vehicle-condition-record"
 import { PhotoUpload } from "@/components/photo-upload"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, User, Phone, Mail, Gauge } from "lucide-react"
+import { toast } from "sonner"
 import type { Ticket, DamagePoint, Photo } from "@/lib/types"
 
 type TicketViewProps = {
@@ -24,10 +25,11 @@ export function TicketView({ ticket, onUpdate }: TicketViewProps) {
       if (!response.ok) throw new Error("Failed to update vehicle condition")
 
       const updatedTicket = await response.json()
+      toast.success("Vehicle condition updated successfully!")
       onUpdate(updatedTicket)
     } catch (error) {
       console.error("Error updating vehicle condition:", error)
-      alert("Failed to update vehicle condition. Please try again.")
+      toast.error("Failed to update vehicle condition. Please try again.")
     }
   }
 
@@ -44,10 +46,11 @@ export function TicketView({ ticket, onUpdate }: TicketViewProps) {
       if (!response.ok) throw new Error("Failed to update photos")
 
       const updatedTicket = await response.json()
+      toast.success(`${type === "before" ? "Before" : "After"} photos updated successfully!`)
       onUpdate(updatedTicket)
     } catch (error) {
       console.error("Error updating photos:", error)
-      alert("Failed to update photos. Please try again.")
+      toast.error("Failed to update photos. Please try again.")
     }
   }
 

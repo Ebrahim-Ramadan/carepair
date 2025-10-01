@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { TicketForm } from "@/components/ticket-form"
 import { TicketList } from "@/components/ticket-list"
 import { TicketView } from "@/components/ticket-view"
 import { Button } from "@/components/ui/button"
-import { Plus, FileText, X } from "lucide-react"
+import { Spinner } from "@/components/ui/spinner"
+import { Plus, FileText, X, ArrowBigLeft, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react"
 import * as Dialog from "@radix-ui/react-dialog"
 import type { Ticket, TicketSummary } from "@/lib/types"
 
@@ -20,6 +21,8 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
   const [tickets, setTickets] = useState<TicketSummary[]>(initialTickets)
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
   const [isCreating, setIsCreating] = useState(false)
+  const [isLoadingTicket, setIsLoadingTicket] = useState(false)
+  const ticketViewRef = useRef<HTMLDivElement>(null)
 console.log('total', total)
 
   const handleTicketCreated = (ticket: Ticket) => {
@@ -50,44 +53,46 @@ console.log('total', total)
       // If selection is already the same full ticket, skip
       if (selectedTicket?._id === maybeTicket._id && selectedTicket?.customerPhone) return
 
+      setIsLoadingTicket(true)
       const res = await fetch(`/api/tickets/${maybeTicket._id}`, { cache: 'no-store' })
       if (!res.ok) throw new Error('Failed to fetch ticket')
       const full = await res.json()
       setSelectedTicket(full)
+      
+      // Scroll to ticket view on mobile screens
+      if (window.innerWidth < 1024 && ticketViewRef.current) {
+        ticketViewRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        })
+      }
     } catch (e) {
       console.error(e)
+    } finally {
+      setIsLoadingTicket(false)
     }
   }
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className=" mx-auto px-2 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-                <FileText className="h-5 w-5 text-primary-foreground" />
-              </div>  
-              <div>
-                <p className="text-sm text-muted-foreground">Manage vehicle service tickets</p>
-              </div>
-            </div>
-            <Button onClick={() => setIsCreating(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Ticket
-            </Button>
-          </div>
-        </div>
-      </header>
+     
 
       {/* Main Content */}
-      <div className=" mx-auto px-2 py-8">
+      <div className=" mx-auto px-2">
         <div className="grid gap-6 lg:grid-cols-[350px_1fr]">
           {/* Sidebar - Ticket List */}
           <div className="space-y-4">
             <div className="rounded-lg border border-border bg-card p-4">
-              <h2 className="mb-4 text-lg font-semibold text-foreground">Tickets ({total})</h2>
+            <div className="flex items-center justify-between pb-2">
+                <h2 className="text-lg font-semibold text-foreground">Tickets ({total}) 
+
+                
+              </h2>
+               <Button onClick={() => setIsCreating(true)} size="sm">
+              <Plus className="w-3" />
+              New Ticket
+            </Button>
+            </div>
               <TicketList
                 tickets={tickets}
                 selectedTicket={selectedTicket}
@@ -100,7 +105,7 @@ console.log('total', total)
                   className={`text-sm ${page <= 1 ? "pointer-events-none opacity-50" : "text-primary hover:underline"}`}
                   aria-disabled={page <= 1}
                 >
-                  Previous
+                  <ChevronLeft className="h-4 w-4" />
                 </a>
                 <span className="text-xs text-muted-foreground">Page {page} of {totalPages}</span>
                 <a
@@ -108,15 +113,25 @@ console.log('total', total)
                   className={`text-sm ${page >= totalPages ? "pointer-events-none opacity-50" : "text-primary hover:underline"}`}
                   aria-disabled={page >= totalPages}
                 >
-                  Next
+                  <ChevronRight className="h-4 w-4" />
                 </a>
               </div>
             </div>
           </div>
 
           {/* Main Area */}
-          <div>
-            {selectedTicket ? (
+          <div ref={ticketViewRef} className="lg:min-h-0">
+            {isLoadingTicket ? (
+              <div className="flex h-[600px] items-center justify-center rounded-lg border border-border bg-card">
+                <div className="text-center">
+                  <Spinner size="lg" className="mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground">Loading ticket...</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Please wait while we fetch the ticket details
+                  </p>
+                </div>
+              </div>
+            ) : selectedTicket ? (
               <TicketView ticket={selectedTicket} onUpdate={handleTicketUpdated} />
             ) : (
               <div className="flex h-[600px] items-center justify-center rounded-lg border border-dashed border-border bg-card">
@@ -125,6 +140,10 @@ console.log('total', total)
                   <h3 className="mt-4 text-lg font-semibold text-foreground">No ticket selected</h3>
                   <p className="mt-2 text-sm text-muted-foreground">
                     Select a ticket from the list or create a new one
+                  </p>
+                  {/* Show hint on mobile */}
+                  <p className="mt-2 text-xs text-muted-foreground lg:hidden">
+                    Tap a ticket above to view its details
                   </p>
                 </div>
               </div>

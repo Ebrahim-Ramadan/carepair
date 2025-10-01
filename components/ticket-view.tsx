@@ -2,8 +2,7 @@
 
 import { VehicleConditionRecord } from "@/components/vehicle-condition-record"
 import { PhotoUpload } from "@/components/photo-upload"
-import { Badge } from "@/components/ui/badge"
-import { Calendar, User, Phone, Mail, Gauge } from "lucide-react"
+import { EditableTicketInfo } from "@/components/editable-ticket-info"
 import { toast } from "sonner"
 import type { Ticket, DamagePoint, Photo } from "@/lib/types"
 
@@ -13,7 +12,6 @@ type TicketViewProps = {
 }
 
 export function TicketView({ ticket, onUpdate }: TicketViewProps) {
-  // Ticket details are loaded by the parent before rendering this component.
   const handleConditionUpdate = async (points: DamagePoint[]) => {
     try {
       const response = await fetch(`/api/tickets/${ticket._id}`, {
@@ -56,60 +54,8 @@ export function TicketView({ ticket, onUpdate }: TicketViewProps) {
 
   return (
     <div className="space-y-6">
-      {/* Ticket Header */}
-      <div className="rounded-lg border border-border bg-card p-6">
-        <div className="mb-4 flex items-start justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">{ticket.plateNumber}</h2>
-            <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              {new Date(ticket.createdAt).toLocaleString()}
-            </div>
-          </div>
-          <Badge variant="secondary" className="text-xs">
-            Ticket #{ticket._id?.slice(-6)}
-          </Badge>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="text-foreground">{ticket.customerName}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <span className="text-foreground">{ticket.customerPhone}</span>
-            </div>
-            {ticket.customerEmail && (
-              <div className="flex items-center gap-2 text-sm">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="text-foreground">{ticket.customerEmail}</span>
-              </div>
-            )}
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              <Gauge className="h-4 w-4 text-muted-foreground" />
-              <span className="text-foreground">{ticket.mileage} km</span>
-            </div>
-            {ticket.repairParts.length > 0 && (
-              <div>
-                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Repair Parts
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {ticket.repairParts.map((part) => (
-                    <Badge key={part} variant="outline">
-                      {part}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Editable Ticket Information */}
+      <EditableTicketInfo ticket={ticket} onUpdate={onUpdate} />
 
       {/* Vehicle Condition Record */}
       <VehicleConditionRecord points={ticket.vehicleConditionPoints} onPointsChange={handleConditionUpdate} />

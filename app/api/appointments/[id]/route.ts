@@ -12,15 +12,18 @@ const transporter = nodemailer.createTransport({
   },
 })
 
-const getStatusEmailTemplate = (status: string, customerName: string, vehicleInfo: string, serviceType: string, serviceDate?: string, serviceTime?: string) => {
-  const statusMessages = {
+// Define the status type
+type AppointmentStatus = "pending" | "confirmed" | "completed" | "canceled"
+
+const getStatusEmailTemplate = (status: AppointmentStatus, customerName: string, vehicleInfo: string, serviceType: string, serviceDate?: string, serviceTime?: string) => {
+  const statusMessages: Record<AppointmentStatus, string> = {
     pending: "Your appointment is now pending review.",
     confirmed: "Great news! Your appointment has been confirmed.",
     completed: "Your service has been completed successfully.",
     canceled: "Unfortunately, your appointment has been canceled."
   }
 
-  const statusColors = {
+  const statusColors: Record<AppointmentStatus, string> = {
     pending: "#f59e0b",
     confirmed: "#10b981", 
     completed: "#6366f1",
@@ -47,7 +50,7 @@ const getStatusEmailTemplate = (status: string, customerName: string, vehicleInf
         </p>
         
         <p style="font-size: 16px; color: #666; line-height: 1.6; margin-bottom: 25px;">
-          ${statusMessages[status]}
+        ${statusMessages[status]}
         </p>
         
         <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
@@ -127,7 +130,7 @@ export async function PATCH(
           to: customerEmail,
           subject: `CarePair - Appointment Status Update: ${status.toUpperCase()}`,
           html: getStatusEmailTemplate(
-            status, 
+            status as AppointmentStatus, 
             customerName, 
             vehicleInfo, 
             serviceType,

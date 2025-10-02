@@ -1,15 +1,32 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import dynamic from "next/dynamic"
 import { TicketForm } from "@/components/ticket-form"
 import { TicketList } from "@/components/ticket-list"
 import { TicketView } from "@/components/ticket-view"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
-import { Plus, FileText, X, ArrowBigLeft, ArrowLeft, ChevronLeft, ChevronRight, MousePointer, MousePointer2 } from "lucide-react"
+import { 
+  Plus, FileText, X, ArrowBigLeft, ArrowLeft, ChevronLeft, 
+  ChevronRight, MousePointer, MousePointer2, ReceiptText, ListOrdered
+} from "lucide-react"
 import * as Dialog from "@radix-ui/react-dialog"
-import type { Ticket, TicketSummary } from "@/lib/types"
+import { toast } from "sonner"
+import type { Ticket, TicketSummary, Service } from "@/lib/types"
+
+// Dynamically import the ServiceDialog component
+const ServiceDialog = dynamic(() => import("@/components/service-dialog").then(mod => mod.ServiceDialog), {
+  loading: () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="rounded-lg border border-border bg-card p-6 shadow-xl">
+        <Spinner size="lg" />
+      </div>
+    </div>
+  ),
+  ssr: false // We don't need this component for SSR
+})
 
 type DashboardClientProps = {
   initialTickets: TicketSummary[]
@@ -26,8 +43,11 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
   const [tickets, setTickets] = useState<TicketSummary[]>(initialTickets)
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
   const [isCreating, setIsCreating] = useState(false)
+  const [isAddingService, setIsAddingService] = useState(false)
   const [isLoadingTicket, setIsLoadingTicket] = useState(false)
+  const [deletingServiceIds, setDeletingServiceIds] = useState<string[]>([])
   const ticketViewRef = useRef<HTMLDivElement>(null)
+  const servicesRef = useRef<HTMLDivElement>(null) // Add ref for services section
 
   // Load ticket from URL parameter on mount
   useEffect(() => {
@@ -38,6 +58,27 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
       }
     }
   }, [ticketIdParam, tickets])
+
+  // Check for hash in URL and scroll to services section
+  useEffect(() => {
+    if (window.location.hash === '#services' && servicesRef.current) {
+      setTimeout(() => {
+        servicesRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 500) // Small delay to ensure content is rendered
+    }
+  }, [selectedTicket]) // Re-run when selected ticket changes
+
+  const handleScrollToServices = () => {
+    if (servicesRef.current) {
+      // Update URL with hash
+      const url = new URL(window.location.href)
+      url.hash = 'services'
+      window.history.replaceState({}, '', url.toString())
+      
+      // Scroll to services section
+      servicesRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
 
   const handleTicketCreated = (ticket: Ticket) => {
     setTickets([
@@ -65,6 +106,7 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
       // Remove ticket ID from URL when ticket is deleted
       const url = new URL(window.location.href)
       url.searchParams.delete("ticketId")
+      url.hash = '' // Clear hash as well
       router.replace(url.toString())
     }
   }
@@ -108,30 +150,117 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
     // Remove ticket ID from URL
     const url = new URL(window.location.href)
     url.searchParams.delete("ticketId")
+    url.hash = '' // Clear hash as well
     router.replace(url.toString())
+  }
+
+  const handleAddService = async (service: Service) => {
+    if (!selectedTicket || !selectedTicket._id) {
+      toast.error('No ticket selected')
+      return false
+    }
+
+    try {
+      const response = await fetch(`/api/tickets/${selectedTicket._id}/services`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          serviceId: service.id,
+          serviceName: service.nameEn,
+          serviceNameAr: service.nameAr,
+          price: service.price,
+          category: service.category,
+          descriptionEn: service.descriptionEn,
+          descriptionAr: service.descriptionAr,
+          estimatedHours: service.estimatedHours,
+          addedAt: new Date().toISOString()
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to add service to ticket')
+      }
+
+      const updatedTicket = await response.json()
+      setSelectedTicket(updatedTicket)
+      
+      // Don't close dialog or show toast when adding multiple services
+      // The calling function (handleAddSelectedServices) will handle closing dialog
+      return true
+    } catch (error) {
+      console.error('Error adding service:', error)
+      toast.error(`Failed to add service: ${service.nameEn}`)
+      return false
+    }
+  }
+
+  const handleRemoveService = async (serviceId: string) => {
+    if (!selectedTicket || !selectedTicket._id) return
+    
+    // Add service ID to loading state
+    setDeletingServiceIds(prev => [...prev, serviceId])
+    
+    try {
+      // Show loading toast
+      const loadingToast = toast.loading('Removing service...')
+      
+      const response = await fetch(`/api/tickets/${selectedTicket._id}/services/${serviceId}`, {
+        method: 'DELETE',
+      })
+      
+      // Dismiss loading toast
+      toast.dismiss(loadingToast)
+      
+      if (!response.ok) {
+        throw new Error('Failed to remove service')
+      }
+      
+      const updatedTicket = await response.json()
+      setSelectedTicket(updatedTicket)
+      toast.success('Service removed from ticket')
+    } catch (error) {
+      console.error('Error removing service:', error)
+      toast.error('Failed to remove service')
+    } finally {
+      // Remove service ID from loading state whether successful or not
+      setDeletingServiceIds(prev => prev.filter(id => id !== serviceId))
+    }
+  }
+
+  // Function to scroll down to services after adding them from the dialog
+  const handleAddSelectedServices = async (services: Service[]) => {
+    // Services are added, now add hash and scroll
+    setTimeout(() => {
+      const url = new URL(window.location.href)
+      url.hash = 'services'
+      window.history.replaceState({}, '', url.toString())
+      
+      if (servicesRef.current) {
+        servicesRef.current.scrollIntoView({ behavior: 'smooth' })
+      }
+    }, 500) // Small delay to ensure the services are rendered
   }
 
   return (
     <div className="min-h-screen bg-background mt-2">
       {/* Main Content */}
-      <div className=" mx-auto px-2">
+      <div className="mx-auto px-2">
         <div className="grid gap-6 lg:grid-cols-[350px_1fr]">
           {/* Sidebar - Ticket List */}
           <div className="space-y-4">
             <div className="rounded-lg border border-border bg-card p-4">
-            <div className="flex items-center justify-between pb-2">
-               <div className=" flex items-center gap-1">
-                 <h2 className="text-lg font-semibold text-foreground">Tickets 
-              </h2>
-<p className="text-xs font-normal text-neutral-500">
-              ({total}) 
-</p>
-               </div>
-               <Button onClick={() => setIsCreating(true)} size="sm">
-              <Plus className="w-3" />
-              New 
-            </Button>
-            </div>
+              <div className="flex items-center justify-between pb-2">
+                <div className="flex items-center gap-1">
+                  <h2 className="text-lg font-semibold text-foreground">Tickets</h2>
+                  <p className="text-xs font-normal text-neutral-500">({total})</p>
+                </div>
+                <Button onClick={() => setIsCreating(true)} size="sm">
+                  <Plus className="w-3" />
+                  New 
+                </Button>
+              </div>
               <TicketList
                 tickets={tickets}
                 selectedTicket={selectedTicket}
@@ -165,30 +294,56 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
                 <div className="text-center">
                   <Spinner size="lg" className="mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-foreground">Loading ticket...</h3>
-                 
                 </div>
               </div>
             ) : selectedTicket ? (
               <div className="space-y-4">
-                {/* Back button for mobile */}
-                <div className="lg:hidden">
-                  <Button
+             
+                
+                {/* Action buttons with new Services button */}
+                <div className="flex justify-between items-center flex-col md:flex-row">
+                   <div className="flex items-center  w-full md:w-auto">
+                    <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleClearSelection}
                     className="gap-2"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    Back to list
+                    Back to Analytics
                   </Button>
+                  </div>
+                  <div className="flex items-center gap-2 flex-row justify-end w-full"> 
+                    <Button 
+                    onClick={handleScrollToServices}
+                    className="gap-2"
+                    variant="outline"
+                  >
+                    <ListOrdered className="h-4 w-4" />
+                    Services
+                  </Button>
+                  <Button 
+                    onClick={() => setIsAddingService(true)}
+                    className="gap-2"
+                    variant="outline"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Service
+                  </Button>
+                  </div>
                 </div>
-                <TicketView ticket={selectedTicket} onUpdate={handleTicketUpdated} />
+
+                <TicketView 
+                  ticket={selectedTicket} 
+                  onUpdate={handleTicketUpdated}
+                  onRemoveService={handleRemoveService}
+                  deletingServiceIds={deletingServiceIds} 
+                  servicesRef={servicesRef} // Pass the services ref to TicketView
+                />
               </div>
             ) : (
               <div className="flex h-[600px] items-center justify-center rounded-lg border border-dashed border-border bg-card">
                 <div className="text-center">
-                  {/* <FileText className="mx-auto h-12 w-12" /> */}
-                  {/* <h3 className="mt-4 text-lg font-semibold">Hi!</h3> */}
                   <MousePointer2 className="mx-auto text-[#EC653B]"/>
                   <p className="mt-2 text-sm">
                     Select a ticket from the list or create a new one
@@ -221,6 +376,16 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {/* Dynamically loaded service dialog */}
+      {isAddingService && (
+        <ServiceDialog 
+          open={isAddingService}
+          onOpenChange={setIsAddingService}
+          onAddService={handleAddService}
+          onServicesAdded={handleAddSelectedServices}
+        />
+      )}
     </div>
   )
 }

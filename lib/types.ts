@@ -11,27 +11,7 @@ export interface Photo {
   name: string
 }
 
-export interface Ticket {
-  _id?: string
-  plateNumber: string
-  customerName: string
-  customerPhone: string
-  customerEmail: string
-  mileage: number
-  repairParts: string[]
-  vehicleConditionPoints: DamagePoint[]
-  beforePhotos: Photo[]
-  afterPhotos: Photo[]
-  createdAt: Date
-  updatedAt: Date
-}
 
-export interface TicketSummary {
-  _id: string
-  plateNumber: string
-  customerName: string
-  createdAt: string
-}
 
 export interface CreateTicketInput {
   plateNumber: string
@@ -83,4 +63,50 @@ export interface Appointment {
   status: "pending" | "confirmed" | "completed" | "cancelled"
   createdAt: Date
   updatedAt: Date
+}
+
+// Services
+export type Service = {
+  id: string
+  nameEn: string
+  nameAr: string
+  descriptionEn: string
+  descriptionAr: string
+  price: number | string
+  category: string
+  estimatedHours: number
+}
+
+export type TicketService = {
+  serviceId: string
+  serviceName: string
+  serviceNameAr: string
+  price: number | string
+  category: string
+  addedAt: string
+}
+
+export type Ticket = {
+  _id?: string
+  customerName: string
+  customerPhone: string
+  customerEmail?: string
+  plateNumber: string
+  make?: string
+  model?: string
+  year?: string
+  color?: string
+  services?: TicketService[]
+  notes?: string
+  status?: "pending" | "in-progress" | "completed" | "canceled"
+  totalAmount?: number
+  createdAt: string
+  updatedAt?: string
+}
+
+export type TicketSummary = {
+  _id: string
+  customerName: string
+  plateNumber: string
+  createdAt: string
 }

@@ -7,7 +7,7 @@ import { TicketList } from "@/components/ticket-list"
 import { TicketView } from "@/components/ticket-view"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
-import { Plus, FileText, X, ArrowBigLeft, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, FileText, X, ArrowBigLeft, ArrowLeft, ChevronLeft, ChevronRight, MousePointer, MousePointer2 } from "lucide-react"
 import * as Dialog from "@radix-ui/react-dialog"
 import type { Ticket, TicketSummary } from "@/lib/types"
 
@@ -146,7 +146,7 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </a>
-                <span className="text-xs text-muted-foreground">Page {page} of {totalPages}</span>
+                <span className="text-xs">Page {page} of {totalPages}</span>
                 <a
                   href={`/?page=${Math.min(totalPages, page + 1)}`}
                   className={`text-sm ${page >= totalPages ? "pointer-events-none opacity-50" : "text-primary hover:underline"}`}
@@ -165,7 +165,7 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
                 <div className="text-center">
                   <Spinner size="lg" className="mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-foreground">Loading ticket...</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
+                  <p className="mt-2 text-sm">
                     Please wait while we fetch the ticket details
                   </p>
                 </div>
@@ -189,13 +189,14 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
             ) : (
               <div className="flex h-[600px] items-center justify-center rounded-lg border border-dashed border-border bg-card">
                 <div className="text-center">
-                  <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-4 text-lg font-semibold text-foreground">Hi.</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
+                  {/* <FileText className="mx-auto h-12 w-12" /> */}
+                  {/* <h3 className="mt-4 text-lg font-semibold">Hi!</h3> */}
+                  <MousePointer2 className="mx-auto text-[#EC653B]"/>
+                  <p className="mt-2 text-sm">
                     Select a ticket from the list or create a new one
                   </p>
                   {/* Show hint on mobile */}
-                  <p className="mt-2 text-xs text-muted-foreground lg:hidden">
+                  <p className="mt-2 text-xs lg:hidden">
                     Tap a ticket above to view its details
                   </p>
                 </div>

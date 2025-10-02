@@ -181,6 +181,16 @@ export function SearchClient() {
         </Button>
       </div>
 
+ {/* Start Typing State - Show when no query and hasn't searched */}
+      {!query.trim() && !hasSearched && (
+        <div className="rounded-lg border border-dashed border-border bg-card p-12 text-center">
+          <Search className="mx-auto h-12 w-12 text-[#EC653B]" />
+          <h3 className="mt-4 text-lg font-semibold">Start typing to search</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Search by ticket ID, plate number, customer name, phone, or email
+          </p>
+        </div>
+      )}
       {/* Search Results */}
       {isLoading && (
         <div className="flex items-center justify-center py-8 sm:py-12">

@@ -46,10 +46,8 @@ export function CustomersClient({ initialCustomers }: CustomersClientProps) {
   return (
     <div className="rounded-lg border border-border bg-card p-2">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Customers</h1>
-        <Badge variant="secondary" className="text-xs">
-          {customers.length} customers
-        </Badge>
+        <h1 className="text-xl font-semibold"> {customers.length} Customer {customers.length !== 1 ? "s" : ""}</h1>
+      
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">

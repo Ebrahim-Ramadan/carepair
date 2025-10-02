@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Mail, Phone, MessageCircle, Calendar, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown } from "lucide-react"
+import { Mail, Phone, MessageCircle, Calendar, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, HelpCircle, Copy, Check, ChevronDown } from "lucide-react"
 import { toast } from "sonner"
 
 type Appointment = {
@@ -82,6 +82,8 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
   const [data, setData] = useState<AppointmentsData>(initialData)
   const [isLoading, setIsLoading] = useState(false)
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
+  const [copiedEmail, setCopiedEmail] = useState<string | null>(null)
+  const [copiedPhone, setCopiedPhone] = useState<string | null>(null)
 
   const handlePageChange = (page: number) => {
     const url = new URL(window.location.href)
@@ -115,8 +117,20 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
     }
   }
 
-  const handleEmailClick = (email: string) => {
-    window.open(`https://mail.google.com/mail/u/0/?view=cm&fs=1&to=${email}&su=Hello&body=Message&tf=cm`, '_blank')
+  const handleCopyEmail = (email: string) => {
+    navigator.clipboard.writeText(email).then(() => {
+      setCopiedEmail(email)
+      toast.success("Email copied to clipboard")
+      setTimeout(() => setCopiedEmail(null), 2000)
+    })
+  }
+
+  const handleCopyPhone = (phone: string) => {
+    navigator.clipboard.writeText(phone).then(() => {
+      setCopiedPhone(phone)
+      toast.success("Phone number copied to clipboard")
+      setTimeout(() => setCopiedPhone(null), 2000)
+    })
   }
 
   const handleWhatsAppClick = (phone: string) => {
@@ -126,6 +140,24 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
 
   const handlePhoneCall = (phone: string) => {
     window.open(`tel:${phone}`, '_self')
+  }
+
+  const handleStatusChangeRequest = (appointmentId: string, newStatus: string) => {
+    const appointment = data.appointments.find(a => a._id === appointmentId)
+    if (!appointment) return
+
+    // Don't show confirmation if status hasn't changed
+    if (appointment.status === newStatus) return
+
+    // Show browser alert for confirmation
+    const customerName = `${appointment.customer.firstName} ${appointment.customer.lastName}`
+    const confirmed = window.confirm(
+      `Are you sure you want to change ${customerName}'s appointment status to ${newStatus}? An email notification will be sent to the customer.`
+    )
+
+    if (confirmed) {
+      handleStatusChange(appointmentId, newStatus)
+    }
   }
 
   const handleStatusChange = async (appointmentId: string, newStatus: string) => {
@@ -193,6 +225,17 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
         return "bg-gray-100 text-gray-800 hover:bg-gray-200"
     }
   }
+  
+  // Get status label with proper capitalization
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending": return "Pending"
+      case "confirmed": return "Confirmed"
+      case "completed": return "Completed"
+      case "canceled": return "Canceled"
+      default: return status.charAt(0).toUpperCase() + status.slice(1)
+    }
+  }
 
   const statusOptions = [
     { value: "pending", label: "Pending" },
@@ -202,7 +245,7 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
   ]
 
   return (
-    <div className=" p-2 md:p-4 space-y-6">
+    <div className="p-2 md:p-4 space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -213,8 +256,6 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
         </div>
         
         <div className="flex items-center gap-4 justify-end">
-          
-          
           {/* Sort Dropdown */}
           <div className="flex items-center gap-2">
             <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
@@ -272,13 +313,25 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
                       <th className="px-2 md:px-4 py-1.5 md:py-3">Vehicle</th>
                       <th className="px-2 md:px-4 py-1.5 md:py-3">Service</th>
                       <th className="px-2 md:px-4 py-1.5 md:py-3">When</th>
-                      <th className="px-2 md:px-4 py-1.5 md:py-3">Status</th>
+                      <th className="px-2 md:px-4 py-1.5 md:py-3">
+                        <div className="flex items-center gap-1">
+                          Status
+                          <button
+                          title="When changing status, an email notification will be sent to the customer"
+                          >
+                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
+
+                          </button>
+                        </div>
+                      </th>
                       <th className="px-2 md:px-4 py-1.5 md:py-3">Created</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.appointments.map((appointment) => {
                       const isUpdating = updatingIds.has(appointment._id)
+                      const isEmailCopied = copiedEmail === appointment.customer.email
+                      const isPhoneCopied = copiedPhone === appointment.customer.phone
 
                       return (
                         <tr key={appointment._id} className="border-b border-border last:border-0">
@@ -287,31 +340,46 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
                           </td>
                           <td className="px-2 md:px-4 py-1.5 md:py-3">
                             <div className="flex items-center gap-1">
-                              <Mail className="h-3 w-3 text-muted-foreground" />
                               <button
-                                onClick={() => handleEmailClick(appointment.customer.email)}
-                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors text-xs"
+                                onClick={() => handleCopyEmail(appointment.customer.email)}
+                                className="p-1 rounded hover:bg-secondary transition-colors"
+                                title="Copy email"
                               >
-                                {appointment.customer.email}
+                                {isEmailCopied ? (
+                                  <Check className="h-3 w-3 text-green-600" />
+                                ) : (
+                                  <Copy className="h-3 w-3 text-muted-foreground" />
+                                )}
                               </button>
+                              <span className="text-xs">{appointment.customer.email}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-muted-foreground mt-1">
-                              <Phone className="h-3 w-3" />
+                            <div className="flex items-center gap-1 text-muted-foreground mt-1">
+                              <button
+                                onClick={() => handleCopyPhone(appointment.customer.phone)}
+                                className="p-1 rounded hover:bg-secondary transition-colors"
+                                title="Copy phone"
+                              >
+                                {isPhoneCopied ? (
+                                  <Check className="h-3 w-3 text-green-600" />
+                                ) : (
+                                  <Copy className="h-3 w-3 text-muted-foreground" />
+                                )}
+                              </button>
                               <span className="text-foreground text-xs">{appointment.customer.phone}</span>
-                              <div className="flex gap-1">
+                              <div className="flex gap-1 ml-auto">
                                 <button
                                   onClick={() => handleWhatsAppClick(appointment.customer.phone)}
                                   className="p-1 rounded hover:bg-green-100 transition-colors"
                                   title="WhatsApp"
                                 >
-                                  <MessageCircle className="h-3 w-3 text-green-600 hover:text-green-800" />
+                                  <MessageCircle className="h-3 w-3 text-[#EC653B] hover:text-[#002440]" />
                                 </button>
                                 <button
                                   onClick={() => handlePhoneCall(appointment.customer.phone)}
                                   className="p-1 rounded hover:bg-blue-100 transition-colors"
                                   title="Call"
                                 >
-                                  <Phone className="h-3 w-3 text-blue-600 hover:text-blue-800" />
+                                  <Phone className="h-3 w-3 text-[#EC653B] hover:text-[#002440]" />
                                 </button>
                               </div>
                             </div>
@@ -331,34 +399,34 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
                           <td className="px-2 md:px-4 py-1.5 md:py-3">
                             <div className="flex items-center gap-2">
                               {/* Clickable Status Dropdown */}
-                              <Select 
-                                value={appointment.status} 
-                                onValueChange={(value) => handleStatusChange(appointment._id, value)}
-                                disabled={isUpdating}
-                              >
-                                <SelectTrigger 
-                                  className={`w-auto border-0 px-2 py-1 h-auto text-xs font-medium rounded-full uppercase ${getStatusColor(appointment.status)} transition-colors`}
+                              {isUpdating ? (
+                                <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium uppercase ${getStatusColor(appointment.status)}`}>
+                                  <Spinner size="sm" className="text-current" />
+                                  <span>Updating</span>
+                                </div>
+                              ) : (
+                                <Select 
+                                  value={appointment.status} 
+                                  onValueChange={(value) => handleStatusChangeRequest(appointment._id, value)}
                                 >
-                                  {isUpdating ? (
-                                    <Spinner size="sm" />
-                                  ) : (
-                                    <>
-                                      <SelectValue />
-                                      <ChevronDown className="h-3 w-3 ml-1" />
-                                    </>
-                                  )}
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {statusOptions.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
-                                      <div className="flex items-center gap-2">
-                                        <div className={`w-2 h-2 rounded-full ${getStatusColor(option.value).split(' ')[0]}`} />
-                                        {option.label}
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                                  <SelectTrigger 
+                                    className={`w-auto border-0 px-2 py-1 h-auto text-xs font-medium rounded-full uppercase ${getStatusColor(appointment.status)} transition-colors flex items-center gap-1`}
+                                  >
+                                    <span>{getStatusLabel(appointment.status)}</span>
+                                    <ChevronDown className="h-3 w-3 opacity-70" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {statusOptions.map((option) => (
+                                      <SelectItem key={option.value} value={option.value}>
+                                        <div className="flex items-center gap-2">
+                                          <div className={`w-2 h-2 rounded-full ${getStatusColor(option.value).split(' ')[0]}`} />
+                                          {option.label}
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
                             </div>
                           </td>
                           <td className="px-2 md:px-4 py-1.5 md:py-3 text-muted-foreground text-xs">

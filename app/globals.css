@@ -94,21 +94,28 @@ body {
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
-/* Custom scrollbar */
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* width */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  height: 0;
+  width: 0;
 }
 
+/* Track */
 ::-webkit-scrollbar-track {
-  background: hsl(var(--color-background));
+  height: 0;
+  border-radius: 0;
 }
 
+/* Handle */
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--color-border));
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--color-muted-foreground));
+  height: 0;
+  border-radius: 0;
 }

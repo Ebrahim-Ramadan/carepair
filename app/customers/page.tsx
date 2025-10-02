@@ -1,5 +1,6 @@
 import { Suspense } from "react"
 import { CustomersClient } from "@/components/customers-client"
+import { Spinner } from "@/components/ui/spinner"
 
 async function CustomersData() {
   const response = await fetch(`${process.env.NEXTAUTH_URL}/api/customers`, {
@@ -18,7 +19,7 @@ async function CustomersData() {
 export default function CustomersPage() {
   return (
     <div className="mx-auto">
-      <Suspense fallback={<div className="rounded-lg border border-border bg-card p-6">Loading customers...</div>}>
+      <Suspense fallback={<div className="flex w-full flex-col items-center justify-center rounded-lg border border-border bg-card p-6"><Spinner/></div>}>
         <CustomersData />
       </Suspense>
     </div>

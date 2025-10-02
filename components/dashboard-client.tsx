@@ -112,7 +112,7 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background mt-2">
       {/* Main Content */}
       <div className=" mx-auto px-2">
         <div className="grid gap-6 lg:grid-cols-[350px_1fr]">
@@ -165,9 +165,7 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
                 <div className="text-center">
                   <Spinner size="lg" className="mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-foreground">Loading ticket...</h3>
-                  <p className="mt-2 text-sm">
-                    Please wait while we fetch the ticket details
-                  </p>
+                 
                 </div>
               </div>
             ) : selectedTicket ? (

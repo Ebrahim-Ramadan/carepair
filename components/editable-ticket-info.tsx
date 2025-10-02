@@ -260,14 +260,14 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
                   className="p-1 rounded hover:bg-green-100 transition-colors"
                   title="WhatsApp"
                 >
-                  <MessageCircle className="h-3 w-3 text-green-600 hover:text-green-800" />
+                  <MessageCircle className="h-3 w-3 text-[#EC653B] hover:text-green-800" />
                 </button>
                 <button
                   onClick={() => handlePhoneCall(ticket.customerPhone)}
                   className="p-1 rounded hover:bg-blue-100 transition-colors"
                   title="Call"
                 >
-                  <Phone className="h-3 w-3 text-blue-600 hover:text-blue-800" />
+                  <Phone className="h-3 w-3 text-[#EC653B] hover:text-blue-800" />
                 </button>
               </div>
             </div>
@@ -302,7 +302,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
                   {ticket.repairParts.map((part) => (
                     <span
                       key={part}
-                      className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                      className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs  transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-[#EC653B]/90 text-[#002440] hover:bg-[#EC653B]/80"
                     >
                       {part}
                     </span>

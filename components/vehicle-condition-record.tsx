@@ -134,7 +134,7 @@ export function VehicleConditionRecord({ points, onPointsChange }: VehicleCondit
             className="gap-2 bg-transparent"
           >
             <RotateCcw className="h-4 w-4" />
-            Reset
+            Clear
           </Button>
         </div>
       </div>
@@ -158,7 +158,7 @@ export function VehicleConditionRecord({ points, onPointsChange }: VehicleCondit
             {localPoints.map((point) => (
               <div
                 key={point.id}
-                className="absolute flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-lg ring-2 ring-background"
+                className="absolute flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#002440] text-xs font-bold text-primary-foreground shadow-lg ring-2 ring-background"
                 style={{ left: `${point.x}%`, top: `${point.y}%` }}
               >
                 {point.number}

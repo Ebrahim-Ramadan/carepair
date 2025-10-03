@@ -34,7 +34,7 @@ const getStatusEmailTemplate = (status: AppointmentStatus, customerName: string,
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
         <div style="margin-bottom: 20px;">
-          <img src="${process.env.NEXTAUTH_URL}/dark-logo.jpg" alt="CarePair Logo" style="height: 60px; width: auto; max-width: 200px;" />
+          <img src="https://carepair-kw.vercel.app/logo.jpg" alt="CarePair Logo" style="height: 60px; width: auto; max-width: 200px;" />
         </div>
         <h1 style="margin: 0; font-size: 28px;">CarePair Auto Service</h1>
         <p style="margin: 10px 0 0 0; opacity: 0.9;">Appointment Status Update</p>
@@ -74,7 +74,7 @@ const getStatusEmailTemplate = (status: AppointmentStatus, customerName: string,
         
         <hr style="border: none; border-top: 1px solid #eee; margin: 25px 0;">
         <div style="text-align: center;">
-          <img src="${process.env.NEXTAUTH_URL}/logo.png" alt="CarePair Logo" style="height: 30px; width: auto; opacity: 0.6; margin-bottom: 10px;" />
+          <img src="https://carepair-kw.vercel.app/logo.jpg" alt="CarePair Logo" style="height: 30px; width: auto; opacity: 0.6; margin-bottom: 10px;" />
           <p style="color: #999; font-size: 12px; margin: 0;">
             This is an automated message. Please do not reply to this email.
           </p>

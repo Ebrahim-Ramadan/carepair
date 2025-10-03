@@ -19,8 +19,6 @@ export const serviceCategories = [
     nameAr: "تخصيص",
     icon: "palette"
   },
-
-
 ]
 
 

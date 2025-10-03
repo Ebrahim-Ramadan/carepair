@@ -30,8 +30,16 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
   const [deletingPhotoUrl, setDeletingPhotoUrl] = useState<string | null>(null)
   const [clearingPhotoUrl, setClearingPhotoUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const initialRenderRef = useRef(true)
 
+  // Only sync localPhotos with photos prop on mount and when photos prop changes
+  // This prevents the infinite update loop
   useEffect(() => {
+    // Skip the effect if this is an update caused by our own state changes
+    if (JSON.stringify(localPhotos) === JSON.stringify(photos)) {
+      return;
+    }
+    
     setLocalPhotos(photos ?? [])
   }, [photos])
 
@@ -101,11 +109,13 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
         }
 
         const updatedTicket = await response.json()
-        onPhotosChange(updatedPhotos) // Update parent component
+        
+        // Update local state first
+        setLocalPhotos(updatedPhotos)
+        
+        // Then notify parent component about the change
+        onPhotosChange(updatedPhotos)
       }
-      
-      // Update local photos with uploaded ones
-      setLocalPhotos([...localPhotos, ...formattedPhotos])
       
       // Clear ALL preview photos after successful upload - clean up memory
       previewPhotos.forEach(photo => URL.revokeObjectURL(photo.url))
@@ -175,9 +185,12 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
 
       // Update local state
       const updatedPhotos = localPhotos.filter((photo) => photo.url !== photoUrl)
-      setLocalPhotos(updatedPhotos)
-      onPhotosChange(updatedPhotos) // Update parent component immediately
       
+      // Update local state first
+      setLocalPhotos(updatedPhotos)
+      
+      // Then notify parent about the change
+      onPhotosChange(updatedPhotos)
 
       toast.success(result.message || 'Image deleted successfully from cloud storage and database')
       
@@ -206,15 +219,12 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
   return (
     <div className="rounded-lg border border-border bg-card p-6">
       <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-
+        <h3 className="text-lg font-semibold text-foreground">{title}</h3>
       </div>
 
       <div className="space-y-6">
         {/* Browse Photos Section */}
         <div className="space-y-3">
-         
-          
           <Button
             type="button"
             variant="outline"
@@ -267,7 +277,6 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
                       {isUploading ? "Uploading..." : `Upload`}
                     </Button>
                   )}
-                  
                 </div>
               </div>
               
@@ -343,30 +352,29 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
                   )}
                   
                   {/* Delete Button - X icon or Clear text */}
-                  {/* Delete Button - X icon or Clear text */}
-<div className="absolute right-2 top-2">
-  {clearingPhotoUrl === photo.url ? (
-    <Button
-      variant="destructive" 
-      size="sm"
-      className="text-white px-3 py-1 h-5 text-xs font-medium rounded-full  transform transition-all duration-300 ease-out scale-x-110"
-      onClick={() => handleClearClick(photo.url)}
-      disabled={deletingPhotoUrl === photo.url}
-    >
-      Clear
-    </Button>
-  ) : (
-    <Button
-      variant="destructive"
-      size="icon"
-      className="text-white h-5 rounded-full w-5 "
-      onClick={() => handleClearClick(photo.url)}
-      disabled={deletingPhotoUrl === photo.url}
-    >
-      <X className="h-2 w-2" />
-    </Button>
-  )}
-</div>
+                  <div className="absolute right-2 top-2">
+                    {clearingPhotoUrl === photo.url ? (
+                      <Button
+                        variant="destructive" 
+                        size="sm"
+                        className="text-white px-3 py-1 h-5 text-xs font-medium rounded-full transform transition-all duration-300 ease-out scale-x-110"
+                        onClick={() => handleClearClick(photo.url)}
+                        disabled={deletingPhotoUrl === photo.url}
+                      >
+                        Clear
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="text-white h-5 rounded-full w-5 "
+                        onClick={() => handleClearClick(photo.url)}
+                        disabled={deletingPhotoUrl === photo.url}
+                      >
+                        <X className="h-2 w-2" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

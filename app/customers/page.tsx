@@ -1,6 +1,13 @@
 import { Suspense } from "react"
 import { CustomersClient } from "@/components/customers-client"
 import { Spinner } from "@/components/ui/spinner"
+import { Metadata } from "next"
+
+
+export const metadata: Metadata = {
+  title: "Customers | CarePair",
+  description: "Search and manage customers with ease using CarePair",
+}
 
 async function CustomersData() {
   const response = await fetch(`${process.env.NEXTAUTH_URL}/api/customers`, {
@@ -18,7 +25,7 @@ async function CustomersData() {
 
 export default function CustomersPage() {
   return (
-    <div className="mx-auto">
+    <div className="mx-auto min-h-screen">
       <Suspense fallback={<div className="flex w-full flex-col items-center justify-center rounded-lg border border-border bg-card p-6"><Spinner/></div>}>
         <CustomersData />
       </Suspense>

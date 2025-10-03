@@ -1,7 +1,12 @@
 import { Suspense } from "react"
 import { AppointmentsClient } from "@/components/appointments-client"
 import { Spinner } from "@/components/ui/spinner"
+import { Metadata } from "next"
 
+export const metadata: Metadata = {
+  title: "Appointments | CarePair",
+  description: "Manage and schedule appointments with ease using CarePair",
+}
 type SearchParams = {
   page?: string
   sortBy?: string

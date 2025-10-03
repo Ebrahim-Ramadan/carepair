@@ -32,7 +32,7 @@ export default async function AnalyticsPage({
   })
   
   return (
-    <div className="container mx-auto">
+    <div className="w-full mx-auto">
       <AnalyticsClient initialData={analyticsData} />
     </div>
   )

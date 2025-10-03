@@ -521,12 +521,14 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
       {/* Detailed Data Tables */}
       {!isLoading && (
         <Tabs defaultValue="services" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-4">
-            <TabsTrigger value="services">Services</TabsTrigger>
-            <TabsTrigger value="categories">Categories</TabsTrigger>
-            <TabsTrigger value="repair-parts">Repair Parts</TabsTrigger>
-            <TabsTrigger value="daily">Daily Data</TabsTrigger>
-          </TabsList>
+           <div className="overflow-x-auto pb-2">
+    <TabsList className="w-full min-w-[500px]">
+      <TabsTrigger value="services" className="flex-1">Services</TabsTrigger>
+      <TabsTrigger value="categories" className="flex-1">Categories</TabsTrigger>
+      <TabsTrigger value="repair-parts" className="flex-1">Repair Parts</TabsTrigger>
+      <TabsTrigger value="daily" className="flex-1">Daily Data</TabsTrigger>
+    </TabsList>
+  </div>
           
           <TabsContent value="services" className="space-y-4">
             <div>

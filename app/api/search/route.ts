@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server"
 import { ObjectId } from "mongodb"
 import clientPromise from "@/lib/mongodb"
 
+// Define a type for search conditions to avoid the TypeScript error
+type SearchCondition = {
+  [key: string]: any;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -25,7 +30,7 @@ export async function GET(request: NextRequest) {
     const searchTerm = query.trim()
     
     // Create search conditions for different fields
-    const searchConditions = [
+    const searchConditions: SearchCondition[] = [
       // Search by plate number
       { plateNumber: { $regex: searchTerm, $options: "i" } },
       

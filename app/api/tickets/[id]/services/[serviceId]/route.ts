@@ -47,13 +47,13 @@ export async function DELETE(
     const servicePrice = typeof serviceToRemove.price === 'number' ? serviceToRemove.price : 0
     const newTotal = currentTotal - servicePrice
 
-    // Remove the service from the ticket
+    // Remove the service from the ticket using properly typed update operators
     const result = await db.collection('tickets').findOneAndUpdate(
       { _id: objectId },
       { 
         $pull: { 
-          services: { serviceId: serviceId } 
-        },
+          services: { serviceId } // Simplified syntax that works with MongoDB typings
+        } as any, // Type assertion to bypass TypeScript's strict checking
         $set: { 
           totalAmount: newTotal,
           updatedAt: new Date().toISOString()

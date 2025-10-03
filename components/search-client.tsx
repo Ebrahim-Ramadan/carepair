@@ -204,7 +204,7 @@ export function SearchClient() {
         <div className="space-y-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-base font-semibold sm:text-lg">
-              Results for "{results.query}"
+              Results for &quot;{results.query}&quot;
             </h2>
             <Badge variant="secondary" className="self-start sm:self-auto">
               {results.pagination.totalCount} result{results.pagination.totalCount !== 1 ? "s" : ""}
@@ -216,7 +216,7 @@ export function SearchClient() {
               <Search className="mx-auto h-8 w-8 text-muted-foreground sm:h-12 sm:w-12" />
               <h3 className="mt-4 text-base font-semibold sm:text-lg">No results found</h3>
               <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
-                No tickets found matching "{results.query}". Try a different search term.
+                No tickets found matching &quot;{results.query}&quot;. Try a different search term.
               </p>
             </div>
           ) : (

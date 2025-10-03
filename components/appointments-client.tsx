@@ -25,11 +25,13 @@ type Appointment = {
   }
   service: {
     type: string
-    date?: string
+    date: string  // Updated to string to match server format
     time: string
+    notes: string
   }
   status: "pending" | "confirmed" | "completed" | "canceled"
   createdAt: string
+  updatedAt: string
 }
 
 type Pagination = {
@@ -320,7 +322,6 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
                           title="When changing status, an email notification will be sent to the customer"
                           >
                             <HelpCircle className="h-3 w-3 text-muted-foreground" />
-
                           </button>
                         </div>
                       </th>
@@ -390,7 +391,16 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
                               <div className="text-muted-foreground">{appointment.vehicle.licensePlate}</div>
                             </div>
                           </td>
-                          <td className="px-2 md:px-4 py-1.5 md:py-3 text-xs">{appointment.service.type}</td>
+                          <td className="px-2 md:px-4 py-1.5 md:py-3">
+                            <div className="text-xs">
+                              {appointment.service.type}
+                              {appointment.service.notes && (
+                                <div className="text-muted-foreground text-xs mt-1">
+                                  {appointment.service.notes}
+                                </div>
+                              )}
+                            </div>
+                          </td>
                           <td className="px-2 md:px-4 py-1.5 md:py-3 text-xs">
                             {appointment.service.date ? new Date(appointment.service.date).toLocaleDateString() : "-"}
                             <br />

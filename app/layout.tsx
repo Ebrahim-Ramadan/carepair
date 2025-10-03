@@ -82,6 +82,14 @@ export default function RootLayout({
                   size="sm"
                   className="text-neutral-600 justify-start sm:justify-center"
                 >
+                  <Link href="/analytics" prefetch={false}>Analytics</Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="text-neutral-600 justify-start sm:justify-center"
+                >
                   <Link href="/" prefetch={false}>Tickets</Link>
                 </Button>
                 <Button

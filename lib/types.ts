@@ -96,6 +96,8 @@ export type Ticket = {
   model?: string
   year?: string
   color?: string
+  mileage: number  // Add this line
+  repairParts: string[]  // Add this line
   services?: TicketService[]
   notes?: string
   status?: "pending" | "in-progress" | "completed" | "canceled"

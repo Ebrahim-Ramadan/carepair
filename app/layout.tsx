@@ -5,6 +5,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "sonner";
 import Footer from "@/components/footer";
+import { AccountMenu } from "./users/AccountMenu";
+import { cookies } from "next/headers"
+
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -56,6 +59,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+   const cookieStore = cookies()
+    const session = cookieStore.get("session")?.value
+    let currentUser = ""
+    if (session) {
+      try {
+        const parsed = JSON.parse(session)
+        currentUser = parsed.email
+      } catch {}
+    }
   return (
     <html lang="en">
       <body
@@ -116,6 +129,8 @@ export default function RootLayout({
                 >
                   <Link href="/appointments" prefetch={false}>Appointments</Link>
                 </Button>
+                        {currentUser && <AccountMenu email={currentUser} />}
+                
               </nav>
             </div>
           </div>

@@ -22,6 +22,18 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
+     // --- Role check ---
+    const session = request.cookies.get("session")?.value
+    let role = ""
+    if (session) {
+      try {
+        const parsed = JSON.parse(session)
+        role = parsed.role
+      } catch {}
+    }
+    if (role === "readonly") {
+      return NextResponse.json({ error: "Forbidden for this role" }, { status: 403 })
+    }
     const body: UpdateTicketInput = await request.json()
 
     const client = await clientPromise

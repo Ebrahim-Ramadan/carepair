@@ -2,6 +2,8 @@ import { cookies } from "next/headers"
 import { UsersClient } from "./UsersClient"
 import { AccountMenu } from "./AccountMenu"
 
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL
+
 export default function UsersPage() {
   const cookieStore = cookies()
   const session = cookieStore.get("session")?.value
@@ -11,6 +13,17 @@ export default function UsersPage() {
       const parsed = JSON.parse(session)
       currentUser = parsed.email
     } catch {}
+  }
+
+  // Only allow admin (from .env) to view this page
+  if (currentUser !== ADMIN_EMAIL) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg font-semibold text-red-500">
+          Unauthorized: Only admin can access this page.
+        </div>
+      </div>
+    )
   }
 
   return (

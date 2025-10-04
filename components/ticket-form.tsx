@@ -59,7 +59,10 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
       })
-
+      if (response.status === 403) {
+        toast.error("You do not have permission to create tickets.")
+        return
+      }
       if (!response.ok) throw new Error("Failed to create ticket")
 
       const ticket = await response.json()

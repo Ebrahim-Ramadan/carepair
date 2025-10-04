@@ -98,7 +98,10 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updateData),
       })
-
+      if (response.status === 403) {
+        toast.error("You do not have permission to edit this ticket.")
+        return
+      }
       if (!response.ok) throw new Error("Failed to update ticket")
 
       const updatedTicket = await response.json()

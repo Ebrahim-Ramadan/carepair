@@ -53,6 +53,7 @@ export const metadata: Metadata = {
       "Professional automotive service management system for vehicle repairs and customer service.",
   },
 };
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL
 
 export default function RootLayout({
   children,
@@ -60,23 +61,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
 
-   const cookieStore = cookies()
-    const session = cookieStore.get("session")?.value
-    let currentUser = ""
-    if (session) {
-      try {
-        const parsed = JSON.parse(session)
-        currentUser = parsed.email
-      } catch {}
-    }
+  const cookieStore = cookies()
+  const session = cookieStore.get("session")?.value
+  let currentUser = ""
+  let isAdmin = false
+  if (session) {
+    try {
+      const parsed = JSON.parse(session)
+      currentUser = parsed.email
+      isAdmin = currentUser === ADMIN_EMAIL
+    } catch {}
+  }
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <header className="border-b border-border bg-card">
-          <div className=" mx-auto py-3 px-2">
-            <div className="flex flex-col items-start justify-between sm:flex-row sm:items-center">
+          <div className="mx-auto py-3 px-2">
+            {/* Flex row for logo and account menu on all screens */}
+            <div className="flex flex-row items-center justify-between mb-2">
               <Link
                 href="/"
                 className="flex flex-row items-center text-base font-semibold text-foreground sm:text-lg"
@@ -86,58 +91,71 @@ export default function RootLayout({
                   alt="Carepair Logo"
                   className="h-12 w-auto"
                 />
-                Car Service Dashboard
               </Link>
-              <nav className="flex w-full flex-wrap items-center sm:w-auto justify-end">
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="sm"
-                  className="text-neutral-600 justify-start sm:justify-center"
-                >
-                  <Link href="/analytics" prefetch={false}>Analytics</Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="sm"
-                  className="text-neutral-600 justify-start sm:justify-center"
-                >
-                  <Link href="/" prefetch={false}>Tickets</Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="sm"
-                  className="text-neutral-600 justify-start sm:justify-center"
-                >
-                  <Link href="/customers" prefetch={false}>Customers</Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="sm"
-                  className="text-neutral-600 justify-start sm:justify-center"
-                >
-                  <Link href="/search" prefetch={false}>Search</Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="sm"
-                  className="text-neutral-600 justify-start sm:justify-center"
-                >
-                  <Link href="/appointments" prefetch={false}>Appointments</Link>
-                </Button>
-                        {currentUser && <AccountMenu email={currentUser} />}
-                
-              </nav>
+              <div className="flex justify-end">
+                {currentUser && <AccountMenu email={currentUser} />}
+              </div>
             </div>
+            {/* Nav: horizontally scrollable on small screens */}
+            <nav
+              className="flex w-full overflow-x-auto gap-1 sm:gap-0 sm:w-auto sm:overflow-visible scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent"
+              style={{ WebkitOverflowScrolling: "touch" }}
+            >
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="text-neutral-600 min-w-max"
+              >
+                <Link href="/analytics" prefetch={false}>Analytics</Link>
+              </Button>
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="text-neutral-600 min-w-max"
+              >
+                <Link href="/" prefetch={false}>Tickets</Link>
+              </Button>
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="text-neutral-600 min-w-max"
+              >
+                <Link href="/customers" prefetch={false}>Customers</Link>
+              </Button>
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="text-neutral-600 min-w-max"
+              >
+                <Link href="/search" prefetch={false}>Search</Link>
+              </Button>
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="text-neutral-600 min-w-max"
+              >
+                <Link href="/appointments" prefetch={false}>Appointments</Link>
+              </Button>
+              {isAdmin && (
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="text-neutral-600 min-w-max"
+                >
+                  <Link href="/users" prefetch={false}>Users</Link>
+                </Button>
+              )}
+            </nav>
           </div>
         </header>
         <main className="w-full pb-12">{children}</main>
         <Footer />
-
         <Toaster position="bottom-right" richColors />
       </body>
     </html>

@@ -17,6 +17,19 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+
+    const session = request.cookies.get("session")?.value
+    let role = ""
+    if (session) {
+      try {
+        const parsed = JSON.parse(session)
+        role = parsed.role
+      } catch {}
+    }
+    if (role === "viewer" || role === "readonly") {
+      return NextResponse.json({ error: "Forbidden for this role" }, { status: 403 })
+    }
+
     const body: CreateTicketInput = await request.json()
 
     // Validate required fields

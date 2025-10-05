@@ -1,26 +1,63 @@
 import { NextRequest, NextResponse } from "next/server"
 import { parse } from "cookie"
 
+const PUBLIC_PATHS = [
+  "/login",
+  "/api/login",
+  "/api/logout",
+  "/favicon.ico",
+  "/robots.txt",
+  "/sitemap.xml",
+]
+
+const STATIC_PREFIXES = [
+  "/_next",
+  "/static",
+  "/public",
+  "/assets",
+  "/_next/image",
+]
+
+const STATIC_EXT_REGEX = /\.(png|jpe?g|svg|gif|webp|avif|ico|bmp|css|js|txt|map)$/i
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  // Skip auth for login and other public routes
-  if (pathname.startsWith("/login")) {
+
+  // Allow public framework/static routes and explicit public paths
+  if (
+    STATIC_PREFIXES.some(p => pathname.startsWith(p)) ||
+    PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + "/")) ||
+    STATIC_EXT_REGEX.test(pathname)
+  ) {
     return NextResponse.next()
   }
-  const cookie = request.headers.get("cookie")
-  if (!cookie) return NextResponse.redirect(new URL("/login", request.url))
-  const { session } = parse(cookie)
-  if (!session) return NextResponse.redirect(new URL("/login", request.url))
+
+  // Check session cookie for everything else (including root "/")
+  const cookieHeader = request.headers.get("cookie")
+  if (!cookieHeader) {
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = "/login"
+    return NextResponse.redirect(loginUrl)
+  }
+
+  const { session } = parse(cookieHeader)
+  if (!session) {
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = "/login"
+    return NextResponse.redirect(loginUrl)
+  }
+
   try {
-    const { email, role } = JSON.parse(session)
-    if (!email || !role) throw new Error("Invalid session")
+    const parsed = JSON.parse(session)
+    if (!parsed || !parsed.email) throw new Error("invalid session")
     return NextResponse.next()
   } catch {
-    return NextResponse.redirect(new URL("/login", request.url))
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = "/login"
+    return NextResponse.redirect(loginUrl)
   }
 }
 
-// Enable middleware for all routes except public/static
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|login).*)"],
+  matcher: ["/:path*"],
 }

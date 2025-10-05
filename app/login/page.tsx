@@ -33,6 +33,7 @@ export default function LoginPage() {
   }
 
   return (
+    
     <div className="flex py-12 h-[60vh] items-center justify-center ">
       <div className="w-full max-w-sm px-2">
         <Image

@@ -32,8 +32,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center ">
-      <div className="w-full max-w-sm ">
+    <div className="flex py-12 h-[60vh] items-center justify-center ">
+      <div className="w-full max-w-sm px-2">
         <img
           src="/logo.jpg"
           alt="Carepair Logo"

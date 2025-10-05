@@ -301,9 +301,8 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
              
                 
                 {/* Action buttons with new Services button */}
-                <div className="flex justify-between items-center flex-col md:flex-row">
-                   <div className="flex items-center  w-full md:w-auto">
-                    <Button
+                <div className="flex items-center w-full md:w-auto">
+                  <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleClearSelection}
@@ -312,33 +311,15 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
                     <ChevronLeft className="h-4 w-4" />
                     Back to Analytics
                   </Button>
-                  </div>
-                  <div className="flex items-center gap-2 flex-row justify-end w-full"> 
-                    <Button 
-                    onClick={handleScrollToServices}
-                    className="gap-2"
-                    variant="outline"
-                  >
-                    <ListOrdered className="h-4 w-4" />
-                    Services
-                  </Button>
-                  <Button 
-                    onClick={() => setIsAddingService(true)}
-                    className="gap-2"
-                    variant="outline"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Service
-                  </Button>
-                  </div>
                 </div>
-
                 <TicketView 
                   ticket={selectedTicket} 
                   onUpdate={handleTicketUpdated}
                   onRemoveService={handleRemoveService}
                   deletingServiceIds={deletingServiceIds} 
                   servicesRef={servicesRef} // Pass the services ref to TicketView
+                  onOpenAddService={() => setIsAddingService(true)}
+                  onScrollToServices={handleScrollToServices}
                 />
               </div>
             ) : (

@@ -6,16 +6,18 @@ import { EditableTicketInfo } from "@/components/editable-ticket-info"
 import { toast } from "sonner"
 import type { Ticket, DamagePoint, Photo } from "@/lib/types"
 import { Button } from "@/components/ui/button"
-import { X, Trash2, Receipt } from "lucide-react"
+import { ListOrdered, Plus, X, Trash2, Receipt } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
 import LazyLoad from "./ui/lazyload"
 
 type TicketViewProps = {
   ticket: Ticket
-  onUpdate: (ticket: Ticket) => void
-  onRemoveService: (serviceId: string) => void
+  onUpdate?: (t: Ticket) => void
+  onRemoveService?: (id: string) => void
   deletingServiceIds?: string[]
-  servicesRef?: React.RefObject<HTMLDivElement> // New prop for services ref
+  servicesRef?: React.RefObject<HTMLDivElement>
+  onOpenAddService?: () => void
+  onScrollToServices?: () => void
 }
 
 export function TicketView({ 
@@ -23,7 +25,9 @@ export function TicketView({
   onUpdate, 
   onRemoveService, 
   deletingServiceIds = [],
-  servicesRef // Add this prop
+  servicesRef,
+  onOpenAddService,
+  onScrollToServices,
 }: TicketViewProps) {
   const handleConditionUpdate = async (points: DamagePoint[]) => {
     try {
@@ -78,13 +82,27 @@ export function TicketView({
   const totalAmount = calculateTotal();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Editable Ticket Information */}
       <EditableTicketInfo ticket={ticket} onUpdate={onUpdate} />
 
       {/* Services Section - Add ref here */}
-      <div className="mt-6" ref={servicesRef} id="services">
-        <h3 className="text-lg font-medium mb-3">Services</h3>
+      <div ref={servicesRef} className="rounded-lg border border-border bg-card p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold text-foreground">Services</h3>
+          <div className="flex items-center gap-2">
+            
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={onOpenAddService}
+            >
+              <Plus className="h-4 w-4" />
+              Add Service
+            </Button>
+          </div>
+        </div>
         {ticket.services && ticket.services.length > 0 ? (
           <div className="rounded-lg border border-border bg-card">
             <div className="p-4">

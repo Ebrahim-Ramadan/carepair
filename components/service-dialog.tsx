@@ -148,7 +148,7 @@ export function ServiceDialog({
 
             {selectedServices.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">
-                <span className="text-xs text-muted-foreground pt-1.5">Selected:</span>
+                <span className="text-xs text-muted-foreground pt-1.5">{selectedServices.length} Selected:</span>
                 {selectedServices.map(service => (
                   <Badge 
                     key={service.id} 
@@ -250,8 +250,7 @@ export function ServiceDialog({
           {/* Bottom action bar */}
           <div className="px-6 py-4 border-t flex justify-between items-center bg-background">
             <div className="text-sm">
-              <span>{selectedServices.length} service{selectedServices.length !== 1 ? 's' : ''} selected</span>
-              {totalPrice > 0 && <span className="ml-2 font-medium">Total: {totalPrice} KD</span>}
+              {totalPrice > 0 && <span className="ml-2 font-medium">Total: {totalPrice} KWD</span>}
             </div>
             <Button
               onClick={handleAddSelectedServices}
@@ -261,12 +260,12 @@ export function ServiceDialog({
               {isAddingServices ? (
                 <>
                   <Spinner size="sm" className="mr-2" />
-                  Adding Services...
+                  Adding...
                 </>
               ) : (
                 <>
                   <ShoppingCart className="h-4 w-4" />
-                  Add Selected Services
+                  Add 
                 </>
               )}
             </Button>

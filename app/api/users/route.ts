@@ -12,7 +12,11 @@ export async function POST(req: NextRequest) {
   if (currentUser !== ADMIN_EMAIL) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
-
+  // Prevent creating the env admin account as a DB user
+  if (email && ADMIN_EMAIL && email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+    return NextResponse.json({ error: "Cannot create admin user" }, { status: 400 })
+  }
+  
   const client = await clientPromise
   const db = client.db("car_repair")
 

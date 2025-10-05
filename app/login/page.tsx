@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { Eye, EyeOff } from "lucide-react"
-import { revalidatePath } from "next/cache"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -26,8 +25,7 @@ export default function LoginPage() {
     setLoading(false)
 
     if (res.ok) {
-      router.replace("/")
-      router.refresh()
+      window.location.href = "/"
     } else {
       toast.error("Invalid credentials")
     }

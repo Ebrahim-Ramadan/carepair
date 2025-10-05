@@ -1,12 +1,23 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import clientPromise from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string, serviceId: string } }
 ) {
   try {
+     const session = request.cookies.get("session")?.value
+    let role = ""
+    if (session) {
+      try {
+        const parsed = JSON.parse(session)
+        role = parsed.role
+      } catch {}
+    }
+    if (role === "readonly" || role === "viewer") {
+      return NextResponse.json({ error: "Forbidden for this role" }, { status: 403 })
+    }
     const { id, serviceId } = params
     
     if (!id || !serviceId) {

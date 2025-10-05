@@ -31,7 +31,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         role = parsed.role
       } catch {}
     }
-    if (role === "readonly") {
+    if (role === "readonly" || role === "viewer") {
       return NextResponse.json({ error: "Forbidden for this role" }, { status: 403 })
     }
     const body: UpdateTicketInput = await request.json()

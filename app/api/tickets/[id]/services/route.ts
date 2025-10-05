@@ -1,13 +1,24 @@
 /* eslint-disable */
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import clientPromise from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
 
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = request.cookies.get("session")?.value
+    let role = ""
+    if (session) {
+      try {
+        const parsed = JSON.parse(session)
+        role = parsed.role
+      } catch {}
+    }
+    if (role === "readonly" || role === "viewer") {
+      return NextResponse.json({ error: "Forbidden for this role" }, { status: 403 })
+    }
     const { id } = params
     const { serviceId, serviceName, serviceNameAr, price, category, addedAt } = await request.json()
 

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { Eye, EyeOff } from "lucide-react"
+import Image from "next/image"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -34,7 +35,9 @@ export default function LoginPage() {
   return (
     <div className="flex py-12 h-[60vh] items-center justify-center ">
       <div className="w-full max-w-sm px-2">
-        <img
+        <Image
+        width={200}
+          height={200}
           src="/logo.jpg"
           alt="Carepair Logo"
           className="mx-auto h-20 w-auto"

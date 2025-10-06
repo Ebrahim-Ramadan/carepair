@@ -3,6 +3,8 @@
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
+import { ChevronDown } from "lucide-react"
 
 type MainNavProps = {
   isAdmin: boolean
@@ -19,7 +21,13 @@ export function MainNav({ isAdmin }: MainNavProps) {
     { href: "/appointments", label: "Appointments" },
     ...(isAdmin ? [
       { href: "/users", label: "Management" },
-      { href: "/inventory/services", label: "Services" },
+      {
+        label: "Inventory",
+        children: [
+          { href: "/inventory/services", label: "Services" },
+          { href: "/inventory/products", label: "Products" }
+        ]
+      },
       { href: "/HRDepartment", label: "HR" }
     ] : [])
   ]
@@ -29,23 +37,63 @@ export function MainNav({ isAdmin }: MainNavProps) {
       className="flex w-full overflow-x-auto gap-1 sm:w-auto sm:overflow-visible scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent text-white"
       style={{ WebkitOverflowScrolling: "touch" }}
     >
-      {routes.map(route => (
-        <Button
-          key={route.href}
-          asChild
-          variant="ghost"
-          size="default"
-          className={`min-w-max ${
-            pathname === route.href ? 
-            "bg-white/10 text-white" : 
-            "text-white/90 hover:text-white hover:bg-white/10"
-          }`}
-        >
-          <Link href={route.href} prefetch={false}>
-            {route.label}
-          </Link>
-        </Button>
-      ))}
+      {routes.map(route => {
+        if ('children' in route) {
+          return (
+            <DropdownMenu.Root key={route.label}>
+              <DropdownMenu.Trigger asChild>
+                <Button
+                  variant="ghost"
+                  size="default"
+                  className="min-w-max text-white/90 hover:text-white hover:bg-white/10"
+                >
+                  {route.label}
+                  <ChevronDown className="ml-1 h-4 w-4" />
+                </Button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  align="start"
+                  className="z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 shadow-md"
+                >
+                  {route.children.map(child => (
+                    <DropdownMenu.Item
+                      key={child.href}
+                      className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <Link 
+                        href={child.href}
+                        className="w-full"
+                        prefetch={false}
+                      >
+                        {child.label}
+                      </Link>
+                    </DropdownMenu.Item>
+                  ))}
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          )
+        }
+
+        return (
+          <Button
+            key={route.href}
+            asChild
+            variant="ghost"
+            size="default"
+            className={`min-w-max ${
+              pathname === route.href ? 
+              "bg-white/10 text-white" : 
+              "text-white/90 hover:text-white hover:bg-white/10"
+            }`}
+          >
+            <Link href={route.href} prefetch={false}>
+              {route.label}
+            </Link>
+          </Button>
+        )
+      })}
     </nav>
   )
 }

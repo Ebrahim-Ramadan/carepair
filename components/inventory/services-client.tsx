@@ -131,7 +131,7 @@ export function ServicesClient({ initialServices }: ServicesClientProps) {
         <h1 className="text-2xl font-bold">Services Management</h1>
         <Button onClick={() => setIsDialogOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
-          Add Service
+          Add 
         </Button>
       </div>
 

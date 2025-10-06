@@ -159,7 +159,7 @@ export function HRDepartmentClient({
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="min-h-screen px-2 mx-auto py-8">
       <div className="flex items-start md:items-center justify-between mb-6">
           <p className="text-sm text-muted-foreground mt-1">
             {total} Employee {total !== 1 ? 's' : ''}
@@ -344,7 +344,7 @@ export function HRDepartmentClient({
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" className="bg-[#002540]" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <>
                       <Spinner size="sm" className="mr-2" />

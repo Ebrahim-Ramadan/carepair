@@ -141,7 +141,9 @@ export default function RootLayout({
               >
                 <Link href="/appointments" prefetch={false}>Appointments</Link>
               </Button>
+             
               {isAdmin && (
+              <>
                 <Button
                   asChild
                   variant="ghost"
@@ -150,6 +152,15 @@ export default function RootLayout({
                 >
                   <Link href="/users" prefetch={false}>Management</Link>
                 </Button>
+                 <Button
+                asChild
+                variant="ghost"
+                size="default"
+                className=" min-w-max"
+              >
+                <Link href="/inventory/services" prefetch={false}>Services</Link>
+              </Button>
+              </>
               )}
             </nav>
           </div>

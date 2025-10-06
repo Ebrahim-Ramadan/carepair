@@ -4,84 +4,39 @@ import clientPromise from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
 
 export async function POST(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = request.cookies.get("session")?.value
-    let role = ""
-    if (session) {
-      try {
-        const parsed = JSON.parse(session)
-        role = parsed.role
-      } catch {}
-    }
-    if (role === "readonly" || role === "viewer") {
-      return NextResponse.json({ error: "Forbidden for this role" }, { status: 403 })
-    }
-    const { id } = params
-    const { serviceId, serviceName, serviceNameAr, price, category, addedAt } = await request.json()
-
-    if (!serviceId || !serviceName || !price) {
-      return NextResponse.json(
-        { error: 'Service information is required' },
-        { status: 400 }
-      )
-    }
-
+    const body = await request.json()
     const client = await clientPromise
     const db = client.db("car_repair")
-    const objectId = new ObjectId(id)
-
-    // Get the current ticket to calculate the new total amount
-    const currentTicket = await db.collection('tickets').findOne({ _id: objectId })
     
-    if (!currentTicket) {
-      return NextResponse.json(
-        { error: 'Ticket not found' },
-        { status: 404 }
-      )
-    }
-
-    // Calculate new total amount
-    const currentTotal = currentTicket.totalAmount || 0
-    const servicePrice = typeof price === 'number' ? price : 0
-    const newTotal = currentTotal + servicePrice
-
-    // Add the service to the ticket - use type assertion to bypass TypeScript's strict checking
-    const result = await db.collection('tickets').findOneAndUpdate(
-      { _id: objectId },
+    const result = await db.collection("tickets").findOneAndUpdate(
+      { _id: new ObjectId(params.id) },
       { 
         $push: { 
           services: {
-            serviceId,
-            serviceName,
-            serviceNameAr,
-            price,
-            category,
-            addedAt
-          } 
-        } as any,  // Type assertion to fix TypeScript error
-        $set: { 
-          totalAmount: newTotal,
-          updatedAt: new Date().toISOString()
+            ...body,
+            addedAt: new Date(body.addedAt),
+            // Ensure discount fields are included
+            discountType: body.discountType,
+            discountValue: body.discountValue,
+            finalPrice: body.finalPrice
+          }
+        },
+        $inc: { 
+          totalAmount: body.finalPrice || body.price 
         }
       },
       { returnDocument: 'after' }
     )
-
-    if (!result) {
-      return NextResponse.json(
-        { error: 'Failed to add service to ticket' },
-        { status: 500 }
-      )
-    }
-
+    
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Error adding service to ticket:', error)
+    console.error('Error adding service:', error)
     return NextResponse.json(
-      { error: 'Failed to add service to ticket' },
+      { error: 'Failed to add service' },
       { status: 500 }
     )
   }

@@ -14,7 +14,7 @@ import {
 } from "lucide-react"
 import * as Dialog from "@radix-ui/react-dialog"
 import { toast } from "sonner"
-import type { Ticket, TicketSummary, Service } from "@/lib/types"
+import type { Ticket, TicketSummary, Service, ServiceWithDiscount } from "@/lib/types"
 
 // Dynamically import the ServiceDialog component
 const ServiceDialog = dynamic(() => import("@/components/service-dialog").then(mod => mod.ServiceDialog), {
@@ -154,7 +154,7 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
     router.replace(url.toString())
   }
 
-  const handleAddService = async (service: Service) => {
+  const handleAddService = async (service: ServiceWithDiscount) => {
     if (!selectedTicket || !selectedTicket._id) {
       toast.error('No ticket selected')
       return false
@@ -175,7 +175,11 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
           descriptionEn: service.descriptionEn,
           descriptionAr: service.descriptionAr,
           estimatedHours: service.estimatedHours,
-          addedAt: new Date().toISOString()
+          addedAt: new Date().toISOString(),
+          // Add discount information
+          discountType: service.discountType,
+          discountValue: service.discountValue,
+          finalPrice: service.finalPrice
         }),
       })
 
@@ -186,8 +190,6 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
       const updatedTicket = await response.json()
       setSelectedTicket(updatedTicket)
       
-      // Don't close dialog or show toast when adding multiple services
-      // The calling function (handleAddSelectedServices) will handle closing dialog
       return true
     } catch (error) {
       console.error('Error adding service:', error)

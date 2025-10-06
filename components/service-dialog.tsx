@@ -8,6 +8,16 @@ import * as Dialog from "@radix-ui/react-dialog"
 import { Input } from "@/components/ui/input"
 import type { Service } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+import type { DiscountType, ServiceWithDiscount } from "@/lib/types"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 type ServiceDialogProps = {
   open: boolean
@@ -27,6 +37,8 @@ export function ServiceDialog({
   const [isLoading, setIsLoading] = useState(true)
   const [selectedServices, setSelectedServices] = useState<Service[]>([])
   const [isAddingServices, setIsAddingServices] = useState(false)
+  const [discountType, setDiscountType] = useState<DiscountType>('percentage')
+  const [discountValue, setDiscountValue] = useState<number>(0)
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -66,27 +78,58 @@ export function ServiceDialog({
     return selectedServices.some(s => s.id === serviceId)
   }
 
+  // Modify calculateFinalPrice to handle individual service prices
+  const calculateFinalPrice = (originalPrice: number, isTotal: boolean = false) => {
+    if (!discountValue) return originalPrice
+    
+    if (discountType === 'percentage') {
+      return originalPrice - (originalPrice * (discountValue / 100))
+    } else if (isTotal) {
+      // Apply KWD discount to total price only
+      return Math.max(0, originalPrice - discountValue)
+    }
+    // Return original price for individual services when using KWD discount
+    return originalPrice
+  }
+
+  const totalPrice = selectedServices.reduce((total, service) => {
+    if (typeof service.price === 'number') {
+      return total + service.price
+    }
+    return total
+  }, 0)
+
+  // Calculate final total with consideration for discount type
+  const finalTotalPrice = calculateFinalPrice(totalPrice, true)
+
   const handleAddSelectedServices = async () => {
     if (selectedServices.length === 0) return
     
     setIsAddingServices(true)
     
     try {
-      // Add each selected service one by one
-      const successfullyAddedServices: Service[] = []
+      const servicesWithDiscount: ServiceWithDiscount[] = selectedServices.map(service => ({
+        ...service,
+        discountType: discountValue > 0 ? discountType : undefined,
+        discountValue: discountValue > 0 ? discountValue : undefined,
+        // For KWD discount, store the proportional discount for each service
+        finalPrice: discountType === 'percentage' 
+          ? calculateFinalPrice(service.price)
+          : service.price - ((discountValue / totalPrice) * service.price)
+      }))
       
-      for (const service of selectedServices) {
+      const successfullyAddedServices: ServiceWithDiscount[] = []
+      
+      for (const service of servicesWithDiscount) {
         const success = await onAddService(service)
         if (success) {
           successfullyAddedServices.push(service)
         }
       }
       
-      // Clear selection and close dialog
       setSelectedServices([])
       onOpenChange(false)
       
-      // Call the callback if provided with successfully added services
       if (onServicesAdded && successfullyAddedServices.length > 0) {
         onServicesAdded(successfullyAddedServices)
       }
@@ -96,14 +139,6 @@ export function ServiceDialog({
       setIsAddingServices(false)
     }
   }
-
-  // Calculate total price of selected services
-  const totalPrice = selectedServices.reduce((total, service) => {
-    if (typeof service.price === 'number') {
-      return total + service.price
-    }
-    return total
-  }, 0)
 
   return (
     <Dialog.Root open={open} onOpenChange={(isOpen) => {
@@ -167,6 +202,10 @@ export function ServiceDialog({
                       service={service}
                       isSelected={isServiceSelected(service.id)}
                       onToggleSelect={() => toggleServiceSelection(service)}
+                      discountType={discountType}
+                      discountValue={discountValue}
+                      totalPrice={totalPrice}
+                      selectedServices={selectedServices}
                     />
                   ))}
                 </div>
@@ -178,28 +217,81 @@ export function ServiceDialog({
             </div>
           </div>
 
+
+
           {/* Bottom action bar */}
-          <div className="px-6 py-4 border-t flex justify-between items-center bg-background">
-            <div className="text-sm">
-              {totalPrice > 0 && <span className="ml-2 font-medium">Total: {totalPrice} KWD</span>}
+          <div className="px-6 py-4 flex flex-col w-full border-t gap-4 bg-background">
+            {selectedServices.length > 0 && (
+              <div className="text-sm space-x-2">
+                <span className="text-muted-foreground">Original: {totalPrice} KWD</span>
+                {discountValue > 0 && (
+                  <>
+                    <span className="font-medium text-green-600">Final: {finalTotalPrice.toFixed(2)} KWD</span>
+                    <span className="text-muted-foreground">
+                      (Save: {(totalPrice - finalTotalPrice).toFixed(2)} KWD)
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
+            
+            <div className="flex items-center gap-2">
+              <div className="flex-1 space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex w-52 gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={discountType === 'percentage' ? 100 : undefined}
+                      step={discountType === 'percentage' ? 1 : 0.1}
+                      value={discountValue}
+                      onChange={(e) => {
+                        const value = Number(e.target.value)
+                        if (discountType === 'percentage' && value > 100) {
+                          setDiscountValue(100)
+                        } else {
+                          setDiscountValue(value)
+                        }
+                      }}
+                      placeholder="Discount value"
+                      className="w-24"
+                    />
+                    <Select
+                      value={discountType}
+                      onValueChange={(value: DiscountType) => setDiscountType(value)}
+                    >
+                      <SelectTrigger className="w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">%</SelectItem>
+                        <SelectItem value="amount">KWD</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  
+                </div>
+              </div>
+
+              <Button
+                onClick={handleAddSelectedServices}
+                disabled={selectedServices.length === 0 || isAddingServices}
+                className="gap-2"
+              >
+                {isAddingServices ? (
+                  <>
+                    <Spinner size="sm" className="mr-2" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="h-4 w-4" />
+                    Add
+                  </>
+                )}
+              </Button>
             </div>
-            <Button
-              onClick={handleAddSelectedServices}
-              disabled={selectedServices.length === 0 || isAddingServices}
-              className="gap-2"
-            >
-              {isAddingServices ? (
-                <>
-                  <Spinner size="sm" className="mr-2" />
-                  Adding...
-                </>
-              ) : (
-                <>
-                  <ShoppingCart className="h-4 w-4" />
-                  Add 
-                </>
-              )}
-            </Button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>
@@ -207,8 +299,21 @@ export function ServiceDialog({
   )
 }
 
-// Simplified ServiceCard Component
-function ServiceCard({ service, isSelected, onToggleSelect }: Omit<ServiceCardProps, 'getCategoryIcon'>) {
+// Update ServiceCard component
+function ServiceCard({ 
+  service, 
+  isSelected, 
+  onToggleSelect, 
+  discountType, 
+  discountValue,
+  totalPrice,
+  selectedServices 
+}: ServiceCardProps) {
+  const originalPrice = service.price
+  const finalPrice = discountType === 'percentage'
+    ? (discountValue ? originalPrice - (originalPrice * (discountValue / 100)) : originalPrice)
+    : (discountValue && isSelected ? originalPrice - ((discountValue / totalPrice) * originalPrice) : originalPrice)
+
   return (
     <div 
       className={`border rounded-lg p-4 transition-colors cursor-pointer ${
@@ -228,7 +333,19 @@ function ServiceCard({ service, isSelected, onToggleSelect }: Omit<ServiceCardPr
           <h3 className="font-medium">{service.nameEn}</h3>
         </div>
         <div className="bg-primary/10 text-primary rounded-full px-2 py-1 text-xs font-medium">
-          {typeof service.price === 'number' ? `${service.price} KD` : service.price}
+          {discountValue > 0 && isSelected ? (
+            <div className="space-y-0.5">
+              <span className="line-through text-muted-foreground">{originalPrice} KD</span>
+              <span className="block font-semibold text-green-600">{finalPrice.toFixed(2)} KD</span>
+              <span className="text-xs text-muted-foreground">
+                {discountType === 'percentage' 
+                  ? `${discountValue}% off`
+                  : `${((discountValue / totalPrice) * originalPrice).toFixed(2)} KD off`}
+              </span>
+            </div>
+          ) : (
+            `${originalPrice} KD`
+          )}
         </div>
       </div>
       <p className="text-sm text-muted-foreground">{service.nameAr} - {service.descriptionAr}</p>

@@ -69,17 +69,10 @@ export function TicketView({
     }
   }
 
-  // Calculate the total price
-  const calculateTotal = () => {
-    if (!ticket.services || ticket.services.length === 0) return 0;
-    
-    return ticket.services.reduce((total, service) => {
-      const servicePrice = typeof service.price === 'number' ? service.price : 0;
-      return total + servicePrice;
-    }, 0);
-  };
-
-  const totalAmount = calculateTotal();
+// Calculate the total price, default to 0 if services don't exist
+const totalAmount = ticket.services?.reduce((sum, service) => 
+  sum + (service.finalPrice ?? service.price), 0
+) ?? 0
 
   return (
     <div className="space-y-4">
@@ -108,32 +101,12 @@ export function TicketView({
             <div className="p-4">
               <div className="space-y-3">
                 {ticket.services.map((service) => (
-                  <div key={service.serviceId} className="border rounded-md p-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium">{service.serviceName}</h4>
-                        <p className="text-sm text-muted-foreground">{service.serviceNameAr}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-sm font-medium">
-                          {typeof service.price === 'number' ? `${service.price} KD` : service.price}
-                        </div>
-                        <Button
-                          onClick={() => onRemoveService(service.serviceId)}
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          disabled={deletingServiceIds.includes(service.serviceId)}
-                        >
-                          {deletingServiceIds.includes(service.serviceId) ? (
-                            <Spinner size="sm" />
-                          ) : (
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                  <ServiceCard
+                    key={service.serviceId}
+                    service={service}
+                    onRemove={() => onRemoveService(service.serviceId)}
+                    isDeleting={deletingServiceIds.includes(service.serviceId)}
+                  />
                 ))}
               </div>
               
@@ -178,6 +151,62 @@ export function TicketView({
         />
       </div>
   </LazyLoad>
+    </div>
+  )
+}
+
+type ServiceCardProps = {
+  service: TicketService
+  onRemove: () => void
+  isDeleting: boolean
+}
+
+function ServiceCard({ service, onRemove, isDeleting }: ServiceCardProps) {
+  return (
+    <div className="border rounded-md p-3">
+      <div className="flex [&>*]:w-full justify-between items-start flex-col md:flex-row w-full">
+        <div>
+          <h4 className="font-medium">{service.serviceName}</h4>
+          <p className="text-sm text-muted-foreground">{service.serviceNameAr}</p>
+        </div>
+        <div className="flex items-center gap-4 justify-end">
+          <div className="text-right">
+            {service.discountValue ? (
+              <>
+                <div className="line-through text-sm text-muted-foreground">
+                  {service.price} KD
+                </div>
+                <div className="text-sm font-medium text-green-600">
+                  {service.finalPrice} KD
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {service.discountType === 'percentage' 
+                    ? `${service.discountValue}% off`
+                    : `${service.discountValue} KD off`
+                  }
+                </div>
+              </>
+            ) : (
+              <div className="text-sm font-medium">
+                {service.price} KD
+              </div>
+            )}
+          </div>
+          <Button
+            onClick={onRemove}
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7"
+            disabled={isDeleting}
+          >
+            {isDeleting ? (
+              <Spinner size="sm" />
+            ) : (
+              <Trash2 className="h-4 w-4 text-red-500" />
+            )}
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }

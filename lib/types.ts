@@ -75,27 +75,37 @@ export type Service = {
   estimatedHours: number
 }
 
+export type DiscountType = 'percentage' | 'amount'
+
+export type ServiceWithDiscount = Service & {
+  discountType?: DiscountType
+  discountValue?: number
+  finalPrice?: number
+}
+
 export type TicketService = {
   serviceId: string
   serviceName: string
   serviceNameAr: string
-  price: number | string
+  price: number
   category: string
+  descriptionEn?: string
+  descriptionAr?: string
+  estimatedHours?: number
   addedAt: string
+  discountType?: DiscountType
+  discountValue?: number
+  finalPrice?: number
 }
 
 export type Ticket = {
   _id?: string
+  plateNumber: string
   customerName: string
   customerPhone: string
   customerEmail?: string
-  plateNumber: string
-  make?: string
-  model?: string
-  year?: string
-  color?: string
-  mileage?: number  // Add this line
-  services?: TicketService[]
+  mileage?: number
+  services: TicketService[]
   notes?: string
   status?: "pending" | "in-progress" | "completed" | "canceled"
   totalAmount?: number

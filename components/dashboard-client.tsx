@@ -256,7 +256,7 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
                   <h2 className="text-lg font-semibold text-foreground">Tickets</h2>
                   <p className="text-xs font-normal text-neutral-500">({total})</p>
                 </div>
-                <Button onClick={() => setIsCreating(true)} size="sm">
+                <Button onClick={() => setIsCreating(true)} size="sm" className="bg-[#002540]">
                   <Plus className="w-3" />
                   New 
                 </Button>

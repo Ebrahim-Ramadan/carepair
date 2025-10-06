@@ -3,13 +3,12 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, X, Trash2 } from "lucide-react"
+import { Plus, X, Trash2, FileSpreadsheet, File, ChevronLeft, ChevronRight } from "lucide-react"
 import * as Dialog from "@radix-ui/react-dialog"
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
 import type { Employee } from "@/lib/types"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, ChevronRight } from "lucide-react"
 
 interface HRDepartmentClientProps {
   initialEmployees: Employee[]
@@ -34,6 +33,7 @@ export function HRDepartmentClient({
     salary: ""
   })
   const [deletingIds, setDeletingIds] = useState<string[]>([])
+  const [isExporting, setIsExporting] = useState<'excel' | 'pdf' | null>(null)
 
   const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -87,19 +87,125 @@ export function HRDepartmentClient({
     }
   }
 
+  const handleExportExcel = async () => {
+    setIsExporting('excel')
+    try {
+      const response = await fetch('/api/employees/all')
+      if (!response.ok) throw new Error('Failed to fetch employees')
+      const allEmployees = await response.json()
+
+      // Dynamically import XLSX
+      const XLSX = await import('xlsx')
+
+      const workbook = XLSX.utils.book_new()
+      const worksheet = XLSX.utils.json_to_sheet(allEmployees.map(emp => ({
+        Name: emp.name,
+        'Job Title': emp.jobTitle,
+        'Salary (KWD)': emp.salary,
+        'Created At': new Date(emp.createdAt).toLocaleDateString()
+      })))
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Employees')
+      XLSX.writeFile(workbook, 'employees.xlsx')
+      
+      toast.success('Successfully exported to Excel')
+    } catch (error) {
+      console.error('Error exporting to Excel:', error)
+      toast.error('Failed to export to Excel')
+    } finally {
+      setIsExporting(null)
+    }
+  }
+
+  const handleExportPDF = async () => {
+    setIsExporting('pdf')
+    try {
+      const response = await fetch('/api/employees/all')
+      if (!response.ok) throw new Error('Failed to fetch employees')
+      const allEmployees = await response.json()
+
+      // Dynamically import jsPDF and autoTable
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable')
+      ])
+
+      const doc = new jsPDF()
+
+      doc.setFontSize(16)
+      doc.text('Employee List', 14, 15)
+      doc.setFontSize(10)
+      doc.text(`Total Employees: ${allEmployees.length}`, 14, 25)
+
+      autoTable(doc, {
+        head: [['Name', 'Job Title', 'Salary (KWD)', 'Created At']],
+        body: allEmployees.map(emp => [
+          emp.name,
+          emp.jobTitle,
+          emp.salary,
+          new Date(emp.createdAt).toLocaleDateString()
+        ]),
+        startY: 30,
+      })
+
+      doc.save('employees.pdf')
+      toast.success('Successfully exported to PDF')
+    } catch (error) {
+      console.error('Error exporting to PDF:', error)
+      toast.error('Failed to export to PDF')
+    } finally {
+      setIsExporting(null)
+    }
+  }
+
   return (
     <div className="container mx-auto py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">HR Department</h1>
+      <div className="flex items-start md:items-center justify-between mb-6">
           <p className="text-sm text-muted-foreground mt-1">
-            Total Employees: {total}
+            {total} Employee {total !== 1 ? 's' : ''}
           </p>
+        <div className="flex items-center gap-2 flex-col md:flex-row">
+          <Button 
+            size='sm' 
+            variant="outline" 
+            onClick={handleExportExcel}
+            disabled={isExporting !== null}
+          >
+            {isExporting === 'excel' ? (
+              <>
+                <Spinner size="sm" className="mr-2" />
+                Exporting...
+              </>
+            ) : (
+              <>
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Export Excel
+              </>
+            )}
+          </Button>
+          <Button 
+            size='sm' 
+            variant="outline" 
+            onClick={handleExportPDF}
+            disabled={isExporting !== null}
+          >
+            {isExporting === 'pdf' ? (
+              <>
+                <Spinner size="sm" className="mr-2" />
+                Exporting...
+              </>
+            ) : (
+              <>
+                <File className="w-4 h-4 mr-2" />
+                Export PDF
+              </>
+            )}
+          </Button>
+          <Button className="bg-[#002540]" size='sm' onClick={() => setIsAddingEmployee(true)}>
+            <Plus className="w-4 h-4" />
+            Add 
+          </Button>
         </div>
-        <Button onClick={() => setIsAddingEmployee(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Employee
-        </Button>
       </div>
 
       <div className="rounded-lg border">
@@ -152,15 +258,14 @@ export function HRDepartmentClient({
             disabled={page <= 1}
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
-            Previous
           </Button>
+          
           <Button
             variant="outline"
             size="sm"
             onClick={() => router.push(`/HRDepartment?page=${page + 1}`)}
             disabled={page >= totalPages}
           >
-            Next
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>

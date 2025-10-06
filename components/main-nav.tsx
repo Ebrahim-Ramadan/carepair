@@ -19,7 +19,8 @@ export function MainNav({ isAdmin }: MainNavProps) {
     { href: "/appointments", label: "Appointments" },
     ...(isAdmin ? [
       { href: "/users", label: "Management" },
-      { href: "/inventory/services", label: "Services" }
+      { href: "/inventory/services", label: "Services" },
+      { href: "/HRDepartment", label: "HR" }
     ] : [])
   ]
 

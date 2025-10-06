@@ -17,9 +17,8 @@ export interface CreateTicketInput {
   plateNumber: string
   customerName: string
   customerPhone: string
-  customerEmail: string
-  mileage: number
-  repairParts: string[]
+  customerEmail?: string
+  mileage?: number
 }
 
 export interface UpdateTicketInput {
@@ -27,7 +26,6 @@ export interface UpdateTicketInput {
   customerPhone?: string
   customerEmail?: string
   mileage?: number
-  repairParts?: string[]
   vehicleConditionPoints?: DamagePoint[]
   beforePhotos?: Photo[]
   afterPhotos?: Photo[]
@@ -96,8 +94,7 @@ export type Ticket = {
   model?: string
   year?: string
   color?: string
-  mileage: number  // Add this line
-  repairParts: string[]  // Add this line
+  mileage?: number  // Add this line
   services?: TicketService[]
   notes?: string
   status?: "pending" | "in-progress" | "completed" | "canceled"

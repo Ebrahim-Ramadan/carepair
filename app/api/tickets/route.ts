@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
         role = parsed.role
       } catch {}
     }
-    if (role === "viewer" || role === "readonly") {
+    if ( role === "readonly") {
       return NextResponse.json({ error: "Forbidden for this role" }, { status: 403 })
     }
 

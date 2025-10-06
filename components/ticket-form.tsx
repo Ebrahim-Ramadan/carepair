@@ -51,7 +51,6 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
         customerPhone,
         customerEmail,
         mileage: Number(mileage),
-        repairParts,
       }
 
       const response = await fetch("/api/tickets", {
@@ -93,14 +92,13 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="mileage">Mileage (km) *</Label>
+            <Label htmlFor="mileage">Mileage (km) </Label>
             <Input
               id="mileage"
               type="number"
               value={mileage}
               onChange={(e) => setMileage(e.target.value)}
               placeholder="50000"
-              required
             />
           </div>
         </div>
@@ -145,7 +143,7 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
       </div>
 
       {/* Repair Parts */}
-      <div className="space-y-4">
+      {/* <div className="space-y-4">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Repair Parts</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {REPAIR_PARTS.map((part) => (
@@ -167,7 +165,7 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? "Creating..." : "Create Ticket"}

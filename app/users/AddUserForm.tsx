@@ -8,7 +8,7 @@ import { Eye, EyeOff } from "lucide-react"
 
 const roleDescriptions = {
   manager: "Can do everything except add users",
-  viewer: "Can view and edit tickets, but cannot add tickets",
+  viewer: "Can view, edit and add tickets",
   readonly: "Can only view data, cannot add or edit tickets",
 }
 const roleLabels = {

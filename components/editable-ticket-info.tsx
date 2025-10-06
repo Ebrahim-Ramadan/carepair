@@ -35,6 +35,7 @@ type EditableTicketInfoProps = {
 export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  console.log('ticket:', ticket)  
   
   // Form state
   const [plateNumber, setPlateNumber] = useState(ticket.plateNumber)
@@ -42,7 +43,6 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
   const [customerPhone, setCustomerPhone] = useState(ticket.customerPhone)
   const [customerEmail, setCustomerEmail] = useState(ticket.customerEmail || "")
   const [mileage, setMileage] = useState(ticket.mileage.toString())
-  const [repairParts, setRepairParts] = useState<string[]>(ticket.repairParts)
 
   const handleEmailClick = (email: string) => {
     // window.open(`mailto:${email}`, '_blank')
@@ -70,8 +70,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
     setCustomerName(ticket.customerName)
     setCustomerPhone(ticket.customerPhone)
     setCustomerEmail(ticket.customerEmail || "")
-    setMileage(ticket.mileage.toString())
-    setRepairParts(ticket.repairParts)
+    setMileage(ticket.mileage?.toString())
     setIsEditing(false)
   }
 
@@ -90,7 +89,6 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
         customerPhone: customerPhone.trim(),
         customerEmail: customerEmail.trim() || undefined,
         mileage: Number(mileage),
-        repairParts,
       }
 
       const response = await fetch(`/api/tickets/${ticket._id}`, {
@@ -210,7 +208,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
           </div>
 
           {/* Repair Parts */}
-          <div className="space-y-4">
+          {/* <div className="space-y-4">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Repair Parts</h3>
             <MultiSelect
               options={REPAIR_PARTS}
@@ -219,7 +217,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
               placeholder="Select repair parts..."
               className="w-full"
             />
-          </div>
+          </div> */}
         </div>
       </div>
     )
@@ -294,25 +292,9 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm">
               <Gauge className="h-4 w-4 text-muted-foreground" />
-              <span className="text-foreground">{ticket.mileage.toLocaleString()} km</span>
+              <span className="text-foreground">{ticket.mileage?.toLocaleString()} km</span>
             </div>
-            {ticket.repairParts.length > 0 && (
-              <div>
-                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Repair Parts
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {ticket.repairParts.map((part) => (
-                    <span
-                      key={part}
-                      className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs  transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-[#EC653B]/90 text-[#002440] hover:bg-[#EC653B]/80"
-                    >
-                      {part}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+            
           </div>
         </div>
       </div>

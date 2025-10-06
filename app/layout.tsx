@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "sonner";
 import Footer from "@/components/footer";
 import { AccountMenu } from "./users/AccountMenu";
-import { cookies } from "next/headers"
-
+import { cookies } from "next/headers";
+import { MainNav } from "@/components/main-nav";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -53,23 +53,22 @@ export const metadata: Metadata = {
       "Professional automotive service management system for vehicle repairs and customer service.",
   },
 };
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
-  const cookieStore = cookies()
-  const session = cookieStore.get("session")?.value
-  let currentUser = ""
-  let isAdmin = false
+  const cookieStore = cookies();
+  const session = cookieStore.get("session")?.value;
+  let currentUser = "";
+  let isAdmin = false;
   if (session) {
     try {
-      const parsed = JSON.parse(session)
-      currentUser = parsed.email
-      isAdmin = currentUser === ADMIN_EMAIL
+      const parsed = JSON.parse(session);
+      currentUser = parsed.email;
+      isAdmin = currentUser === ADMIN_EMAIL;
     } catch {}
   }
 
@@ -80,7 +79,7 @@ export default function RootLayout({
       >
         <header className="border-b border-border bg-[#002540]">
           <div className="mx-auto py-3 px-2">
-            {/* Flex row for logo and account menu on all screens */}
+            {/* Logo and account menu */}
             <div className="flex flex-row items-center justify-between mb-2">
               <Link
                 href="/"
@@ -96,73 +95,9 @@ export default function RootLayout({
                 {currentUser && <AccountMenu email={currentUser} />}
               </div>
             </div>
-            {/* Nav: horizontally scrollable on small screens */}
-            <nav
-              className="flex w-full overflow-x-auto gap-1 sm:gap-0 sm:w-auto sm:overflow-visible scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent text-white"
-              style={{ WebkitOverflowScrolling: "touch" }}
-            >
-              <Button
-                asChild
-                variant="ghost"
-                size="default"
-                className=" min-w-max"
-              >
-                <Link href="/analytics" prefetch={false}>Analytics</Link>
-              </Button>
-              <Button
-                asChild
-                variant="ghost"
-                size="default"
-                className=" min-w-max"
-              >
-                <Link href="/" prefetch={false}>Tickets</Link>
-              </Button>
-              <Button
-                asChild
-                variant="ghost"
-                size="default"
-                className=" min-w-max"
-              >
-                <Link href="/customers" prefetch={false}>Customers</Link>
-              </Button>
-              <Button
-                asChild
-                variant="ghost"
-                size="default"
-                className=" min-w-max"
-              >
-                <Link href="/search" prefetch={false}>Search</Link>
-              </Button>
-              <Button
-                asChild
-                variant="ghost"
-                size="default"
-                className=" min-w-max"
-              >
-                <Link href="/appointments" prefetch={false}>Appointments</Link>
-              </Button>
-             
-              {isAdmin && (
-              <>
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="default"
-                  className=" min-w-max"
-                >
-                  <Link href="/users" prefetch={false}>Management</Link>
-                </Button>
-                 <Button
-                asChild
-                variant="ghost"
-                size="default"
-                className=" min-w-max"
-              >
-                <Link href="/inventory/services" prefetch={false}>Services</Link>
-              </Button>
-              </>
-              )}
-            </nav>
+
+            {/* Navigation */}
+            <MainNav isAdmin={isAdmin} />
           </div>
         </header>
         <main className="w-full pb-12">{children}</main>

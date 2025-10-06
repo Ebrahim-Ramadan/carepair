@@ -1,17 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
-import { 
-  X, Shield, Sparkles, Palette, PenTool, Sofa, SprayCan,
-  Wrench, PackageOpen, Check, ShoppingCart
-} from "lucide-react"
+import { X, Check, ShoppingCart } from "lucide-react"
 import * as Dialog from "@radix-ui/react-dialog"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Service } from "@/lib/types"
-import { services, serviceCategories } from "@/lib/services"
 import { Badge } from "@/components/ui/badge"
 
 type ServiceDialogProps = {
@@ -28,41 +23,33 @@ export function ServiceDialog({
   onServicesAdded 
 }: ServiceDialogProps) {
   const [searchQuery, setSearchQuery] = useState<string>("")
-  const [selectedCategory, setSelectedCategory] = useState<string>("all")
+  const [services, setServices] = useState<Service[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [selectedServices, setSelectedServices] = useState<Service[]>([])
   const [isAddingServices, setIsAddingServices] = useState(false)
 
-  const filteredServices = services
-    .filter(service => 
-      (selectedCategory === 'all' || service.category === selectedCategory) && 
-      (searchQuery === '' || 
-        service.nameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        service.nameAr.includes(searchQuery))
-    )
-
-  // Group services by category for the tabs
-  const servicesByCategory = serviceCategories.reduce((acc, category) => {
-    acc[category.id] = filteredServices.filter(service => service.category === category.id)
-    return acc
-  }, {} as Record<string, Service[]>)
-
-  // Get popular/recommended services (could be based on frequency or manually flagged)
-  const popularServices = filteredServices.slice(0, 16) // Just using first few for example
-
-  // Check if any services match the search query
-  const hasSearchResults = searchQuery && filteredServices.length > 0
-
-  const getCategoryIcon = (categoryId: string) => {
-    switch (categoryId) {
-      case 'protection': return <Shield className="h-4 w-4" />
-      case 'polish': return <Sparkles className="h-4 w-4" />
-      case 'customization': return <Palette className="h-4 w-4" />
-      case 'restoration': return <PenTool className="h-4 w-4" />
-      case 'upholstery': return <Sofa className="h-4 w-4" />
-      case 'cleaning': return <SprayCan className="h-4 w-4" />
-      default: return <Wrench className="h-4 w-4" />
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const response = await fetch('/api/services')
+        if (!response.ok) throw new Error('Failed to fetch services')
+        const data = await response.json()
+        setServices(data)
+      } catch (error) {
+        console.error('Error fetching services:', error)
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }
+
+    fetchServices()
+  }, [])
+
+  const filteredServices = services.filter(service => 
+    searchQuery === '' || 
+    service.nameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    service.nameAr.includes(searchQuery)
+  )
 
   const toggleServiceSelection = (service: Service) => {
     setSelectedServices(prevSelected => {
@@ -127,6 +114,7 @@ export function ServiceDialog({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[95vw] max-w-3xl h-[80vh] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-card shadow-xl outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 flex flex-col">
+          {/* Header */}
           <div className="px-6 pt-6 pb-4 border-b">
             <div className="flex items-center justify-between">
               <Dialog.Title className="text-xl font-semibold text-foreground">Add Services to Ticket</Dialog.Title>
@@ -164,11 +152,14 @@ export function ServiceDialog({
             )}
           </div>
 
-          {/* Main content area with guaranteed scrolling */}
+          {/* Main content area */}
           <div className="flex-1 overflow-hidden">
-            {hasSearchResults ? (
-              <div className="h-full overflow-y-auto p-6">
-                <h3 className="text-sm font-medium mb-3">Search Results</h3>
+            <div className="h-full overflow-y-auto p-6">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <Spinner size="lg" />
+                </div>
+              ) : filteredServices.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {filteredServices.map(service => (
                     <ServiceCard 
@@ -176,75 +167,15 @@ export function ServiceDialog({
                       service={service}
                       isSelected={isServiceSelected(service.id)}
                       onToggleSelect={() => toggleServiceSelection(service)}
-                      getCategoryIcon={getCategoryIcon}
                     />
                   ))}
                 </div>
-              </div>
-            ) : (
-              <Tabs defaultValue="popular" className="h-full flex flex-col">
-                <div className="px-6 py-2 border-b">
-                  <TabsList className="w-full overflow-x-auto">
-                    <TabsTrigger value="popular" className="flex items-center gap-2">
-                      <PackageOpen className="h-4 w-4" />
-                      <span>Popular</span>
-                    </TabsTrigger>
-                    {serviceCategories.map(category => (
-                      <TabsTrigger key={category.id} value={category.id} className="flex items-center gap-2">
-                        {getCategoryIcon(category.id)}
-                        <span>{category.nameEn}</span>
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-muted-foreground">No services found.</p>
                 </div>
-                
-                <div className="flex-1 overflow-hidden">
-                  <TabsContent value="popular" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
-                    <div className="flex-1 overflow-y-auto p-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {popularServices.map(service => (
-                          <ServiceCard 
-                            key={service.id}
-                            service={service}
-                            isSelected={isServiceSelected(service.id)}
-                            onToggleSelect={() => toggleServiceSelection(service)}
-                            getCategoryIcon={getCategoryIcon}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  {serviceCategories.map(category => (
-                    <TabsContent 
-                      key={category.id} 
-                      value={category.id}
-                      className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col"
-                    >
-                      <div className="flex-1 overflow-y-auto p-6">
-                        {servicesByCategory[category.id]?.length > 0 ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {servicesByCategory[category.id].map(service => (
-                              <ServiceCard 
-                                key={service.id}
-                                service={service}
-                                isSelected={isServiceSelected(service.id)}
-                                onToggleSelect={() => toggleServiceSelection(service)}
-                                getCategoryIcon={getCategoryIcon}
-                              />
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center h-full">
-                            <p className="text-muted-foreground">No services in this category.</p>
-                          </div>
-                        )}
-                      </div>
-                    </TabsContent>
-                  ))}
-                </div>
-              </Tabs>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Bottom action bar */}
@@ -276,15 +207,8 @@ export function ServiceDialog({
   )
 }
 
-// ServiceCard Component
-type ServiceCardProps = {
-  service: Service
-  isSelected: boolean
-  onToggleSelect: () => void
-  getCategoryIcon: (categoryId: string) => JSX.Element
-}
-
-function ServiceCard({ service, isSelected, onToggleSelect, getCategoryIcon }: ServiceCardProps) {
+// Simplified ServiceCard Component
+function ServiceCard({ service, isSelected, onToggleSelect }: Omit<ServiceCardProps, 'getCategoryIcon'>) {
   return (
     <div 
       className={`border rounded-lg p-4 transition-colors cursor-pointer ${
@@ -296,12 +220,10 @@ function ServiceCard({ service, isSelected, onToggleSelect, getCategoryIcon }: S
     >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          {isSelected ? (
+          {isSelected && (
             <div className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center">
               <Check className="h-3 w-3" />
             </div>
-          ) : (
-            getCategoryIcon(service.category)
           )}
           <h3 className="font-medium">{service.nameEn}</h3>
         </div>

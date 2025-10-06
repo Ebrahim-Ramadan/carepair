@@ -33,3 +33,7 @@ next-env.d.ts
 # Uploads directory
 /public/uploads/*
 !/public/uploads/.gitkeep
+
+
+
+scripts/upload-services.ts

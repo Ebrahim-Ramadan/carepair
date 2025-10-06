@@ -297,21 +297,6 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
                 </div>
               </div>
             ) : selectedTicket ? (
-              <div className="space-y-4">
-             
-                
-                {/* Action buttons with new Services button */}
-                <div className="flex items-center w-full md:w-auto">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClearSelection}
-                    className="gap-2"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Back to Analytics
-                  </Button>
-                </div>
                 <TicketView 
                   ticket={selectedTicket} 
                   onUpdate={handleTicketUpdated}
@@ -321,7 +306,6 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
                   onOpenAddService={() => setIsAddingService(true)}
                   onScrollToServices={handleScrollToServices}
                 />
-              </div>
             ) : (
               <div className="flex h-[600px] items-center justify-center rounded-lg border border-dashed border-border bg-card">
                 <div className="text-center">

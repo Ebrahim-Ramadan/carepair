@@ -78,7 +78,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <header className="border-b border-border bg-card">
+        <header className="border-b border-border bg-[#002540]">
           <div className="mx-auto py-3 px-2">
             {/* Flex row for logo and account menu on all screens */}
             <div className="flex flex-row items-center justify-between mb-2">
@@ -89,7 +89,7 @@ export default function RootLayout({
                 <img
                   src="/logo.jpg"
                   alt="Carepair Logo"
-                  className="h-12 w-auto"
+                  className="h-16 w-auto rounded-full"
                 />
               </Link>
               <div className="flex justify-end">
@@ -98,46 +98,46 @@ export default function RootLayout({
             </div>
             {/* Nav: horizontally scrollable on small screens */}
             <nav
-              className="flex w-full overflow-x-auto gap-1 sm:gap-0 sm:w-auto sm:overflow-visible scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent"
+              className="flex w-full overflow-x-auto gap-1 sm:gap-0 sm:w-auto sm:overflow-visible scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent text-white"
               style={{ WebkitOverflowScrolling: "touch" }}
             >
               <Button
                 asChild
                 variant="ghost"
-                size="sm"
-                className="text-neutral-600 min-w-max"
+                size="default"
+                className=" min-w-max"
               >
                 <Link href="/analytics" prefetch={false}>Analytics</Link>
               </Button>
               <Button
                 asChild
                 variant="ghost"
-                size="sm"
-                className="text-neutral-600 min-w-max"
+                size="default"
+                className=" min-w-max"
               >
                 <Link href="/" prefetch={false}>Tickets</Link>
               </Button>
               <Button
                 asChild
                 variant="ghost"
-                size="sm"
-                className="text-neutral-600 min-w-max"
+                size="default"
+                className=" min-w-max"
               >
                 <Link href="/customers" prefetch={false}>Customers</Link>
               </Button>
               <Button
                 asChild
                 variant="ghost"
-                size="sm"
-                className="text-neutral-600 min-w-max"
+                size="default"
+                className=" min-w-max"
               >
                 <Link href="/search" prefetch={false}>Search</Link>
               </Button>
               <Button
                 asChild
                 variant="ghost"
-                size="sm"
-                className="text-neutral-600 min-w-max"
+                size="default"
+                className=" min-w-max"
               >
                 <Link href="/appointments" prefetch={false}>Appointments</Link>
               </Button>
@@ -145,10 +145,10 @@ export default function RootLayout({
                 <Button
                   asChild
                   variant="ghost"
-                  size="sm"
-                  className="text-neutral-600 min-w-max"
+                  size="default"
+                  className=" min-w-max"
                 >
-                  <Link href="/users" prefetch={false}>Users</Link>
+                  <Link href="/users" prefetch={false}>Management</Link>
                 </Button>
               )}
             </nav>

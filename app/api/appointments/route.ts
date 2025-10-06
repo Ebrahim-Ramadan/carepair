@@ -8,6 +8,8 @@ export const revalidate = 0
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
+    console.log('API: Received request with searchParams:', searchParams)
+    
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "10")
     const sortBy = searchParams.get("sortBy") || "latest" // latest or earliest
@@ -21,11 +23,16 @@ export async function GET(request: NextRequest) {
     const sortOrder = sortBy === "earliest" ? 1 : -1
 
     const client = await clientPromise
+    console.log('API: MongoDB connected')
+    
     const db = client.db("car_repair")
     const collection = db.collection("appointments")
 
-    // Get total count for pagination
+    // Log counts for debugging
     const totalCount = await collection.countDocuments({})
+    console.log('API: Total appointments:', totalCount)
+
+    // Get total count for pagination
     const totalPages = Math.ceil(totalCount / validatedLimit)
 
     // Get paginated and sorted results
@@ -47,25 +54,25 @@ export async function GET(request: NextRequest) {
         hasPrevious: validatedPage > 1
       },
       sortBy
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+      }
     })
-    
-    // Add cache control headers to prevent caching
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0')
-    response.headers.set('Pragma', 'no-cache')
-    response.headers.set('Expires', '0')
-    response.headers.set('Surrogate-Control', 'no-store')
 
     return response
   } catch (error) {
-    console.error("Error fetching appointments:", error)
+    console.error("Detailed API error:", error)
     return NextResponse.json(
-      { message: "Failed to fetch appointments" }, 
       { 
-        status: 500,
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0'
-        }
-      }
+        message: "Failed to fetch appointments",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }, 
+      { status: 500 }
     )
   }
 }

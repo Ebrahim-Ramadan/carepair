@@ -123,27 +123,27 @@ export async function PATCH(
     }
 
     // Send email if requested
-    if (sendEmail && customerEmail) {
-      try {
-        await transporter.sendMail({
-          from: `"CarePair Auto Service" <${process.env.GMAIL_ACC}>`,
-          to: customerEmail,
-          subject: `CarePair - Appointment Status Update: ${status.toUpperCase()}`,
-          html: getStatusEmailTemplate(
-            status as AppointmentStatus, 
-            customerName, 
-            vehicleInfo, 
-            serviceType,
-            serviceDate,
-            serviceTime
-          )
-        })
-        console.log(`Email sent successfully to ${customerEmail}`)
-      } catch (emailError) {
-        console.error("Failed to send email:", emailError)
-        // Don't fail the request if email fails
-      }
-    }
+    // if (sendEmail && customerEmail) {
+    //   try {
+    //     await transporter.sendMail({
+    //       from: `"CarePair Auto Service" <${process.env.GMAIL_ACC}>`,
+    //       to: customerEmail,
+    //       subject: `CarePair - Appointment Status Update: ${status.toUpperCase()}`,
+    //       html: getStatusEmailTemplate(
+    //         status as AppointmentStatus, 
+    //         customerName, 
+    //         vehicleInfo, 
+    //         serviceType,
+    //         serviceDate,
+    //         serviceTime
+    //       )
+    //     })
+    //     console.log(`Email sent successfully to ${customerEmail}`)
+    //   } catch (emailError) {
+    //     console.error("Failed to send email:", emailError)
+    //     // Don't fail the request if email fails
+    //   }
+    // }
 
     return NextResponse.json({ 
       success: true,

@@ -9,26 +9,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Mail, Phone, MessageCircle, Calendar, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, HelpCircle, Copy, Check, ChevronDown } from "lucide-react"
 import { toast } from "sonner"
 
+// Update the Appointment type to match the API structure
+type Customer = {
+  firstName: string
+  lastName: string
+  phone: string
+}
+
+type Service = {
+  type: string
+  date: string
+  time: string
+  notes: string
+}
+
 type Appointment = {
   _id: string
-  customer: {
-    firstName: string
-    lastName: string
-    email: string
-    phone: string
-  }
-  vehicle: {
-    make: string
-    model: string
-    year: string
-    licensePlate: string
-  }
-  service: {
-    type: string
-    date: string  // Updated to string to match server format
-    time: string
-    notes: string
-  }
+  customer: Customer
+  service: Service
   status: "pending" | "confirmed" | "completed" | "canceled"
   createdAt: string
   updatedAt: string
@@ -80,6 +78,7 @@ type AppointmentsClientProps = {
 
 export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
   const router = useRouter()
+  console.log('initialData:', initialData)  
   
   const [data, setData] = useState<AppointmentsData>(initialData)
   const [isLoading, setIsLoading] = useState(false)
@@ -177,12 +176,8 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
         body: JSON.stringify({ 
           status: newStatus,
           sendEmail: true,
-          customerEmail: appointment.customer.email,
           customerName: `${appointment.customer.firstName} ${appointment.customer.lastName}`,
-          vehicleInfo: `${appointment.vehicle.make} ${appointment.vehicle.model} ${appointment.vehicle.year}`,
           serviceType: appointment.service.type,
-          serviceDate: appointment.service.date,
-          serviceTime: appointment.service.time
         })
       })
 
@@ -312,26 +307,14 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
                     <tr className="border-b border-border text-left text-muted-foreground">
                       <th className="px-2 md:px-4 py-1.5 md:py-3">Customer</th>
                       <th className="px-2 md:px-4 py-1.5 md:py-3">Contact</th>
-                      <th className="px-2 md:px-4 py-1.5 md:py-3">Vehicle</th>
                       <th className="px-2 md:px-4 py-1.5 md:py-3">Service</th>
-                      <th className="px-2 md:px-4 py-1.5 md:py-3">When</th>
-                      <th className="px-2 md:px-4 py-1.5 md:py-3">
-                        <div className="flex items-center gap-1">
-                          Status
-                          <button
-                          title="When changing status, an email notification will be sent to the customer"
-                          >
-                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
-                          </button>
-                        </div>
-                      </th>
+                      <th className="px-2 md:px-4 py-1.5 md:py-3">Status</th>
                       <th className="px-2 md:px-4 py-1.5 md:py-3">Created</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.appointments.map((appointment) => {
                       const isUpdating = updatingIds.has(appointment._id)
-                      const isEmailCopied = copiedEmail === appointment.customer.email
                       const isPhoneCopied = copiedPhone === appointment.customer.phone
 
                       return (
@@ -340,21 +323,7 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
                             {appointment.customer.firstName} {appointment.customer.lastName}
                           </td>
                           <td className="px-2 md:px-4 py-1.5 md:py-3">
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={() => handleCopyEmail(appointment.customer.email)}
-                                className="p-1 rounded hover:bg-secondary transition-colors"
-                                title="Copy email"
-                              >
-                                {isEmailCopied ? (
-                                  <Check className="h-3 w-3 text-green-600" />
-                                ) : (
-                                  <Copy className="h-3 w-3 text-muted-foreground" />
-                                )}
-                              </button>
-                              <span className="text-xs">{appointment.customer.email}</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-muted-foreground mt-1">
+                            <div className="flex items-center gap-1 text-muted-foreground">
                               <button
                                 onClick={() => handleCopyPhone(appointment.customer.phone)}
                                 className="p-1 rounded hover:bg-secondary transition-colors"
@@ -387,24 +356,18 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
                           </td>
                           <td className="px-2 md:px-4 py-1.5 md:py-3">
                             <div className="text-xs">
-                              {appointment.vehicle.make} {appointment.vehicle.model} {appointment.vehicle.year}
-                              <div className="text-muted-foreground">{appointment.vehicle.licensePlate}</div>
-                            </div>
-                          </td>
-                          <td className="px-2 md:px-4 py-1.5 md:py-3">
-                            <div className="text-xs">
                               {appointment.service.type}
+                              {appointment.service.time && (
+                                <div className="text-muted-foreground mt-1">
+                                  {formatDate(appointment.service.date)} at {appointment.service.time}
+                                </div>
+                              )}
                               {appointment.service.notes && (
-                                <div className="text-muted-foreground text-xs mt-1">
+                                <div className="text-muted-foreground mt-1">
                                   {appointment.service.notes}
                                 </div>
                               )}
                             </div>
-                          </td>
-                          <td className="px-2 md:px-4 py-1.5 md:py-3 text-xs">
-                            {appointment.service.date ? new Date(appointment.service.date).toLocaleDateString() : "-"}
-                            <br />
-                            {formatTime(appointment.service.time)}
                           </td>
                           <td className="px-2 md:px-4 py-1.5 md:py-3">
                             <div className="flex items-center gap-2">

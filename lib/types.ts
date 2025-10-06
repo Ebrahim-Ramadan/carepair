@@ -119,3 +119,11 @@ export type TicketSummary = {
   plateNumber: string
   createdAt: string
 }
+
+export type Employee = {
+  _id?: string
+  name: string
+  jobTitle: string
+  salary: number
+  createdAt: string
+}

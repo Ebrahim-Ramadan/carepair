@@ -36,7 +36,6 @@ async function connectWithRetry(): Promise<MongoClient> {
       const client = new MongoClient(uri, options)
       await client.connect()
       await client.db("admin").command({ ping: 1 }) // Test the connection
-      console.log("Successfully connected to MongoDB")
       return client
     } catch (error) {
       lastError = error

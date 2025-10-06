@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { ListOrdered, Plus, X, Trash2, Receipt } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
 import LazyLoad from "./ui/lazyload"
+import { useEffect } from "react"
 
 type TicketViewProps = {
   ticket: Ticket
@@ -73,6 +74,19 @@ export function TicketView({
 const totalAmount = ticket.services?.reduce((sum, service) => 
   sum + (service.finalPrice ?? service.price), 0
 ) ?? 0
+
+// Update total in database if it's different
+useEffect(() => {
+  if (ticket._id && typeof ticket.totalAmount !== 'undefined' && ticket.totalAmount !== totalAmount) {
+    fetch(`/api/tickets/${ticket._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ totalAmount })
+    }).catch(error => {
+      console.error('Error updating total amount:', error)
+    })
+  }
+}, [ticket._id, ticket.totalAmount, totalAmount])
 
   return (
     <div className="space-y-4">

@@ -333,19 +333,7 @@ function ServiceCard({
           <h3 className="font-medium">{service.nameEn}</h3>
         </div>
         <div className="bg-primary/10 text-primary rounded-full px-2 py-1 text-xs font-medium">
-          {discountValue > 0 && isSelected ? (
-            <div className="space-y-0.5">
-              <span className="line-through text-muted-foreground">{originalPrice} KD</span>
-              <span className="block font-semibold text-green-600">{finalPrice.toFixed(2)} KD</span>
-              <span className="text-xs text-muted-foreground">
-                {discountType === 'percentage' 
-                  ? `${discountValue}% off`
-                  : `${((discountValue / totalPrice) * originalPrice).toFixed(2)} KD off`}
-              </span>
-            </div>
-          ) : (
-            `${originalPrice} KD`
-          )}
+          {originalPrice} KD
         </div>
       </div>
       <p className="text-sm text-muted-foreground">{service.nameAr} - {service.descriptionAr}</p>

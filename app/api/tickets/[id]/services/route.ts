@@ -12,21 +12,30 @@ export async function POST(
     const client = await clientPromise
     const db = client.db("car_repair")
     
+    // Get current ticket to calculate new total
+    const ticket = await db.collection("tickets").findOne(
+      { _id: new ObjectId(params.id) }
+    )
+    
+    if (!ticket) {
+      return NextResponse.json(
+        { error: 'Ticket not found' },
+        { status: 404 }
+      )
+    }
+
     const result = await db.collection("tickets").findOneAndUpdate(
       { _id: new ObjectId(params.id) },
       { 
         $push: { 
           services: {
             ...body,
-            addedAt: new Date(body.addedAt),
-            // Ensure discount fields are included
-            discountType: body.discountType,
-            discountValue: body.discountValue,
-            finalPrice: body.finalPrice
+            addedAt: new Date(body.addedAt)
           }
         },
-        $inc: { 
-          totalAmount: body.finalPrice || body.price 
+        // Update total amount with the new service's final price
+        $set: {
+          totalAmount: (ticket.totalAmount || 0) + (body.finalPrice || body.price)
         }
       },
       { returnDocument: 'after' }

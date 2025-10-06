@@ -75,7 +75,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-neutral-100`}
       >
         <header className="border-b border-border bg-[#002540]">
           <div className="mx-auto py-3 px-2">

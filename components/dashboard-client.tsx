@@ -145,14 +145,6 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
     }
   }
 
-  const handleClearSelection = () => {
-    setSelectedTicket(null)
-    // Remove ticket ID from URL
-    const url = new URL(window.location.href)
-    url.searchParams.delete("ticketId")
-    url.hash = '' // Clear hash as well
-    router.replace(url.toString())
-  }
 
   const handleAddService = async (service: ServiceWithDiscount) => {
     if (!selectedTicket || !selectedTicket._id) {
@@ -246,13 +238,13 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
   }
 
   return (
-    <div className="min-h-screen bg-background mt-2">
+    <div className="min-h-screen mt-2">
       {/* Main Content */}
       <div className="mx-auto px-2">
         <div className="grid gap-6 lg:grid-cols-[350px_1fr]">
           {/* Sidebar - Ticket List */}
           <div className="space-y-4">
-            <div className="rounded-lg border border-border bg-card p-4">
+            <div className="rounded-lg border border-border bg-neutral-50 p-4">
               <div className="flex items-center justify-between pb-2">
                 <div className="flex items-center gap-1">
                   <h2 className="text-lg font-semibold text-foreground">Tickets</h2>
@@ -330,7 +322,7 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
       <Dialog.Root open={isCreating} onOpenChange={setIsCreating}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[95vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-card p-6 shadow-xl outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[95vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-neutral-50 p-6 shadow-xl outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
             <div className="mb-4 flex items-center justify-between">
               <Dialog.Title className="text-xl font-semibold text-foreground">Create New Ticket</Dialog.Title>
               <Dialog.Close asChild>

@@ -9,10 +9,22 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const client = await clientPromise
     const db = client.db("car_repair")
 
+    // accept and store only pricePerPiece / pricePerMeter (no legacy price or pricingMode)
+    const pp = Number(body.pricePerPiece ?? 0)
+    const pm = Number(body.pricePerMeter ?? 0)
+
+    // validation (optional here, keep safe defaults)
+    if (!(pp > 0 || pm > 0)) {
+      return NextResponse.json({ error: "Provide at least one price field" }, { status: 400 })
+    }
+
     const update: any = {
-      name: String(body.name || ""),
-      sku: body.sku ? String(body.sku) : undefined,
-      price: Number(body.price || 0),
+      name: body.name ? String(body.name) : (body.nameEn ? String(body.nameEn) : ""),
+      nameEn: body.nameEn ? String(body.nameEn) : undefined,
+      nameAr: body.nameAr ? String(body.nameAr) : undefined,
+      category: body.category ? String(body.category) : undefined,
+      pricePerPiece: pp > 0 ? pp : undefined,
+      pricePerMeter: pm > 0 ? pm : undefined,
       stock: body.stock ? Number(body.stock) : 0,
       description: body.description ? String(body.description) : "",
       updatedAt: new Date().toISOString(),

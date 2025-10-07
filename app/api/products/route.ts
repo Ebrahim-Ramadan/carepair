@@ -26,14 +26,32 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
+    console.log("body:", body)
+
     const client = await clientPromise
     const db = client.db("car_repair")
 
+    // accept explicit pricePerPiece / pricePerMeter only
+    const pp = Number(body.pricePerPiece ?? 0)
+    const pm = Number(body.pricePerMeter ?? 0)
+
+    // require at least one price
+    if (!(pp > 0 || pm > 0)) {
+      return NextResponse.json(
+        { error: "Provide a price for at least one pricing mode (pricePerPiece or pricePerMeter)" },
+        { status: 400 }
+      )
+    }
+
     const now = new Date().toISOString()
-    const doc = {
-      name: String(body.name || ""),
-      sku: body.sku ? String(body.sku) : undefined,
-      price: Number(body.price || 0),
+    const doc: any = {
+      // bilingual fields if provided
+      nameEn: body.nameEn ? String(body.nameEn) : undefined,
+      nameAr: body.nameAr ? String(body.nameAr) : undefined,
+      category: body.category ? String(body.category) : undefined,
+      // only store explicit prices
+      pricePerPiece: pp > 0 ? pp : undefined,
+      pricePerMeter: pm > 0 ? pm : undefined,
       stock: body.stock ? Number(body.stock) : 0,
       description: body.description ? String(body.description) : "",
       createdAt: now,

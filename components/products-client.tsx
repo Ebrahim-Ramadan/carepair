@@ -7,14 +7,17 @@ import { toast } from "sonner"
 import { ChevronLeft, ChevronRight, Pencil, Plus, Trash } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 
+
 type Product = {
   _id?: string
-  name: string
-  sku?: string
-  price: number
+  nameEn?: string
+  nameAr?: string
+  category?: string
+  // only explicit prices now
+  pricePerPiece?: number
+  pricePerMeter?: number
   stock?: number
   description?: string
-  createdAt?: string
 }
 
 type Props = {
@@ -25,7 +28,13 @@ type Props = {
   limit: number
 }
 
-export function ProductsClient({ initialProducts, initialPage, totalPages: initialTotalPages, total: initialTotal, limit }: Props) {
+export function ProductsClient({
+  initialProducts,
+  initialPage,
+  totalPages: initialTotalPages,
+  total: initialTotal,
+  limit,
+}: Props) {
   const [products, setProducts] = useState<Product[]>(initialProducts)
   const [page, setPage] = useState(initialPage)
   const [totalPages, setTotalPages] = useState(initialTotalPages)
@@ -34,9 +43,11 @@ export function ProductsClient({ initialProducts, initialPage, totalPages: initi
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
   const [form, setForm] = useState<Product>({
-    name: "",
-    sku: "",
-    price: 0,
+    nameEn: "",
+    nameAr: "",
+    category: "",
+    pricePerPiece: undefined,
+    pricePerMeter: undefined,
     stock: 0,
     description: "",
   })
@@ -61,18 +72,29 @@ export function ProductsClient({ initialProducts, initialPage, totalPages: initi
 
   const openAdd = () => {
     setEditing(null)
-    setForm({ name: "", sku: "", price: 0, stock: 0, description: "" })
+    setForm({
+      nameEn: "",
+      nameAr: "",
+      category: "",
+      pricePerPiece: undefined,
+      pricePerMeter: undefined,
+      stock: 0,
+      description: "",
+    })
     setIsFormOpen(true)
   }
 
   const openEdit = (p: Product) => {
     setEditing(p)
     setForm({
-      name: p.name,
-      sku: p.sku ?? "",
-      price: p.price ?? 0,
+      nameEn: p.nameEn ??  "",
+      nameAr: p.nameAr ?? "",
+      category: p.category ?? "",
+      pricePerPiece: typeof p.pricePerPiece === "number" ? p.pricePerPiece : undefined,
+      pricePerMeter: typeof p.pricePerMeter === "number" ? p.pricePerMeter : undefined,
       stock: p.stock ?? 0,
       description: p.description ?? "",
+      _id: p._id,
     })
     setIsFormOpen(true)
   }
@@ -81,16 +103,34 @@ export function ProductsClient({ initialProducts, initialPage, totalPages: initi
     e?.preventDefault()
     setLoading(true)
     try {
-      if (!form.name || Number.isNaN(form.price)) {
-        toast.error("Name and price are required")
+      const pp = Number(form.pricePerPiece ?? 0)
+      const pm = Number(form.pricePerMeter ?? 0)
+      if (!form.nameEn) {
+        toast.error("English name is required")
+        setLoading(false)
         return
+      }
+      if (!(pp > 0 || pm > 0)) {
+        toast.error("Provide a price for at least one mode (per piece or per meter)")
+        setLoading(false)
+        return
+      }
+
+      const payload: any = {
+        nameEn: String(form.nameEn),
+        nameAr: form.nameAr ? String(form.nameAr) : undefined,
+        category: form.category ? String(form.category) : undefined,
+        pricePerPiece: pp > 0 ? pp : undefined,
+        pricePerMeter: pm > 0 ? pm : undefined,
+        stock: form.stock ? Number(form.stock) : 0,
+        description: form.description ? String(form.description) : "",
       }
 
       if (editing) {
         const res = await fetch(`/api/products/${editing._id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
+          body: JSON.stringify(payload),
         })
         if (!res.ok) throw new Error("Failed to update product")
         const updated = await res.json()
@@ -100,10 +140,9 @@ export function ProductsClient({ initialProducts, initialPage, totalPages: initi
         const res = await fetch("/api/products", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
+          body: JSON.stringify(payload),
         })
         if (!res.ok) throw new Error("Failed to create product")
-        const created = await res.json()
         // refresh current page
         await fetchPage(page)
         toast.success("Product added")
@@ -124,7 +163,6 @@ export function ProductsClient({ initialProducts, initialPage, totalPages: initi
     try {
       const res = await fetch(`/api/products/${id}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Failed to delete")
-      // refresh current page (if last item on page removed and page > 1, refetch previous)
       await fetchPage(page)
       toast.success("Product deleted")
     } catch (err) {
@@ -133,6 +171,25 @@ export function ProductsClient({ initialProducts, initialPage, totalPages: initi
     } finally {
       setLoading(false)
     }
+  }
+
+  const priceLabel = (p: Product) => {
+    const piece = typeof p.pricePerPiece === "number" ? p.pricePerPiece : undefined
+    const meter = typeof p.pricePerMeter === "number" ? p.pricePerMeter : undefined
+
+    if (piece != null && meter != null) {
+      return (
+        <div className="text-right leading-tight">
+          <div className="text-sm font-medium">{piece.toFixed(3)} KD</div>
+          <div className="text-sm text-muted-foreground">{meter.toFixed(3)} KD / m</div>
+        </div>
+      )
+    }
+
+    if (piece != null) return <div className="text-right">{piece.toFixed(3)} KD</div>
+    if (meter != null) return <div className="text-right">{meter.toFixed(3)} KD / m</div>
+
+    return "—"
   }
 
   return (
@@ -149,8 +206,9 @@ export function ProductsClient({ initialProducts, initialPage, totalPages: initi
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left bg-muted/50">
-              <th className="p-3">Name</th>
-              <th className="p-3">SKU</th>
+              <th className="p-3">Name (EN)</th>
+              <th className="p-3">Name (AR)</th>
+              <th className="p-3">Category</th>
               <th className="p-3 text-right">Price</th>
               <th className="p-3 text-right">Stock</th>
               <th className="p-3">Actions</th>
@@ -159,25 +217,25 @@ export function ProductsClient({ initialProducts, initialPage, totalPages: initi
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="p-6 text-center"><Spinner /></td>
+                <td colSpan={6} className="p-6 text-center"><Spinner /></td>
               </tr>
             ) : products.length === 0 ? (
-              <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">No products</td></tr>
+              <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">No products</td></tr>
             ) : (
               products.map((p) => (
                 <tr key={p._id} className="border-b hover:bg-muted/50">
-                  <td className="p-3">{p.name}</td>
-                  <td className="p-3">{p.sku}</td>
-                  <td className="p-3 text-right">{p.price.toFixed(3)}</td>
+                  <td className="p-3">{p.nameEn ??"-"}</td>
+                  <td className="p-3">{p.nameAr ?? "-"}</td>
+                  <td className="p-3">{p.category}</td>
+                  <td className="p-3 text-right">{priceLabel(p)}</td>
                   <td className="p-3 text-right">{p.stock ?? 0}</td>
                   <td className="p-3">
                     <div className="flex gap-2">
                       <Button size="sm" variant="default" onClick={() => openEdit(p)}>
-                        
-                        <Pencil/>
+                        <Pencil />
                       </Button>
                       <Button size="sm" variant="destructive" onClick={() => handleDelete(p._id)}>
-                        <Trash className="text-white"/>
+                        <Trash className="text-white" />
                       </Button>
                     </div>
                   </td>
@@ -200,7 +258,6 @@ export function ProductsClient({ initialProducts, initialPage, totalPages: initi
         </Button>
       </div>
 
-      {/* Shadcn Dialog for form */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-xl">
           <form onSubmit={handleSubmit} className="w-full">
@@ -210,24 +267,47 @@ export function ProductsClient({ initialProducts, initialPage, totalPages: initi
 
             <div className="grid grid-cols-1 gap-3 py-2">
               <label className="flex flex-col">
-                <span className="text-sm">Name</span>
-                <input className="border rounded p-2" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                <span className="text-sm">English name *</span>
+                <input className="border rounded p-2" value={form.nameEn} onChange={(e) => setForm({ ...form, nameEn: e.target.value })} required />
               </label>
 
               <label className="flex flex-col">
-                <span className="text-sm">SKU</span>
-                <input className="border rounded p-2" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
+                <span className="text-sm">Arabic name</span>
+                <input className="border rounded p-2" value={form.nameAr} onChange={(e) => setForm({ ...form, nameAr: e.target.value })} />
               </label>
 
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex flex-col">
-                  <span className="text-sm">Price</span>
-                  <input type="number" step="0.001" className="border rounded p-2" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} required />
+                  <span className="text-sm">Category</span>
+                  <input className="border rounded p-2" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
                 </label>
-
                 <label className="flex flex-col">
                   <span className="text-sm">Stock</span>
                   <input type="number" className="border rounded p-2" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
+                </label>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex flex-col">
+                  <span className="text-sm">Price per piece</span>
+                  <input
+                    type="number"
+                    step="0.001"
+                    className="border rounded p-2"
+                    value={form.pricePerPiece ?? ""}
+                    onChange={(e) => setForm({ ...form, pricePerPiece: e.target.value === "" ? undefined : Number(e.target.value) })}
+                  />
+                </label>
+
+                <label className="flex flex-col">
+                  <span className="text-sm">Price per meter</span>
+                  <input
+                    type="number"
+                    step="0.001"
+                    className="border rounded p-2"
+                    value={form.pricePerMeter ?? ""}
+                    onChange={(e) => setForm({ ...form, pricePerMeter: e.target.value === "" ? undefined : Number(e.target.value) })}
+                  />
                 </label>
               </div>
 
@@ -246,7 +326,6 @@ export function ProductsClient({ initialProducts, initialPage, totalPages: initi
           </form>
         </DialogContent>
       </Dialog>
-
     </div>
   )
 }

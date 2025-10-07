@@ -241,7 +241,7 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
     <div className="min-h-screen mt-2">
       {/* Main Content */}
       <div className="mx-auto px-2">
-        <div className="grid gap-6 lg:grid-cols-[350px_1fr]">
+        <div className="grid gap-4 lg:grid-cols-[350px_1fr]">
           {/* Sidebar - Ticket List */}
           <div className="space-y-4">
             <div className="rounded-lg border border-border bg-neutral-50 p-4">

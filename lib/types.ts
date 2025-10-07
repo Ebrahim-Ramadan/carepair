@@ -107,7 +107,6 @@ export type Ticket = {
   mileage?: number
   services: TicketService[]
   notes?: string
-  status?: "pending" | "in-progress" | "completed" | "canceled"
   totalAmount?: number
   createdAt: string
   updatedAt?: string

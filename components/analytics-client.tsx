@@ -526,7 +526,6 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
     <TabsList className="w-full min-w-[500px]">
       <TabsTrigger value="services" className="flex-1">Services</TabsTrigger>
       <TabsTrigger value="categories" className="flex-1">Categories</TabsTrigger>
-      <TabsTrigger value="repair-parts" className="flex-1">Repair Parts</TabsTrigger>
       <TabsTrigger value="daily" className="flex-1">Daily Data</TabsTrigger>
     </TabsList>
   </div>
@@ -550,18 +549,37 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
                           <th className="p-3 font-medium text-right">Count</th>
                           <th className="p-3 font-medium text-right">Revenue</th>
                           <th className="p-3 font-medium text-right">Avg. Price</th>
+                          <th className="p-3 font-medium text-right">Cost</th>
+                          <th className="p-3 font-medium text-right">Net Profit</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {data.topServices.map((service) => (
-                          <tr key={service.serviceId} className="border-b hover:bg-muted/50">
-                            <td className="p-3">{service.serviceName}</td>
-                            <td className="p-3 capitalize">{service.categoryId}</td>
-                            <td className="p-3 text-right">{service.count}</td>
-                            <td className="p-3 text-right">{formatCurrency(service.revenue)}</td>
-                            <td className="p-3 text-right">{formatCurrency(service.revenue / service.count)}</td>
-                          </tr>
-                        ))}
+                        {data.topServices.map((service) => {
+                          const revenue = typeof service.revenue === "number" ? service.revenue : Number(service.revenue ?? 0)
+                          const count = typeof service.count === "number" && service.count > 0 ? service.count : 1
+                          const avgPrice = count ? revenue / count : 0
+
+                          // cost can be provided per-service in the analytics payload (total cost for that service)
+                          // fallback to 0 when missing
+                          const cost = typeof service.cost === "number" ? service.cost : Number(service.cost ?? 0)
+
+                          // net profit = revenue - cost
+                          const netProfit = revenue - cost
+
+                          return (
+                            <tr key={service.serviceId} className="border-b hover:bg-muted/50">
+                              <td className="p-3">{service.serviceName}</td>
+                              <td className="p-3 capitalize">{service.categoryId}</td>
+                              <td className="p-3 text-right">{service.count}</td>
+                              <td className="p-3 text-right">{formatCurrency(revenue)}</td>
+                              <td className="p-3 text-right">{formatCurrency(avgPrice)}</td>
+                              <td className="p-3 text-right text-muted-foreground">{formatCurrency(cost)}</td>
+                              <td className={`p-3 text-right ${netProfit < 0 ? 'text-rose-600' : 'text-green-600'}`}>
+                                {formatCurrency(netProfit)}
+                              </td>
+                            </tr>
+                          )
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -609,40 +627,6 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
             </div>
           </TabsContent>
           
-          <TabsContent value="repair-parts" className="space-y-4">
-            <div>
-              <div>
-                <div>Repair Part Frequency</div>
-                <p className="text-sm text-muted-foreground">
-                  Most commonly repaired vehicle parts
-                </p>
-              </div>
-              <div>
-                <div className="rounded-md border">
-                  <div className="overflow-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-left border-b bg-muted/50">
-                          <th className="p-3 font-medium">Part Name</th>
-                          <th className="p-3 font-medium text-right">Count</th>
-                          <th className="p-3 font-medium text-right">Percentage</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {data.commonRepairParts.map((part) => (
-                          <tr key={part.name} className="border-b hover:bg-muted/50">
-                            <td className="p-3">{part.name}</td>
-                            <td className="p-3 text-right">{part.count}</td>
-                            <td className="p-3 text-right">{formatPercentage(part.percentage)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
           
           <TabsContent value="daily" className="space-y-4">
             <div>

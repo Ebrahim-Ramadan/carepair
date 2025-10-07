@@ -8,15 +8,11 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
 
 export async function POST(request: NextRequest) {
   const { email, password } = await request.json()
-console.log('password', password)
 
   // Check admin credentials from .env
   if (email === ADMIN_EMAIL) {
-    console.log('might be admin');
-console.log('ADMIN_PASSWORD', ADMIN_PASSWORD);
     
     const passwordMatch = ADMIN_PASSWORD === password
-    console.log('passwordMatch', passwordMatch);
     
     if (!passwordMatch) {
       return NextResponse.json({ success: false }, { status: 401 })
@@ -26,7 +22,8 @@ console.log('ADMIN_PASSWORD', ADMIN_PASSWORD);
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 60 * 60 * 24,
+      maxAge: 60 * 60 * 24 * 7, // 7 days for admin
+
       sameSite: "lax",
     })
     const res = NextResponse.json({ success: true })
@@ -52,7 +49,7 @@ console.log('ADMIN_PASSWORD', ADMIN_PASSWORD);
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 24,
+    maxAge: 60 * 60 * 24 * 7,
     sameSite: "lax",
   })
   const res = NextResponse.json({ success: true })

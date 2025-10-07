@@ -27,6 +27,7 @@ export type ServicePopularity = {
   count: number
   revenue: number
   categoryId: string
+  cost?: number
 }
 
 export type RepairPartData = {

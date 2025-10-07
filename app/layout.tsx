@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Toaster } from "sonner";
 import Footer from "@/components/footer";
 import { AccountMenu } from "./users/AccountMenu";

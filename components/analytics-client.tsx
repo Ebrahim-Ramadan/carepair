@@ -177,6 +177,7 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
           <p className="text-sm text-muted-foreground">
             Track performance metrics and insights for your repair business
           </p>
+          
         </div>
         
         <div className="flex flex-wrap gap-3">

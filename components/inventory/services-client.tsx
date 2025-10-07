@@ -130,7 +130,7 @@ export function ServicesClient({ initialServices }: ServicesClientProps) {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Services Management</h1>
         <Button onClick={() => setIsDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4" />
           Add 
         </Button>
       </div>

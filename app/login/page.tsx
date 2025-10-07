@@ -41,7 +41,7 @@ export default function LoginPage() {
           height={200}
           src="/logo.jpg"
           alt="Carepair Logo"
-          className="mx-auto h-20 w-auto"
+          className="mx-auto h-20 w-auto rounded-full"
         />
         <div>
           <form onSubmit={handleLogin} className="space-y-4">

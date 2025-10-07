@@ -21,9 +21,9 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "CarePair - Automotive Service Management Dashboard",
+  title: "NintyNine - Automotive Service Management Dashboard",
   description:
-    "Professional automotive service management system for tracking vehicle repairs, customer information, service appointments, and before/after documentation. Streamline your auto repair business with CarePair.",
+    "Professional automotive service management system for tracking vehicle repairs, customer information, service appointments, and before/after documentation. Streamline your auto repair business with NintyNine.",
   keywords: [
     "automotive service",
     "car repair management",
@@ -34,21 +34,21 @@ export const metadata: Metadata = {
     "repair shop management",
     "vehicle maintenance tracking",
   ],
-  authors: [{ name: "CarePair Team" }],
-  creator: "CarePair",
-  publisher: "CarePair",
+  authors: [{ name: "NintyNine Team" }],
+  creator: "NintyNine",
+  publisher: "NintyNine",
   robots: "index, follow",
   openGraph: {
-    title: "CarePair - Automotive Service Management Dashboard",
+    title: "NintyNine - Automotive Service Management Dashboard",
     description:
       "Professional automotive service management system for streamlining vehicle repairs and customer service.",
     type: "website",
     locale: "en_US",
-    siteName: "CarePair",
+    siteName: "NintyNine",
   },
   twitter: {
     card: "summary_large_image",
-    title: "CarePair - Automotive Service Management",
+    title: "NintyNine - Automotive Service Management",
     description:
       "Professional automotive service management system for vehicle repairs and customer service.",
   },
@@ -87,7 +87,7 @@ export default function RootLayout({
               >
                 <img
                   src="/logo.jpg"
-                  alt="Carepair Logo"
+                  alt="NintyNine Logo"
                   className="h-16 w-auto rounded-full"
                 />
               </Link>

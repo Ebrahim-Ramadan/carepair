@@ -2,6 +2,12 @@ import { Suspense } from "react"
 import { HRDepartmentClient } from "@/components/hr-department-client"
 import { Spinner } from "@/components/ui/spinner"
 import clientPromise from "@/lib/mongodb"
+import { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "HR Department | NintyNine",
+  description: "Manage HR operations and employee data with NintyNine",
+}
 
 interface PageProps {
   searchParams: { page?: string }

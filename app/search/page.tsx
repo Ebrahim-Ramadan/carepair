@@ -3,8 +3,8 @@ import { SearchClient } from "@/components/search-client"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Search | CarePair",
-  description: "Search and manage tickets with ease using CarePair",
+  title: "Search | NintyNine",
+  description: "Search and manage tickets with ease using NintyNine",
 }
 export default function SearchPage() {
   return (

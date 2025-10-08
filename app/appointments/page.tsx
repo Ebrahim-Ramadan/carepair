@@ -5,8 +5,8 @@ import { Metadata } from "next"
 import { headers } from 'next/headers'
 
 export const metadata: Metadata = {
-  title: "Appointments | CarePair",
-  description: "Manage and schedule appointments with ease using CarePair",
+  title: "Appointments | NintyNine",
+  description: "Manage and schedule appointments with ease using NintyNine",
 }
 type SearchParams = {
   page?: string

@@ -1,7 +1,11 @@
 import { cookies } from "next/headers"
 import { UsersClient } from "./UsersClient"
-import { AccountMenu } from "./AccountMenu"
+import { Metadata } from "next"
 
+export const metadata: Metadata = {
+  title: "User Management | NintyNine",
+  description: "Search and manage users with ease using NintyNine",
+}
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL
 
 export default function UsersPage() {

@@ -3,7 +3,7 @@ import { ServicesClient } from "@/components/inventory/services-client"
 import clientPromise from "@/lib/mongodb"
 
 export const metadata: Metadata = {
-  title: "Services Management | CarePair",
+  title: "Services Management | NintyNine",
   description: "Manage workshop services and pricing",
 }
 

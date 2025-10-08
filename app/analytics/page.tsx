@@ -3,8 +3,8 @@ import { AnalyticsClient } from "@/components/analytics-client"
 import { getAnalyticsData } from "@/lib/analytics"
 
 export const metadata: Metadata = {
-  title: "Analytics | CarePair",
-  description: "Business analytics and insights for CarePair operations",
+  title: "Analytics | NintyNine",
+  description: "Business analytics and insights for NintyNine operations",
 }
 
 export default async function AnalyticsPage({

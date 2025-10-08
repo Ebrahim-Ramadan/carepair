@@ -18,15 +18,18 @@ async function AppointmentsData({ searchParams }: { searchParams: SearchParams }
   const sortBy = searchParams.sortBy || "latest"
   
   try {
-    // Use relative URL instead of NEXT_PUBLIC_NEXTAUTH_URL
-    const apiUrl = `/api/appointments?page=${page}&sortBy=${sortBy}&limit=10`
-    console.log('Fetching from:', apiUrl)
-    
+    // Build a stable URL for undici/Node fetch: prefer absolute URL when host present.
     const headersList = headers()
     const host = headersList.get('host')
-    console.log('Current host:', host)
 
-    const response = await fetch(`${process.env.NODE_ENV === 'development' ? `http://${host}` : ''}/api/appointments?page=${page}&sortBy=${sortBy}&limit=10`, {
+    const forwardedProto = headersList.get('x-forwarded-proto')
+    const inferredProto = forwardedProto || (host && (host.includes('localhost') || process.env.NODE_ENV === 'development') ? 'http' : 'https')
+
+    const base = host ? `${inferredProto}://${host}` : ''
+    const apiUrl = `${base}/api/appointments?page=${page}&sortBy=${sortBy}&limit=10`
+    if (process.env.NODE_ENV !== 'production') console.log('Fetching from:', apiUrl)
+
+    const response = await fetch(apiUrl, {
       cache: 'no-store',
       headers: {
         'Accept': 'application/json',

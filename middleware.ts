@@ -37,6 +37,8 @@ export function middleware(request: NextRequest) {
   if (!cookieHeader) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = "/login"
+    // preserve originally requested path + query so app can redirect back after login
+    loginUrl.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search)
     return NextResponse.redirect(loginUrl)
   }
 
@@ -44,6 +46,7 @@ export function middleware(request: NextRequest) {
   if (!session) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = "/login"
+    loginUrl.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search)
     return NextResponse.redirect(loginUrl)
   }
 
@@ -54,6 +57,7 @@ export function middleware(request: NextRequest) {
   } catch {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = "/login"
+    loginUrl.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search)
     return NextResponse.redirect(loginUrl)
   }
 }

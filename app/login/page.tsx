@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import {  useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,7 +13,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
+const searchParams = useSearchParams();
+  // get "next" param (fallback to "/")
+  const nextParam = (() => {
+    try {
+      const n = searchParams?.get("next") ?? "/"
+      // basic safety: only allow internal paths
+      return n && n.startsWith("/") ? n : "/"
+    } catch {
+      return "/"
+    }
+  })()
+
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -26,7 +37,9 @@ export default function LoginPage() {
     setLoading(false)
 
     if (res.ok) {
-      window.location.href = "/"
+      console.log('ass');
+      
+      window.location.href = nextParam
     } else {
       toast.error("Invalid credentials")
     }

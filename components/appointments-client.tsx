@@ -319,7 +319,7 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
 
                       return (
                         <tr key={appointment._id} className="border-b border-border last:border-0">
-                          <td className="px-2 md:px-4 py-1.5 md:py-3">
+                          <td className="px-2 md:px-4 py-1.5 md:py-3 text-base">
                             {appointment.customer.firstName} {appointment.customer.lastName}
                           </td>
                           <td className="px-2 md:px-4 py-1.5 md:py-3">
@@ -355,10 +355,10 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
                             </div>
                           </td>
                           <td className="px-2 md:px-4 py-1.5 md:py-3">
-                            <div className="text-xs">
+                            <div className="text-sm">
                               {appointment.service.type}
                               {appointment.service.time && (
-                                <div className="text-muted-foreground mt-1">
+                                <div className="text-neutral-500 text-[10px] mt-1">
                                   {formatDate(appointment.service.date)} at {appointment.service.time}
                                 </div>
                               )}

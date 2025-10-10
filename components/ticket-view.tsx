@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { ListOrdered, Plus, X, Trash2, Receipt } from "lucide-react"
 import { File } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
+import { Textarea } from "@/components/ui/textarea"
 import LazyLoad from "./ui/lazyload"
 
 type TicketViewProps = {
@@ -32,6 +33,9 @@ export function TicketView({
   onScrollToServices,
 }: TicketViewProps) {
   const [isExportingPdf, setIsExportingPdf] = useState(false)
+  const [noteValue, setNoteValue] = useState(ticket.notes || "")
+  const [notesavingloading, setnotesavingloading] = useState(false)
+  const [originalNote] = useState(ticket.notes || "")
 
   const handleConditionUpdate = async (points: DamagePoint[]) => {
     try {
@@ -90,6 +94,11 @@ export function TicketView({
       })
     }
   }, [ticket._id, ticket.totalAmount, totalAmount])
+
+  // Update note value when ticket changes
+  useEffect(() => {
+    setNoteValue(ticket.notes || "")
+  }, [ticket.notes])
 
     // Replace the existing handleExportPDF with the updated implementation
     async function handleExportPDF() {
@@ -243,6 +252,17 @@ export function TicketView({
         doc.rect(pageWidth - boxWidth - 14, signatureY, boxWidth, boxHeight)
         doc.text("Company Signature", pageWidth - 14 - boxWidth/2, signatureY + boxHeight + 6, { align: "center" })
 
+        // Add notes if they exist
+        if (ticket.notes) {
+          doc.setFontSize(10)
+          doc.setFont("helvetica", "bold")
+          doc.text("Notes:", 14, signatureY + boxHeight + 20)
+          doc.setFont("helvetica", "normal")
+          doc.text(ticket.notes, 14, signatureY + boxHeight + 30, {
+            maxWidth: pageWidth - 28
+          })
+        }
+
         const filename = `ticket-${String(ticket._id ?? "export")}.pdf`
         doc.save(filename)
         toast.success("Exported ticket to PDF")
@@ -347,6 +367,61 @@ export function TicketView({
           />
         </div>
       </LazyLoad>
+
+      {/* Notes Section */}
+      <div className="rounded-lg border border-border bg-card p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-foreground">Notes</h3>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              // Check if notes are empty or unchanged
+              if (!noteValue.trim()) {
+                toast.error("Notes cannot be empty");
+                return;
+              }
+              if (noteValue.trim() === originalNote.trim()) {
+                toast.error("No changes to save");
+                return;
+              }
+
+              setnotesavingloading(true);
+              try {
+                const response = await fetch(`/api/tickets/${ticket._id}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ notes: noteValue.trim() }),
+                });
+
+                if (!response.ok) throw new Error("Failed to update notes");
+
+                const updatedTicket = await response.json();
+                onUpdate?.(updatedTicket);
+                toast.success("Notes saved successfully!");
+              } catch (error) {
+                console.error("Error updating notes:", error);
+                toast.error("Failed to save notes. Please try again.");
+              }
+              setnotesavingloading(false);
+            }}
+            // Disable button if notes are empty or unchanged
+            disabled={notesavingloading || !noteValue.trim() || noteValue.trim() === originalNote.trim()}
+          >
+            {notesavingloading ? (
+              <Spinner size="sm" className="" />
+            ) : (
+             "Save Notes"
+            )}
+          </Button>
+        </div>
+        <Textarea
+          placeholder="Add any additional notes here..."
+          className="min-h-[120px] mb-2"
+          value={noteValue}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNoteValue(e.target.value)}
+        />
+      </div>
     </div>
   )
 }

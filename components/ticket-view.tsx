@@ -138,7 +138,7 @@ export function TicketView({
         // Company Name
         doc.setFontSize(28)
         doc.setFont("helvetica", "bold")
-        doc.text("CAREPAIR", pageWidth / 2, 80, { align: "center" })
+        doc.text("NintyNine", pageWidth / 2, 80, { align: "center" })
         
         // doc.setFontSize(16)
         // doc.setFont("helvetica", "normal")
@@ -256,9 +256,9 @@ export function TicketView({
         if (ticket.notes) {
           doc.setFontSize(10)
           doc.setFont("helvetica", "bold")
-          doc.text("Notes:", 14, signatureY + boxHeight + 20)
+          doc.text("Notes:", 14, finalY + 25)
           doc.setFont("helvetica", "normal")
-          doc.text(ticket.notes, 14, signatureY + boxHeight + 30, {
+          doc.text(ticket.notes, 14, finalY + 35, {
             maxWidth: pageWidth - 28
           })
         }

@@ -106,7 +106,7 @@ export function ExpensesClient() {
             <TableRow key={expense._id}>
               <TableCell>{expense.name}</TableCell>
               <TableCell>{expense.quantity}</TableCell>
-              <TableCell>${expense.cost.toFixed(2)}</TableCell>
+              <TableCell>KWD{expense.cost.toFixed(2)}</TableCell>
               <TableCell>{expense.note}</TableCell>
               <TableCell>
                 <div className="flex gap-2">

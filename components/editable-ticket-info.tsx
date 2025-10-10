@@ -4,28 +4,10 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { MultiSelect } from "@/components/ui/multi-select"
 import { Edit, Save, X, User, Phone, Mail, Gauge, Car, MessageCircle } from "lucide-react"
 import { toast } from "sonner"
 import type { Ticket } from "@/lib/types"
 
-const REPAIR_PARTS = [
-  "Front Bumper",
-  "Rear Bumper", 
-  "Left Door",
-  "Right Door",
-  "Hood",
-  "Trunk",
-  "Left Fender",
-  "Right Fender",
-  "Front Windshield",
-  "Rear Windshield",
-  "Side Mirror",
-  "Headlight",
-  "Taillight",
-  "Grille",
-  "Side Panel"
-]
 
 type EditableTicketInfoProps = {
   ticket: Ticket

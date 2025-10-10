@@ -11,7 +11,6 @@ import { ListOrdered, Plus, X, Trash2, Receipt } from "lucide-react"
 import { File } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
 import LazyLoad from "./ui/lazyload"
-import { useEffect as useEff } from "react"
 
 type TicketViewProps = {
   ticket: Ticket
@@ -104,12 +103,48 @@ export function TicketView({
         const autoTable = (autoTableModule as any).default ?? autoTableModule
 
         const doc = new JsPDFClass()
+        const pageWidth = doc.internal.pageSize.getWidth()
+
+        // Add logo image
+        try {
+          await new Promise((resolve, reject) => {
+            const logoImg = new Image()
+            logoImg.onload = () => {
+              try {
+                // Company Logo and Name
+                doc.addImage(logoImg, 'PNG', pageWidth / 2 - 25, 15, 50, 50)
+                resolve(null)
+              } catch (e) {
+                reject(e)
+              }
+            }
+            logoImg.onerror = reject
+            logoImg.src = '/logo.jpg'
+          })
+        } catch (error) {
+          console.error('Failed to load logo:', error)
+          // Continue without logo if it fails to load
+        }
+        
+        // Company Name
+        doc.setFontSize(28)
+        doc.setFont("helvetica", "bold")
+        doc.text("CAREPAIR", pageWidth / 2, 80, { align: "center" })
+        
+        // doc.setFontSize(16)
+        // doc.setFont("helvetica", "normal")
+        // doc.text("Auto Service Center", pageWidth / 2, 90, { align: "center" })
+        
+        // Decorative line
+        doc.setDrawColor(2, 119, 189) // #0277BD
+        doc.setLineWidth(0.5)
+        doc.line(14, 100, pageWidth - 14, 100)
 
         // Title
         doc.setFontSize(16)
-        doc.text(`Ticket ${String(ticket._id ?? "")}`, 14, 16)
+        doc.text(`Ticket ${String(ticket._id ?? "")}`, 14, 115)
 
-        // Ticket meta — align with provided Ticket type (customerName, plateNumber, etc.)
+        // Ticket meta
         doc.setFontSize(10)
         const meta = [
           ["Ticket ID", String(ticket._id ?? "")],
@@ -121,7 +156,7 @@ export function TicketView({
         // Render meta table (plain) — ensure autoTable call shape is correct
         if (typeof autoTable === "function") {
           autoTable(doc, {
-            startY: 22,
+            startY: 120,
             theme: "plain",
             body: meta,
             styles: { fontSize: 10 }
@@ -190,6 +225,23 @@ export function TicketView({
         const finalY = (doc as any).lastAutoTable?.finalY ?? servicesStartY + 40
         doc.setFontSize(12)
         doc.text(`Total: ${Number(totalAmount).toFixed(3)} KWD`, 14, finalY + 12)
+
+        // Add signature boxes - set to gray color and move further down
+        const signatureY = finalY + 80 // Increased from 50 to 80
+        const boxWidth = 60
+        const boxHeight = 15
+        
+        // Set gray color for signature boxes
+        doc.setDrawColor(128, 128, 128) // RGB for gray
+        
+        // Customer Signature Box
+        doc.rect(14, signatureY, boxWidth, boxHeight)
+        doc.setFontSize(8)
+        doc.text("Customer Signature", 14 + boxWidth/2, signatureY + boxHeight + 6, { align: "center" })
+        
+        // Company Signature Box
+        doc.rect(pageWidth - boxWidth - 14, signatureY, boxWidth, boxHeight)
+        doc.text("Company Signature", pageWidth - 14 - boxWidth/2, signatureY + boxHeight + 6, { align: "center" })
 
         const filename = `ticket-${String(ticket._id ?? "export")}.pdf`
         doc.save(filename)

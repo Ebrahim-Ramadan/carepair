@@ -87,7 +87,7 @@ export default function RootLayout({
                 <img
                   src="/logo.jpg"
                   alt="NintyNine Logo"
-                  className="h-20 w-auto rounded-full"
+                  className="h-12 md:h-28 w-auto rounded-full"
                 />
               </Link>
               <div className="flex justify-end">

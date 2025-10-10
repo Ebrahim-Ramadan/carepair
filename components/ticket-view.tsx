@@ -121,7 +121,7 @@ export function TicketView({
             logoImg.onload = () => {
               try {
                 // Company Logo and Name
-                doc.addImage(logoImg, 'PNG', pageWidth / 2 - 25, 15, 50, 50)
+                doc.addImage(logoImg, 'PNG', pageWidth / 2 - 20, 15, 40, 40)
                 resolve(null)
               } catch (e) {
                 reject(e)
@@ -138,20 +138,16 @@ export function TicketView({
         // Company Name
         doc.setFontSize(28)
         doc.setFont("helvetica", "bold")
-        doc.text("NintyNine", pageWidth / 2, 80, { align: "center" })
-        
-        // doc.setFontSize(16)
-        // doc.setFont("helvetica", "normal")
-        // doc.text("Auto Service Center", pageWidth / 2, 90, { align: "center" })
+        doc.text("NintyNine", pageWidth / 2, 65, { align: "center" })
         
         // Decorative line
         doc.setDrawColor(2, 119, 189) // #0277BD
         doc.setLineWidth(0.5)
-        doc.line(14, 100, pageWidth - 14, 100)
+        doc.line(14, 75, pageWidth - 14, 75)
 
         // Title
         doc.setFontSize(16)
-        doc.text(`Ticket ${String(ticket._id ?? "")}`, 14, 115)
+        doc.text(`Ticket ${String(ticket._id ?? "")}`, 14, 90)
 
         // Ticket meta
         doc.setFontSize(10)
@@ -165,7 +161,7 @@ export function TicketView({
         // Render meta table (plain) — ensure autoTable call shape is correct
         if (typeof autoTable === "function") {
           autoTable(doc, {
-            startY: 120,
+            startY: 95,
             theme: "plain",
             body: meta,
             styles: { fontSize: 10 }
@@ -230,13 +226,32 @@ export function TicketView({
           throw new Error("autoTable is not available in the imported module")
         }
 
-        // Total at bottom
+        // Final Y after services table
         const finalY = (doc as any).lastAutoTable?.finalY ?? servicesStartY + 40
-        doc.setFontSize(12)
-        doc.text(`Total: ${Number(totalAmount).toFixed(3)} KWD`, 14, finalY + 12)
 
-        // Add signature boxes - set to gray color and move further down
-        const signatureY = finalY + 80 // Increased from 50 to 80
+        // Add notes if they exist
+        if (ticket.notes) {
+          doc.setFontSize(10)
+          doc.setFont("helvetica", "bold")
+          doc.text("Notes:", 14, finalY + 12)
+          doc.setFont("helvetica", "normal")
+          doc.text(ticket.notes, 14, finalY + 22, {
+            maxWidth: pageWidth - 28
+          })
+          
+          // Add total right after notes
+          doc.setFontSize(12)
+          doc.text(`Total: ${Number(totalAmount).toFixed(3)} KWD`, 14, finalY + 35)
+        } else {
+          // If no notes, add total directly
+          doc.setFontSize(12)
+          doc.text(`Total: ${Number(totalAmount).toFixed(3)} KWD`, 14, finalY + 12)
+        }
+
+        // Add signature boxes at the bottom of the page
+        const pageHeight = doc.internal.pageSize.getHeight()
+        const marginFromBottom = 30 // Space from bottom of page
+        const signatureY = pageHeight - marginFromBottom // Position boxes from bottom
         const boxWidth = 60
         const boxHeight = 15
         
@@ -251,17 +266,6 @@ export function TicketView({
         // Company Signature Box
         doc.rect(pageWidth - boxWidth - 14, signatureY, boxWidth, boxHeight)
         doc.text("Company Signature", pageWidth - 14 - boxWidth/2, signatureY + boxHeight + 6, { align: "center" })
-
-        // Add notes if they exist
-        if (ticket.notes) {
-          doc.setFontSize(10)
-          doc.setFont("helvetica", "bold")
-          doc.text("Notes:", 14, finalY + 25)
-          doc.setFont("helvetica", "normal")
-          doc.text(ticket.notes, 14, finalY + 35, {
-            maxWidth: pageWidth - 28
-          })
-        }
 
         const filename = `ticket-${String(ticket._id ?? "export")}.pdf`
         doc.save(filename)

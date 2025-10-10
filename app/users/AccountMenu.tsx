@@ -17,8 +17,8 @@ export function AccountMenu({ email }: { email: string }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="flex items-center gap-2 text-white">
-          <User size={18} />
+        <Button variant="ghost" className="flex items-center text-base gap-2 text-white">
+          <User size={20} />
           <span className="font-medium">{email =="admin@carepair.com"?"Admin Fahd":email}</span>
         </Button>
       </DropdownMenuTrigger>

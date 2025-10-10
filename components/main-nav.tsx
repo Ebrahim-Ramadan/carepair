@@ -14,16 +14,17 @@ export function MainNav({ isAdmin }: MainNavProps) {
   const pathname = usePathname()
 
   const routes = [
-    { href: "/analytics", label: "Sales" },
+    { href: "/services", label: "Services" },
     { href: "/", label: "Tickets" },
     { href: "/customers", label: "Customers" },
     { href: "/appointments", label: "Appointments" },
     ...(isAdmin ? [
       { href: "/users", label: "Management" },
       {
-        label: "Inventory",
+        label: "Financial",
         children: [
-          { href: "/inventory/services", label: "Services" },
+          { href: "/inventory/expenses", label: "Expenses" },
+          { href: "/inventory/analytics", label: "Sales" },
           { href: "/inventory/products", label: "Products" }
         ]
       },

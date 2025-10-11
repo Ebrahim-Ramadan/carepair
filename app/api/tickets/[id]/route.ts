@@ -10,6 +10,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const ticket = await db.collection("tickets").findOne({ _id: new ObjectId(params.id) })
 
     if (!ticket) {
+      console.log('asssss');
+      
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 })
     }
 

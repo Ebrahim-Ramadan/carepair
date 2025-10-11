@@ -11,6 +11,8 @@ import { Pencil, Plus, Search, Trash2 } from "lucide-react"
 import { ServiceDialog } from "./service-dialog"
 import { toast } from "sonner"
 
+type ServiceCategory = 'protection' | 'tinting' | 'painting' | 'detailing' | 'repair'
+
 type Service = {
   _id: string
   id: string
@@ -19,7 +21,7 @@ type Service = {
   // descriptionEn: string
   // descriptionAr: string
   price: number
-  category: string
+  category: ServiceCategory
 }
 
 type ServicesClientProps = {
@@ -32,12 +34,19 @@ export function ServicesClient({ initialServices }: ServicesClientProps) {
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | 'all'>('all')
 
-  const filteredServices = services.filter(service => 
-    service.nameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    service.nameAr.includes(searchQuery) ||
-    service.category.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+
+  const filteredServices = services.filter(service => {
+    const matchesSearch = 
+      service.nameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      service.nameAr.includes(searchQuery) ||
+      service.category.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    const matchesCategory = selectedCategory === 'all' || service.category === selectedCategory
+    
+    return matchesSearch && matchesCategory
+  })
 
   const handleCreateService = async (serviceData: Partial<Service>) => {
     setIsLoading(true)
@@ -163,7 +172,7 @@ export function ServicesClient({ initialServices }: ServicesClientProps) {
               <TableRow key={service._id}>
                 <TableCell>{service.nameEn}</TableCell>
                 <TableCell className="font-arabic">{service.nameAr}</TableCell>
-                <TableCell>{service.category}</TableCell>
+                <TableCell className="capitalize">{service.category}</TableCell>
                 <TableCell>{service.price} KWD</TableCell>
                 <TableCell className="text-right">
                   <Button

@@ -9,6 +9,8 @@ export async function POST(
 ) {
   try {
     const body = await request.json()
+    console.log('body ass', body);
+    
     const client = await clientPromise
     const db = client.db("car_repair")
     
@@ -30,7 +32,6 @@ export async function POST(
         $push: { 
           services: {
             ...body,
-            addedAt: new Date(body.addedAt)
           }
         },
         // Update total amount with the new service's final price

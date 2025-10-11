@@ -91,11 +91,19 @@ export function ServiceDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Category</label>
-                <Input
+                <select
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                   required
                   value={form.category}
                   onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-                />
+                >
+                  <option value="">Select category</option>
+                  <option value="protection">Protection</option>
+                  <option value="tinting">Tinting</option>
+                  <option value="painting">Painting</option>
+                  <option value="detailing">Detailing</option>
+                  <option value="repair">Repair</option>
+                </select>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Price (KWD)</label>

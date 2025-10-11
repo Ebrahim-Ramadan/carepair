@@ -127,6 +127,23 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
 
       setIsLoadingTicket(true)
       const res = await fetch(`/api/tickets/${maybeTicket._id}`, { cache: 'no-store' })
+      console.log('res', res);
+      
+      if (res.status === 404) {
+        console.log('ass');
+        
+        toast.error('Ticket not found. It may have been deleted.')
+        // Remove ticket from the list if it's not found
+        setTickets(tickets.filter(t => t._id !== maybeTicket._id))
+        setSelectedTicket(null)
+        // Update URL to remove the ticket ID
+        const url = new URL(window.location.href)
+        url.searchParams.delete("ticketId")
+        url.hash = ''
+        router.replace(url.toString())
+        return
+      }
+      
       if (!res.ok) throw new Error('Failed to fetch ticket')
       const full = await res.json()
       setSelectedTicket(full)
@@ -139,6 +156,7 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
         })
       }
     } catch (e) {
+      console.error('ass:', e)
       console.error(e)
     } finally {
       setIsLoadingTicket(false)
@@ -166,8 +184,8 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
           category: service.category,
           descriptionEn: service.descriptionEn,
           descriptionAr: service.descriptionAr,
-          estimatedHours: service.estimatedHours,
           addedAt: new Date().toISOString(),
+          isCustom: service.isCustom || false,
           // Add discount information
           discountType: service.discountType,
           discountValue: service.discountValue,

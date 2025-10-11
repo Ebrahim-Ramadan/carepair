@@ -72,8 +72,8 @@ export type Service = {
   descriptionAr: string
   price: number | string
   category: string
-  estimatedHours: number
-}
+  isCustom?: boolean
+} 
 
 export type DiscountType = 'percentage' | 'amount'
 

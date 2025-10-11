@@ -14,7 +14,7 @@ export function MainNav({ isAdmin }: MainNavProps) {
   const pathname = usePathname()
 
   const routes = [
-    { href: "/services", label: "Services" },
+    { href: "/inventory/services", label: "Services" },
     { href: "/", label: "Tickets" },
     { href: "/customers", label: "Customers" },
     { href: "/appointments", label: "Appointments" },

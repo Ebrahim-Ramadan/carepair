@@ -7,7 +7,8 @@ import { EditableTicketInfo } from "@/components/editable-ticket-info"
 import { toast } from "sonner"
 import type { Ticket, DamagePoint, Photo } from "@/lib/types"
 import { Button } from "@/components/ui/button"
-import { ListOrdered, Plus, X, Trash2, Receipt } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import {  Plus, X, Trash2, Receipt } from "lucide-react"
 import { File } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
@@ -441,7 +442,14 @@ function ServiceCard({ service, onRemove, isDeleting }: ServiceCardProps) {
     <div className="border rounded-md p-3">
       <div className="flex [&>*]:w-full justify-between items-start flex-col md:flex-row w-full">
         <div>
-          <h4 className="font-medium">{service.serviceName}</h4>
+          <div className="flex items-center gap-2">
+            <h4 className="font-medium">{service.serviceName}</h4>
+            {service.isCustom && (
+              <Badge variant="outline" className="text-xs">
+                Custom
+              </Badge>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">{service.serviceNameAr}</p>
         </div>
         <div className="flex items-center gap-4 justify-end">
@@ -449,7 +457,7 @@ function ServiceCard({ service, onRemove, isDeleting }: ServiceCardProps) {
             {service.discountValue ? (
               <>
                 <div className="line-through text-sm text-muted-foreground">
-                  {service.price} KD
+                  {service.originalPrice || service.price} KD
                 </div>
                 <div className="text-sm font-medium text-green-600">
                   {service.finalPrice} KD
@@ -463,7 +471,7 @@ function ServiceCard({ service, onRemove, isDeleting }: ServiceCardProps) {
               </>
             ) : (
               <div className="text-sm font-medium">
-                {service.price} KD
+                {service.finalPrice || service.price} KD
               </div>
             )}
           </div>

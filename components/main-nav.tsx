@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Search } from "lucide-react"
 
 type MainNavProps = {
   isAdmin: boolean
@@ -29,7 +29,7 @@ export function MainNav({ isAdmin }: MainNavProps) {
         ]
       },
       { href: "/HRDepartment", label: "HR" },
-    { href: "/search", label: "Search" },
+    { href: "/search", label: <Search/> },
 
     ] : [])
   ]

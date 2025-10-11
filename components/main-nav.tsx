@@ -36,7 +36,7 @@ export function MainNav({ isAdmin }: MainNavProps) {
 
   return (
     <nav
-      className="flex w-full overflow-x-auto gap-1 sm:w-auto sm:overflow-visible scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent text-white"
+      className="flex w-full overflow-x-auto gap-1 lg:justify-center scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent text-white"
       style={{ WebkitOverflowScrolling: "touch" }}
     >
       {routes.map(route => {

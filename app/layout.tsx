@@ -78,25 +78,45 @@ export default function RootLayout({
       >
         <header className="border-b border-border bg-[#002540]">
           <div className="mx-auto py-3 px-2">
-            {/* Logo and account menu */}
-            <div className="flex flex-row items-center justify-between mb-2">
+            {/* Mobile Layout (flex-col) */}
+            <div className="flex flex-col lg:hidden">
+              <div className="flex flex-row items-center justify-between mb-2">
+                <Link
+                  href="/"
+                  className="flex flex-row items-center text-base font-semibold text-foreground sm:text-lg"
+                >
+                  <img
+                    src="/logo.jpg"
+                    alt="NintyNine Logo"
+                    className="h-12 w-auto rounded-full"
+                  />
+                </Link>
+                <div className="flex justify-end">
+                  {currentUser && <AccountMenu email={currentUser} />}
+                </div>
+              </div>
+              <MainNav isAdmin={isAdmin} />
+            </div>
+
+            {/* Desktop Layout (single row) */}
+            <div className="hidden lg:flex lg:flex-row lg:items-center lg:justify-between lg:gap-4">
               <Link
                 href="/"
-                className="flex flex-row items-center text-base font-semibold text-foreground sm:text-lg"
+                className="flex flex-row items-center text-base font-semibold text-foreground"
               >
                 <img
                   src="/logo.jpg"
                   alt="NintyNine Logo"
-                  className="h-12 md:h-28 w-auto rounded-full"
+                  className="h-14 w-auto rounded-full"
                 />
               </Link>
-              <div className="flex justify-end">
+              <div className="flex-1">
+                <MainNav isAdmin={isAdmin} />
+              </div>
+              <div>
                 {currentUser && <AccountMenu email={currentUser} />}
               </div>
             </div>
-
-            {/* Navigation */}
-            <MainNav isAdmin={isAdmin} />
           </div>
         </header>
         <main className="w-full pb-12">{children}</main>

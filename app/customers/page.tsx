@@ -20,10 +20,14 @@ async function CustomersData({ searchParams }: { searchParams: SearchParams }) {
   const sortBy = searchParams?.sortBy || 'latest'
 
   try {
+    // Build a stable URL for undici/Node fetch: prefer absolute URL when host present.
     const headersList = headers()
     const host = headersList.get('host')
 
-    const base = process.env.NODE_ENV === 'development' && host ? `http://${host}` : ''
+    const forwardedProto = headersList.get('x-forwarded-proto')
+    const inferredProto = forwardedProto || (host && (host.includes('localhost') || process.env.NODE_ENV === 'development') ? 'http' : 'https')
+
+    const base = host ? `${inferredProto}://${host}` : ''
     const url = `${base}/api/customers?page=${page}&sortBy=${sortBy}&limit=10`
 
     if (process.env.NODE_ENV !== 'production') console.log('Fetching customers from:', url)

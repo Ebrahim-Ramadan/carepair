@@ -180,6 +180,7 @@ export function TicketView({
 
         // Services table headers and body must have matching column counts
         const headers = [
+          "#",
           "Service ID",
           "Name (EN)",
           "Category",
@@ -191,7 +192,8 @@ export function TicketView({
         ]
 
         const services = ticket.services ?? []
-        const servicesBody = services.map((s) => [
+        const servicesBody = services.map((s, idx) => [
+          String(idx + 1),
           String(s.serviceId ?? ""),
           String(s.serviceName ?? ""),
           String(s.category ?? ""),

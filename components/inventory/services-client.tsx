@@ -3,10 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { 
-  Table, TableBody, TableCell, TableHead, 
-  TableHeader, TableRow 
-} from "@/components/ui/table"
+// Render services grouped by category instead of a flat table
 import { Pencil, Plus, Search, Trash2 } from "lucide-react"
 import { ServiceDialog } from "./service-dialog"
 import { toast } from "sonner"
@@ -156,47 +153,89 @@ export function ServicesClient({ initialServices }: ServicesClientProps) {
         </div>
       </div>
 
-      <div className="rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name (EN)</TableHead>
-              <TableHead>Name (AR)</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredServices.map(service => (
-              <TableRow key={service._id}>
-                <TableCell>{service.nameEn}</TableCell>
-                <TableCell className="font-arabic">{service.nameAr}</TableCell>
-                <TableCell className="capitalize">{service.category}</TableCell>
-                <TableCell>{service.price} KWD</TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditingService(service)}
-                    disabled={isLoading}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteService(service._id)}
-                    disabled={isLoading}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      <div className="space-y-6">
+        {/* Build a list of categories from the filtered services */}
+        {(() => {
+          // Fixed ordered categories (from the type definition)
+          const orderedCategories: ServiceCategory[] = [
+            'protection',
+            'tanting',
+            'painting',
+            'detailing',
+            'repair'
+          ]
+
+          // Map of category -> Tailwind bg class to visually specialize each section
+          const categoryBg: Record<ServiceCategory, string> = {
+            protection: 'bg-green-50',
+            tanting: 'bg-yellow-50',
+            painting: 'bg-red-50',
+            detailing: 'bg-blue-50',
+            repair: 'bg-gray-50'
+          }
+
+          const categoriesToShow = selectedCategory === 'all' ? orderedCategories : [selectedCategory as ServiceCategory]
+
+          return categoriesToShow.map((category) => {
+            const categoryServices = filteredServices.filter(s => s.category === category)
+
+            return (
+              <section key={category} className={`rounded-lg border p-4 ${categoryBg[category]}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold capitalize">{category}</h3>
+                  <span className="text-sm text-muted-foreground">{categoryServices.length} items</span>
+                </div>
+
+                {categoryServices.length === 0 ? (
+                  <div className="p-6 rounded-md border border-dashed text-center text-sm text-muted-foreground">
+                    No services in this category
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {categoryServices.map((service, idx) => (
+                      <div key={service._id} className="border rounded-md p-3 flex flex-col justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className="text-muted-foreground font-medium w-6 text-right">{idx + 1}.</div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="font-medium">{service.nameEn}</h4>
+                                <p className="text-sm text-muted-foreground font-arabic">{service.nameAr}</p>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-sm font-medium">{service.price} KWD</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingService(service)}
+                            disabled={isLoading}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteService(service._id)}
+                            disabled={isLoading}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )
+          })
+        })()}
       </div>
     </div>
   )

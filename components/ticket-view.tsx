@@ -473,7 +473,7 @@ function ServiceCard({ service, onRemove, isDeleting }: ServiceCardProps) {
       <div className="flex [&>*]:w-full justify-between items-start flex-col md:flex-row w-full">
         <div>
           <div className="flex items-center gap-2">
-            <h4 className="font-medium">{service.serviceName}</h4>
+            <h4 className="font-medium text-lg capitalize">{service.serviceName}</h4>
             {service.isCustom && (
               <p className="rounded-full px-2 py-1 text-white text-xs bg-[#002540]">
                 Custom

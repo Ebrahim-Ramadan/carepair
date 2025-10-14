@@ -119,7 +119,7 @@ export function ServiceDialog({
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const response = await fetch('/api/services')
+        const response = await fetch('/api/services', {cache: 'no-store'})
         if (!response.ok) throw new Error('Failed to fetch services')
         const data = await response.json()
         setServices(data)

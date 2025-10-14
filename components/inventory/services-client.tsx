@@ -11,7 +11,7 @@ import { Pencil, Plus, Search, Trash2 } from "lucide-react"
 import { ServiceDialog } from "./service-dialog"
 import { toast } from "sonner"
 
-type ServiceCategory = 'protection' | 'tinting' | 'painting' | 'detailing' | 'repair'
+type ServiceCategory = 'protection' | 'tanting' | 'painting' | 'detailing' | 'repair'
 
 type Service = {
   _id: string

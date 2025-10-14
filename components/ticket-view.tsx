@@ -323,27 +323,55 @@ export function TicketView({
           </div>
         </div>
         {ticket.services && ticket.services.length > 0 ? (
-          <div className="rounded-lg border border-border bg-card">
-            <div className="p-4">
-              <div className="space-y-3">
-                {ticket.services.map((service) => (
-                  <ServiceCard
-                    key={(service as any).serviceId ?? service.serviceName}
-                    service={service as any}
-                    onRemove={() => onRemoveService?.((service as any).serviceId)}
-                    isDeleting={deletingServiceIds.includes((service as any).serviceId)}
-                  />
-                ))}
+          <div className="space-y-6">
+            {/* Services by Category */}
+            {['protection', 'tanting', 'painting', 'detailing', 'repair'].map(category => {
+              const categoryServices = ticket.services?.filter(service => 
+                (service as any).category === category
+              ) || [];
+
+              // Skip empty categories
+              if (categoryServices.length === 0) return null;
+
+              // Category background colors matching services-client.tsx
+              const categoryBg: Record<string, string> = {
+                protection: 'bg-green-50',
+                tanting: 'bg-yellow-50',
+                painting: 'bg-red-50',
+                detailing: 'bg-blue-50',
+                repair: 'bg-gray-50'
+              };
+
+              return (
+                <section key={category} className={`rounded-lg border p-4 ${categoryBg[category]}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold capitalize">{category}</h3>
+                    <span className="text-sm text-muted-foreground">
+                      {categoryServices.length} items
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {categoryServices.map((service) => (
+                      <ServiceCard
+                        key={(service as any).serviceId ?? (service as any).serviceName}
+                        service={service}
+                        onRemove={() => onRemoveService?.((service as any).serviceId)}
+                        isDeleting={deletingServiceIds.includes((service as any).serviceId)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+
+            {/* Total section */}
+            <div className="mt-2 pt-4 border-t border-border flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">Total</span>
               </div>
-              
-              {/* Total section */}
-              <div className="mt-6 pt-4 border-t border-border flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Receipt className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">Total</span>
-                </div>
-                <div className="font-semibold text-lg">{totalAmount} KD</div>
-              </div>
+              <div className="font-semibold text-lg">{totalAmount} KD</div>
             </div>
           </div>
         ) : (
@@ -447,9 +475,9 @@ function ServiceCard({ service, onRemove, isDeleting }: ServiceCardProps) {
           <div className="flex items-center gap-2">
             <h4 className="font-medium">{service.serviceName}</h4>
             {service.isCustom && (
-              <Badge variant="outline" className="text-xs">
+              <p className="rounded-full px-2 py-1 text-white text-xs bg-[#002540]">
                 Custom
-              </Badge>
+              </p>
             )}
           </div>
           <p className="text-sm text-muted-foreground">{service.serviceNameAr}</p>

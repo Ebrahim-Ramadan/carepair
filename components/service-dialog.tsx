@@ -8,7 +8,6 @@ import * as Dialog from "@radix-ui/react-dialog"
 import { Input } from "@/components/ui/input"
 import type { Service } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import type { DiscountType, ServiceWithDiscount } from "@/lib/types"
 import {
@@ -99,7 +98,7 @@ export function ServiceDialog({
       const customService: Service = {
         id: `custom-${Date.now()}`,
         ...data,
-        category: customServiceCategory!,
+        category: customServiceCategory ?? 'protection',
         isCustom: true,
         descriptionEn: "",
         descriptionAr: "",
@@ -440,6 +439,25 @@ export function ServiceDialog({
               <div className="space-y-2">
                 <Label htmlFor="nameAr">Name (Arabic)</Label>
                 <Input id="nameAr" name="nameAr" required dir="rtl" />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Select
+                  value={customServiceCategory ?? 'protection'}
+                  onValueChange={(value) => setCustomServiceCategory(value)}
+                >
+                  <SelectTrigger id="category" className="w-full">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="protection">Protection</SelectItem>
+                    <SelectItem value="tanting">Tanting</SelectItem>
+                    <SelectItem value="painting">Painting</SelectItem>
+                    <SelectItem value="detailing">Detailing</SelectItem>
+                    <SelectItem value="repair">Repair</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">

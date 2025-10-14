@@ -99,7 +99,7 @@ export function ServiceDialog({
                 >
                   <option value="">Select category</option>
                   <option value="protection">Protection</option>
-                  <option value="tinting">Tinting</option>
+                  <option value="tanting">Tanting</option>
                   <option value="painting">Painting</option>
                   <option value="detailing">Detailing</option>
                   <option value="repair">Repair</option>

@@ -279,7 +279,19 @@ export function ProductsClient({
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex flex-col">
                   <span className="text-sm">Category</span>
-                  <input className="border rounded p-2" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+                  <select
+                    className="border rounded p-2"
+                    value={form.category}
+                    onChange={e => setForm({ ...form, category: e.target.value })}
+                  >
+                    <option value="">Select category</option>
+                    <option value="protection">Protection</option>
+                    <option value="tanting">Tanting</option>
+                    <option value="painting">Painting</option>
+                    <option value="detailing">Detailing</option>
+                    <option value="repair">Repair</option>
+                    <option value="other">Other</option>
+                  </select>
                 </label>
                 <label className="flex flex-col">
                   <span className="text-sm">Stock</span>

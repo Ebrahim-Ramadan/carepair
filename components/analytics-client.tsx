@@ -173,7 +173,7 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
       {/* Header with filters */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Business Analytics</h1>
+          <h1 className="text-2xl font-bold text-foreground">Business Sales</h1>
           <p className="text-sm text-muted-foreground">
             Track performance metrics and insights for your repair business
           </p>

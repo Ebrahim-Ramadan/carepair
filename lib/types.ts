@@ -110,6 +110,7 @@ export type Ticket = {
   totalAmount?: number
   createdAt: string
   updatedAt?: string
+  paymentTime?: string
 }
 
 export type TicketSummary = {

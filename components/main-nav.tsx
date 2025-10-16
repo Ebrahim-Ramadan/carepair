@@ -15,7 +15,7 @@ export function MainNav({ isAdmin }: MainNavProps) {
 
   const routes = [
     { href: "/inventory/services", label: "Services" },
-    { href: "/", label: "Tickets" },
+    { href: "/inventory/tickets", label: "Tickets" },
     { href: "/customers", label: "Customers" },
     { href: "/appointments", label: "Appointments" },
     ...(isAdmin ? [
@@ -24,7 +24,7 @@ export function MainNav({ isAdmin }: MainNavProps) {
         label: "Financial",
         children: [
           { href: "/inventory/expenses", label: "Expenses" },
-          { href: "/inventory/analytics", label: "Sales" },
+          { href: "/", label: "Sales" },
           { href: "/inventory/products", label: "Products" }
         ]
       },
@@ -41,13 +41,15 @@ export function MainNav({ isAdmin }: MainNavProps) {
     >
       {routes.map(route => {
         if ('children' in route) {
+          // Highlight parent if any child matches
+          const isActive = route.children.some(child => pathname.startsWith(child.href));
           return (
             <DropdownMenu.Root key={route.label}>
               <DropdownMenu.Trigger asChild>
                 <Button
                   variant="ghost"
                   size="default"
-                  className="min-w-max text-white/90 hover:text-white hover:bg-white/10"
+                  className={`min-w-max ${isActive ? "bg-white/10 text-white" : "text-white/90 hover:text-white hover:bg-white/10"}`}
                 >
                   {route.label}
                   <ChevronDown className="ml-1 h-4 w-4" />

@@ -39,6 +39,9 @@ export function TicketView({
   const [notesavingloading, setnotesavingloading] = useState(false)
   const [originalNote] = useState(ticket.notes || "")
   const [exportLanguageMenuOpen, setExportLanguageMenuOpen] = useState(false)
+  const [paymentTime, setPaymentTime] = useState(ticket.paymentTime ? new Date(ticket.paymentTime).toISOString().slice(0,16) : "")
+  const [paymentMethod, setPaymentMethod] = useState(ticket.paymentMethod || "")
+  const [isPaymentSaving, setIsPaymentSaving] = useState(false)
 
   const handleConditionUpdate = async (points: DamagePoint[]) => {
     try {
@@ -146,7 +149,7 @@ export function TicketView({
       // Company Name
       doc.setFontSize(28)
       doc.setFont("helvetica", "bold")
-      doc.text("NintyNine", pageWidth / 2, 65, { align: "center" })
+      doc.text("Protection", pageWidth / 2, 65, { align: "center" })
 
       // Decorative line
       doc.setDrawColor(2, 119, 189)
@@ -351,12 +354,71 @@ export function TicketView({
               );
             })}
 
-            <div className="mt-2 pt-4 border-t border-border flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <Receipt className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">Total</span>
+            <div className="mt-2 pt-4 border-t border-border flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Total</span>
+                </div>
+                <div className="font-semibold text-lg">{totalAmount} KD</div>
               </div>
-              <div className="font-semibold text-lg">{totalAmount} KD</div>
+              <div className="flex flex-col md:flex-row gap-2 justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-muted-foreground font-medium">Payment Time:</label>
+                  <input
+                    type="datetime-local"
+                    className="border rounded px-2 py-1 text-sm"
+                    value={paymentTime}
+                    onChange={e => setPaymentTime(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-muted-foreground font-medium">Payment Method:</label>
+                  <select
+                    className="border rounded px-2 py-1 text-sm"
+                    value={paymentMethod}
+                    onChange={e => setPaymentMethod(e.target.value)}
+                  >
+                    <option value="">Select</option>
+                    <option value="maifatoora">ماي فاتورة</option>
+                    <option value="knent">knent</option>
+                    <option value="cash">cash</option>
+                    <option value="tabbykib">tabby kib</option>
+                    <option value="other">other</option>
+                  </select>
+                </div>
+                <Button
+                  size="sm"
+                  className="bg-[#002540]"
+                  disabled={isPaymentSaving || (paymentTime === (ticket.paymentTime ? new Date(ticket.paymentTime).toISOString().slice(0,16) : "") && paymentMethod === (ticket.paymentMethod || ""))}
+                  onClick={async () => {
+                    setIsPaymentSaving(true);
+                    try {
+                      const payload: any = {};
+                      if (paymentTime !== (ticket.paymentTime ? new Date(ticket.paymentTime).toISOString().slice(0,16) : "")) {
+                        payload.paymentTime = paymentTime ? new Date(paymentTime).toISOString() : null;
+                      }
+                      if (paymentMethod !== (ticket.paymentMethod || "")) {
+                        payload.paymentMethod = paymentMethod;
+                      }
+                      const response = await fetch(`/api/tickets/${ticket._id}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                      });
+                      if (!response.ok) throw new Error("Failed to update payment info");
+                      const updatedTicket = await response.json();
+                      toast.success("Payment info updated!");
+                      onUpdate?.(updatedTicket);
+                    } catch (error) {
+                      toast.error("Failed to update payment info");
+                    }
+                    setIsPaymentSaving(false);
+                  }}
+                >
+                  {isPaymentSaving ? <Spinner size="sm" /> : "Save"}
+                </Button>
+              </div>
             </div>
           </div>
         ) : (

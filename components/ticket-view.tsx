@@ -38,7 +38,7 @@ export function TicketView({
   const [noteValue, setNoteValue] = useState(ticket.notes || "")
   const [notesavingloading, setnotesavingloading] = useState(false)
   const [originalNote] = useState(ticket.notes || "")
-  const [exportLanguage, setExportLanguage] = useState<"english" | "arabic">("english")
+  const [exportLanguageMenuOpen, setExportLanguageMenuOpen] = useState(false)
 
   const handleConditionUpdate = async (points: DamagePoint[]) => {
     try {
@@ -103,172 +103,159 @@ export function TicketView({
     setNoteValue(ticket.notes || "")
   }, [ticket.notes])
 
-
-
-async function handleExportPDF() {
-  setIsExportingPdf(true)
-  try {
-    const jsPDFModule = await import('jspdf')
-    const autoTableModule = await import('jspdf-autotable')
-
-    const JsPDFClass = (jsPDFModule as any).default ?? jsPDFModule
-    const autoTable = (autoTableModule as any).default ?? autoTableModule
-
-    const doc = new JsPDFClass()
-    const pageWidth = doc.internal.pageSize.getWidth()
-    const isArabic = exportLanguage === "arabic"
-    // Fetch the base64 font data from the public folder
-    const response = await fetch('/fonts/base64.txt');
-    const amiriFontData = await response.text();
-    doc.addFileToVFS('Amiri-Regular.ttf', amiriFontData); 
-    doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
-
-    // Set font
-    doc.setFont(isArabic ? "Amiri" : "helvetica", "normal")
-
-    // Add logo image (placeholder - ensure logo.jpg exists)
+  async function handleExportPDF(language: "english" | "arabic") {
+    setIsExportingPdf(true)
     try {
-      await new Promise((resolve, reject) => {
-        const logoImg = new Image()
-        logoImg.onload = () => {
-          try {
-            doc.addImage(logoImg, 'PNG', pageWidth / 2 - 20, 15, 40, 40)
-            resolve(null)
-          } catch (e) {
-            reject(e)
+      const jsPDFModule = await import('jspdf')
+      const autoTableModule = await import('jspdf-autotable')
+
+      const JsPDFClass = (jsPDFModule as any).default ?? jsPDFModule
+      const autoTable = (autoTableModule as any).default ?? autoTableModule
+
+      const doc = new JsPDFClass()
+      const pageWidth = doc.internal.pageSize.getWidth()
+      const isArabic = language === "arabic"
+      // Fetch the base64 font data from the public folder
+      const response = await fetch('/fonts/base64.txt');
+      const amiriFontData = await response.text();
+      doc.addFileToVFS('Amiri-Regular.ttf', amiriFontData); 
+      doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+
+      // Set font
+      doc.setFont(isArabic ? "Amiri" : "helvetica", "normal")
+
+      // Add logo image (placeholder - ensure logo.jpg exists)
+      try {
+        await new Promise((resolve, reject) => {
+          const logoImg = new Image()
+          logoImg.onload = () => {
+            try {
+              doc.addImage(logoImg, 'PNG', pageWidth / 2 - 20, 15, 40, 40)
+              resolve(null)
+            } catch (e) {
+              reject(e)
+            }
           }
-        }
-        logoImg.onerror = reject
-        logoImg.src = '/logo.jpg'
-      })
-    } catch (error) {
-      console.error('Failed to load logo:', error)
+          logoImg.onerror = reject
+          logoImg.src = '/logo.jpg'
+        })
+      } catch (error) {
+        console.error('Failed to load logo:', error)
+      }
+
+      // Company Name
+      doc.setFontSize(28)
+      doc.setFont("helvetica", "bold")
+      doc.text("NintyNine", pageWidth / 2, 65, { align: "center" })
+
+      // Decorative line
+      doc.setDrawColor(2, 119, 189)
+      doc.setLineWidth(0.5)
+      doc.line(14, 75, pageWidth - 14, 75)
+
+      // Title
+      doc.setFontSize(16)
+      const title = `Ticket ${String(ticket._id ?? "")}`
+      doc.text(title, 14, 90, { align: "left" })
+
+      // Ticket meta
+      doc.setFontSize(10)
+      const meta = isArabic ? [
+        ["رقم التذكرة", String(ticket._id ?? "")],
+        ["العميل", String(ticket.customerName ?? "")],
+        ["رقم اللوحة", String(ticket.plateNumber ?? "")],
+        ["تاريخ الإنشاء", ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('ar-EG') : ""],
+      ] : [
+        ["Ticket ID", String(ticket._id ?? "")],
+        ["Customer", String(ticket.customerName ?? "")],
+        ["Plate Number", String(ticket.plateNumber ?? "")],
+        ["Created At", ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : ""],
+      ]
+
+      if (typeof autoTable === "function") {
+        autoTable(doc, {
+          startY: 95,
+          theme: "plain",
+          body: meta,
+          styles: { fontSize: 10, font: isArabic ? "Amiri" : "helvetica", halign: "left" },
+          columnStyles: { 0: { halign: "left" }, 1: { halign: "left" } },
+        })
+      } else if ((doc as any).autoTable) {
+        ;(doc as any).autoTable({
+          startY: 95,
+          theme: "plain",
+          body: meta,
+          styles: { fontSize: 10, font: isArabic ? "Amiri" : "helvetica", halign: "left" },
+          columnStyles: { 0: { halign: "left" }, 1: { halign: "left" } },
+        })
+      }
+
+      // Services table
+      const headers = [
+        "#",
+        "Service ID",
+        "Name (EN)",
+        "Category",
+        "Price (KWD)",
+        "Final (KWD)",
+        "Added At"
+      ]
+
+      const services = ticket.services ?? []
+      const servicesBody = services.map((s, idx) => [
+        String(idx + 1),
+        String(s.serviceId ?? ""),
+        isArabic ? String(s.serviceNameAr ?? s.serviceName ?? "") : String(s.serviceName ?? ""),
+        String(s.category ?? ""),
+        (typeof s.price === "number" ? s.price : Number(s.price ?? 0)).toFixed(3),
+        (typeof s.finalPrice === "number" ? s.finalPrice : Number(s.finalPrice ?? s.price ?? 0)).toFixed(3),
+        s.addedAt ? new Date(s.addedAt).toLocaleString('en-US') : ""
+      ])
+
+      const servicesStartY = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 6 : 120
+
+      if (typeof autoTable === "function") {
+        autoTable(doc, {
+          head: [headers],
+          body: servicesBody,
+          startY: servicesStartY,
+          styles: { fontSize: 10, font: isArabic ? "Amiri" : "helvetica", halign: "left" },
+          headStyles: { fillColor: [2, 119, 189], textColor: 255, font: isArabic ? "Amiri" : "helvetica", halign: "left" },
+          columnStyles: headers.reduce((acc, _, idx) => ({ ...acc, [idx]: { halign: "left" } }), {}),
+        })
+      }
+
+      // Total
+      const finalY = (doc as any).lastAutoTable?.finalY ?? servicesStartY + 40
+      doc.setFontSize(12)
+      const totalLabel =  `Total: ${Number(totalAmount).toFixed(3)} KWD`
+      doc.text(totalLabel,  14, finalY + 12, { align: "left" })
+
+      // Signature boxes
+      const pageHeight = doc.internal.pageSize.getHeight()
+      const marginFromBottom = 30
+      const signatureY = pageHeight - marginFromBottom
+      const boxWidth = 60
+      const boxHeight = 15
+
+      doc.setDrawColor(128, 128, 128)
+      doc.rect(isArabic ? pageWidth - boxWidth - 14 : 14, signatureY, boxWidth, boxHeight)
+      doc.setFontSize(8)
+      doc.text("Customer Signature", isArabic ? pageWidth - 14 - boxWidth/2 : 14 + boxWidth/2, signatureY + boxHeight + 6, { align: "center" })
+
+      doc.rect(isArabic ? 14 : pageWidth - boxWidth - 14, signatureY, boxWidth, boxHeight)
+      doc.text("Company Signature", isArabic ? 14 + boxWidth/2 : pageWidth - 14 - boxWidth/2, signatureY + boxHeight + 6, { align: "center" })
+
+      const filename = `ticket-${String(ticket._id ?? "export")}.pdf`
+      doc.save(filename)
+      toast.success(isArabic ? "تم تصدير التذكرة إلى PDF" : "Exported ticket to PDF")
+    } catch (err) {
+      console.error("Error exporting PDF:", err)
+      toast.error("Failed to export PDF")
+    } finally {
+      setIsExportingPdf(false)
     }
-
-    // Company Name
-    doc.setFontSize(28)
-    doc.setFont(isArabic ? "Amiri" : "helvetica", "bold")
-    const companyName = isArabic ? "ناينتي ناين" : "NintyNine"
-    doc.text(companyName, pageWidth / 2, 65, { align: "center" })
-
-    // Decorative line
-    doc.setDrawColor(2, 119, 189)
-    doc.setLineWidth(0.5)
-    doc.line(14, 75, pageWidth - 14, 75)
-
-    // Title
-    doc.setFontSize(16)
-    const title = isArabic ? `تذكرة ${String(ticket._id ?? "")}` : `Ticket ${String(ticket._id ?? "")}`
-    doc.text(title, isArabic ? pageWidth - 14 : 14, 90, { align: isArabic ? "right" : "left" })
-
-    // Ticket meta
-    doc.setFontSize(10)
-    const meta = isArabic ? [
-      ["رقم التذكرة", String(ticket._id ?? "")],
-      ["العميل", String(ticket.customerName ?? "")],
-      ["رقم اللوحة", String(ticket.plateNumber ?? "")],
-      ["تاريخ الإنشاء", ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('ar-EG') : ""],
-    ] : [
-      ["Ticket ID", String(ticket._id ?? "")],
-      ["Customer", String(ticket.customerName ?? "")],
-      ["Plate Number", String(ticket.plateNumber ?? "")],
-      ["Created At", ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : ""],
-    ]
-
-    if (typeof autoTable === "function") {
-      autoTable(doc, {
-        startY: 95,
-        theme: "plain",
-        body: meta,
-        styles: { fontSize: 10, font: isArabic ? "Amiri" : "helvetica", halign: isArabic ? "right" : "left" },
-        columnStyles: { 0: { halign: isArabic ? "right" : "left" }, 1: { halign: isArabic ? "right" : "left" } },
-      })
-    } else if ((doc as any).autoTable) {
-      ;(doc as any).autoTable({
-        startY: 95,
-        theme: "plain",
-        body: meta,
-        styles: { fontSize: 10, font: isArabic ? "Amiri" : "helvetica", halign: isArabic ? "right" : "left" },
-        columnStyles: { 0: { halign: isArabic ? "right" : "left" }, 1: { halign: isArabic ? "right" : "left" } },
-      })
-    }
-
-    // Services table
-    const headers = isArabic ? [
-      "#",
-      "معرف الخدمة",
-      "الاسم (عربي)",
-      "الفئة",
-      "السعر (د.ك)",
-      "النهائي (د.ك)",
-      "تاريخ الإضافة"
-    ] : [
-      "#",
-      "Service ID",
-      "Name (EN)",
-      "Category",
-      "Price (KWD)",
-      "Final (KWD)",
-      "Added At"
-    ]
-
-    const services = ticket.services ?? []
-    const servicesBody = services.map((s, idx) => [
-      String(idx + 1),
-      String(s.serviceId ?? ""),
-      isArabic ? String(s.serviceNameAr ?? s.serviceName ?? "") : String(s.serviceName ?? ""),
-      String(s.category ?? ""),
-      (typeof s.price === "number" ? s.price : Number(s.price ?? 0)).toFixed(3),
-      (typeof s.finalPrice === "number" ? s.finalPrice : Number(s.finalPrice ?? s.price ?? 0)).toFixed(3),
-      s.addedAt ? new Date(s.addedAt).toLocaleString(isArabic ? 'ar-EG' : 'en-US') : ""
-    ])
-
-    const servicesStartY = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 6 : 120
-
-    if (typeof autoTable === "function") {
-      autoTable(doc, {
-        head: [headers],
-        body: servicesBody,
-        startY: servicesStartY,
-        styles: { fontSize: 10, font: isArabic ? "Amiri" : "helvetica", halign: isArabic ? "right" : "left" },
-        headStyles: { fillColor: [2, 119, 189], textColor: 255, font: isArabic ? "Amiri" : "helvetica", halign: isArabic ? "right" : "left" },
-        columnStyles: headers.reduce((acc, _, idx) => ({ ...acc, [idx]: { halign: isArabic ? "right" : "left" } }), {}),
-      })
-    }
-
-    // Total
-    const finalY = (doc as any).lastAutoTable?.finalY ?? servicesStartY + 40
-    doc.setFontSize(12)
-    const totalLabel = isArabic ? `الإجمالي: ${Number(totalAmount).toFixed(3)} د.ك` : `Total: ${Number(totalAmount).toFixed(3)} KWD`
-    doc.text(totalLabel, isArabic ? pageWidth - 14 : 14, finalY + 12, { align: isArabic ? "right" : "left" })
-
-    // Signature boxes
-    const pageHeight = doc.internal.pageSize.getHeight()
-    const marginFromBottom = 30
-    const signatureY = pageHeight - marginFromBottom
-    const boxWidth = 60
-    const boxHeight = 15
-
-    doc.setDrawColor(128, 128, 128)
-    doc.rect(isArabic ? pageWidth - boxWidth - 14 : 14, signatureY, boxWidth, boxHeight)
-    doc.setFontSize(8)
-    const customerSignatureLabel = isArabic ? "توقيع العميل" : "Customer Signature"
-    doc.text(customerSignatureLabel, isArabic ? pageWidth - 14 - boxWidth/2 : 14 + boxWidth/2, signatureY + boxHeight + 6, { align: "center" })
-
-    doc.rect(isArabic ? 14 : pageWidth - boxWidth - 14, signatureY, boxWidth, boxHeight)
-    const companySignatureLabel = isArabic ? "توقيع الشركة" : "Company Signature"
-    doc.text(companySignatureLabel, isArabic ? 14 + boxWidth/2 : pageWidth - 14 - boxWidth/2, signatureY + boxHeight + 6, { align: "center" })
-
-    const filename = `ticket-${String(ticket._id ?? "export")}.pdf`
-    doc.save(filename)
-    toast.success(isArabic ? "تم تصدير التذكرة إلى PDF" : "Exported ticket to PDF")
-  } catch (err) {
-    console.error("Error exporting PDF:", err)
-    toast.error(isArabic ? "فشل في تصدير PDF" : "Failed to export PDF")
-  } finally {
-    setIsExportingPdf(false)
   }
-}
 
   return (
     <div className="space-y-4">
@@ -290,34 +277,37 @@ async function handleExportPDF() {
               Add 
             </Button>
 
-            <Select value={exportLanguage} onValueChange={(value: "english" | "arabic") => setExportLanguage(value)}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Language" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="english">English</SelectItem>
-                <SelectItem value="arabic">Arabic</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportPDF}
-              disabled={isExportingPdf}
-            >
-              {isExportingPdf ? (
-                <>
-                  <Spinner size="sm" className="" />
-                  Exporting...
-                </>
-              ) : (
-                <>
-                  <File className="h-4 w-4 " />
-                  Export PDF
-                </>
+            <div className="relative">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                disabled={isExportingPdf}
+                onClick={() => setExportLanguageMenuOpen((prev) => !prev)}
+              >
+                <File className="h-4 w-4" />
+                Export PDF
+                <span className="ml-2">▼</span>
+              </Button>
+              {exportLanguageMenuOpen && (
+                <div className="absolute right-0 mt-2 w-36 bg-white border rounded shadow z-10">
+                  <button
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                    onClick={() => { setExportLanguageMenuOpen(false); handleExportPDF('english'); }}
+                    disabled={isExportingPdf}
+                  >
+                    English
+                  </button>
+                  <button
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                    onClick={() => { setExportLanguageMenuOpen(false); handleExportPDF('arabic'); }}
+                    disabled={isExportingPdf}
+                  >
+                    العربية
+                  </button>
+                </div>
               )}
-            </Button>
+            </div>
           </div>
         </div>
         {ticket.services && ticket.services.length > 0 ? (

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, X, Trash2, FileSpreadsheet, File, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, X, Trash2, FileSpreadsheet, File, ChevronLeft, ChevronRight, Edit } from "lucide-react"
 import * as Dialog from "@radix-ui/react-dialog"
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
@@ -26,12 +26,14 @@ export function HRDepartmentClient({
   const router = useRouter()
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees)
   const [isAddingEmployee, setIsAddingEmployee] = useState(false)
+  const [isEditingEmployee, setIsEditingEmployee] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [newEmployee, setNewEmployee] = useState({
     name: "",
     jobTitle: "",
     salary: ""
   })
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
   const [deletingIds, setDeletingIds] = useState<string[]>([])
   const [isExporting, setIsExporting] = useState<'excel' | 'pdf' | null>(null)
 
@@ -62,6 +64,47 @@ export function HRDepartmentClient({
     } catch (error) {
       console.error('Error adding employee:', error)
       toast.error('Failed to add employee')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleEditEmployee = (employee: Employee) => {
+    setEditingEmployee(employee)
+    setIsEditingEmployee(true)
+  }
+
+  const handleUpdateEmployee = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingEmployee) return
+
+    setIsSubmitting(true)
+    
+    try {
+      const response = await fetch(`/api/employees/${editingEmployee._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: editingEmployee.name,
+          jobTitle: editingEmployee.jobTitle,
+          salary: Number(editingEmployee.salary)
+        })
+      })
+
+      if (!response.ok) throw new Error('Failed to update employee')
+
+      const updatedEmployee = await response.json()
+      setEmployees(employees.map(emp => 
+        emp._id === editingEmployee._id ? updatedEmployee : emp
+      ))
+      setIsEditingEmployee(false)
+      setEditingEmployee(null)
+      toast.success('Employee updated successfully')
+    } catch (error) {
+      console.error('Error updating employee:', error)
+      toast.error('Failed to update employee')
     } finally {
       setIsSubmitting(false)
     }
@@ -225,19 +268,29 @@ export function HRDepartmentClient({
                 <td className="p-4">{employee.jobTitle}</td>
                 <td className="p-4">{employee.salary} KWD</td>
                 <td className="p-4">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                    onClick={() => handleDeleteEmployee(employee._id!)}
-                    disabled={deletingIds.includes(employee._id!)}
-                  >
-                    {deletingIds.includes(employee._id!) ? (
-                      <Spinner size="sm" className="text-red-500" />
-                    ) : (
-                      <Trash2 className="h-4 w-4" />
-                    )}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                      onClick={() => handleEditEmployee(employee)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                      onClick={() => handleDeleteEmployee(employee._id!)}
+                      disabled={deletingIds.includes(employee._id!)}
+                    >
+                      {deletingIds.includes(employee._id!) ? (
+                        <Spinner size="sm" className="text-red-500" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -271,6 +324,7 @@ export function HRDepartmentClient({
         </div>
       </div>
 
+      {/* Add Employee Dialog */}
       <Dialog.Root 
         open={isAddingEmployee} 
         onOpenChange={(open) => {
@@ -356,6 +410,99 @@ export function HRDepartmentClient({
                 </Button>
               </div>
             </form>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      {/* Edit Employee Dialog */}
+      <Dialog.Root 
+        open={isEditingEmployee} 
+        onOpenChange={(open) => {
+          // Prevent closing while submitting
+          if (isSubmitting && !open) return
+          setIsEditingEmployee(open)
+          if (!open) setEditingEmployee(null)
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[95vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border bg-card p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <Dialog.Title className="text-xl font-semibold">
+                Edit Employee
+              </Dialog.Title>
+              <Dialog.Close asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8"
+                  disabled={isSubmitting}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </Dialog.Close>
+            </div>
+
+            {editingEmployee && (
+              <form onSubmit={handleUpdateEmployee} className="space-y-4">
+                <div>
+                  <label htmlFor="edit-name" className="block text-sm mb-2">Name</label>
+                  <Input
+                    id="edit-name"
+                    value={editingEmployee.name}
+                    onChange={(e) => setEditingEmployee({ ...editingEmployee, name: e.target.value })}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="edit-jobTitle" className="block text-sm mb-2">Job Title</label>
+                  <Input
+                    id="edit-jobTitle"
+                    value={editingEmployee.jobTitle}
+                    onChange={(e) => setEditingEmployee({ ...editingEmployee, jobTitle: e.target.value })}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="edit-salary" className="block text-sm mb-2">Salary (KWD)</label>
+                  <Input
+                    id="edit-salary"
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    value={editingEmployee.salary}
+                    onChange={(e) => setEditingEmployee({ ...editingEmployee, salary: e.target.value })}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsEditingEmployee(false)}
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="bg-[#002540]" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Spinner size="sm" className="mr-2" />
+                        Updating...
+                      </>
+                    ) : (
+                      'Update Employee'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>

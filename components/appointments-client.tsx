@@ -1,6 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
+import * as XLSX from "xlsx"
 import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -85,6 +88,41 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null)
   const [copiedPhone, setCopiedPhone] = useState<string | null>(null)
+
+  // Export to PDF
+  const handleExportPDF = () => {
+    const doc = new jsPDF()
+    doc.text("Appointments", 14, 12)
+    autoTable(doc, {
+      head: [["Customer", "Phone", "Service", "Date", "Time", "Status"]],
+      body: data.appointments.map((apt) => [
+        `${apt.customer.firstName} ${apt.customer.lastName}`,
+        apt.customer.phone,
+        apt.service.type,
+        formatDate(apt.service.date),
+        apt.service.time,
+        getStatusLabel(apt.status)
+      ]),
+    })
+    doc.save("appointments.pdf")
+  }
+
+  // Export to Excel
+  const handleExportExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(
+      data.appointments.map((apt) => ({
+        Customer: `${apt.customer.firstName} ${apt.customer.lastName}`,
+        Phone: apt.customer.phone,
+        Service: apt.service.type,
+        Date: formatDate(apt.service.date),
+        Time: apt.service.time,
+        Status: getStatusLabel(apt.status),
+      }))
+    )
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "Appointments")
+    XLSX.writeFile(wb, "appointments.xlsx")
+  }
 
   const handlePageChange = (page: number) => {
     const url = new URL(window.location.href)
@@ -253,6 +291,13 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
         </div>
         
         <div className="flex items-center gap-4 justify-end">
+          {/* Export Buttons */}
+          <Button variant="outline" size="sm" onClick={handleExportPDF} className="mr-2">
+            Export PDF
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportExcel} className="mr-2">
+            Export Excel
+          </Button>
           {/* Sort Dropdown */}
           <div className="flex items-center gap-2">
             <ArrowUpDown className="h-4 w-4 text-muted-foreground" />

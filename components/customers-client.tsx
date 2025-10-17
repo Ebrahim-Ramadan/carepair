@@ -1,6 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
+import * as XLSX from "xlsx"
 import { Badge } from "@/components/ui/badge"
 import { Mail, Phone, MessageCircle } from "lucide-react"
 
@@ -29,6 +32,41 @@ type CustomersClientProps = {
 export function CustomersClient({ initialCustomers }: CustomersClientProps) {
   const [customers] = useState<Customer[]>(initialCustomers)
 
+  // Export to PDF
+  const handleExportPDF = () => {
+    const doc = new jsPDF()
+    doc.text("Customers", 14, 12)
+    autoTable(doc, {
+      head: [["Name", "Email", "Phone", "Vehicles", "Total Tickets", "Last Visit"]],
+      body: customers.map((c) => [
+        c.customerName,
+        c.customerEmail,
+        c.customerPhone,
+        c.vehicles.map(v => v.plateNumber).join(", "),
+        c.totalTickets,
+        formatDate(c.lastVisit)
+      ]),
+    })
+    doc.save("customers.pdf")
+  }
+
+  // Export to Excel
+  const handleExportExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(
+      customers.map((c) => ({
+        Name: c.customerName,
+        Email: c.customerEmail,
+        Phone: c.customerPhone,
+        Vehicles: c.vehicles.map(v => v.plateNumber).join(", "),
+        "Total Tickets": c.totalTickets,
+        "Last Visit": formatDate(c.lastVisit),
+      }))
+    )
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "Customers")
+    XLSX.writeFile(wb, "customers.xlsx")
+  }
+
   const handleEmailClick = (email: string) => {
     window.open(`https://mail.google.com/mail/u/0/?view=cm&fs=1&to=${email}&su=Hello&body=Message&tf=cm`, '_blank')
   }
@@ -46,8 +84,11 @@ export function CustomersClient({ initialCustomers }: CustomersClientProps) {
   return (
     <div className="rounded-lg border border-border bg-card p-2">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold"> {customers.length} Customer {customers.length !== 1 ? "s" : ""}</h1>
-      
+        <h1 className="text-xl font-semibold"> {customers.length} Customer{customers.length !== 1 ? "s" : ""}</h1>
+        <div className="flex gap-2">
+          <button onClick={handleExportPDF} className="border rounded px-2 py-1 text-xs hover:bg-muted transition-colors">Export PDF</button>
+          <button onClick={handleExportExcel} className="border rounded px-2 py-1 text-xs hover:bg-muted transition-colors">Export Excel</button>
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">

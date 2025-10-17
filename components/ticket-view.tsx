@@ -41,6 +41,7 @@ export function TicketView({
   const [exportLanguageMenuOpen, setExportLanguageMenuOpen] = useState(false)
   const [paymentTime, setPaymentTime] = useState(ticket.paymentTime ? new Date(ticket.paymentTime).toISOString().slice(0,16) : "")
   const [paymentMethod, setPaymentMethod] = useState(ticket.paymentMethod || "")
+  const [customPaymentMethod, setCustomPaymentMethod] = useState("")
   const [isPaymentSaving, setIsPaymentSaving] = useState(false)
 
   const handleConditionUpdate = async (points: DamagePoint[]) => {
@@ -87,6 +88,22 @@ export function TicketView({
   const totalAmount = ticket.services?.reduce((sum, service) => 
     sum + (service.finalPrice ?? service.price), 0
   ) ?? 0
+
+    // Payment method fee logic
+    function getPaymentFee(method: string, amount: number): number {
+      if (!method) return 0;
+      const m = method.toLowerCase();
+      if (m === 'myfatoorah' || m === 'maifatoora' || m === 'ماي فاتورة') return 0.275;
+      if (m === 'knet' || m === 'knent') return 0;
+      if (m === 'cash') return 0;
+      if (m === 'tabby' || m === 'tabbykib') return amount * 0.0799;
+      if (m === 'kib') return amount * 0.10;
+      // Other or unknown
+      return 0;
+    }
+
+    const paymentFee = getPaymentFee(paymentMethod || ticket.paymentMethod || '', totalAmount);
+    const totalAfterFee = totalAmount - paymentFee;
 
   // Update total in database if it's different
   useEffect(() => {
@@ -163,16 +180,22 @@ export function TicketView({
 
       // Ticket meta
       doc.setFontSize(10)
+      const paymentMethodDisplay = ticket.paymentMethod ? ticket.paymentMethod : "-"
+      const paymentTimeDisplay = ticket.paymentTime ? (isArabic ? new Date(ticket.paymentTime).toLocaleString('ar-EG') : new Date(ticket.paymentTime).toLocaleString()) : "-"
       const meta = isArabic ? [
         ["رقم التذكرة", String(ticket._id ?? "")],
         ["العميل", String(ticket.customerName ?? "")],
         ["رقم اللوحة", String(ticket.plateNumber ?? "")],
         ["تاريخ الإنشاء", ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('ar-EG') : ""],
+        ["طريقة الدفع", paymentMethodDisplay],
+        ["تاريخ الدفع", paymentTimeDisplay],
       ] : [
         ["Ticket ID", String(ticket._id ?? "")],
         ["Customer", String(ticket.customerName ?? "")],
         ["Plate Number", String(ticket.plateNumber ?? "")],
         ["Created At", ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : ""],
+        ["Payment Method", paymentMethodDisplay],
+        ["Payment Time", paymentTimeDisplay],
       ]
 
       if (typeof autoTable === "function") {
@@ -233,6 +256,12 @@ export function TicketView({
       doc.setFontSize(12)
       const totalLabel =  `Total: ${Number(totalAmount).toFixed(3)} KWD`
       doc.text(totalLabel,  14, finalY + 12, { align: "left" })
+    doc.setFontSize(10)
+    const feeLabel = `Payment Method Fee: ${paymentFee > 0 ? '- ' + paymentFee.toFixed(3) : '0.000'} KWD`
+    doc.text(feeLabel, 14, finalY + 20, { align: "left" })
+    doc.setFontSize(12)
+    const afterFeeLabel = `Total After Fee: ${totalAfterFee.toFixed(3)} KWD`
+    doc.text(afterFeeLabel, 14, finalY + 30, { align: "left" })
 
       // Signature boxes
       const pageHeight = doc.internal.pageSize.getHeight()
@@ -377,20 +406,34 @@ export function TicketView({
                   <select
                     className="border rounded px-2 py-1 text-sm"
                     value={paymentMethod}
-                    onChange={e => setPaymentMethod(e.target.value)}
+                    onChange={e => {
+                      setPaymentMethod(e.target.value)
+                      if (e.target.value !== "other") setCustomPaymentMethod("")
+                    }}
                   >
                     <option value="">Select</option>
-                    <option value="maifatoora">ماي فاتورة</option>
-                    <option value="knent">knent</option>
-                    <option value="cash">cash</option>
-                    <option value="tabbykib">tabby kib</option>
+                    <option value="myfatoorah">My fatoorah</option>
+                    <option value="knent">Knent</option>
+                    <option value="cash">Cash</option>
+                    <option value="tabbykib">Tabby</option>
+                    <option value="kib">KIB</option>
                     <option value="other">other</option>
                   </select>
+                  {paymentMethod === "other" && (
+                    <input
+                      type="text"
+                      className="border rounded px-2 py-1 text-sm ml-2"
+                      placeholder="Type payment method"
+                      value={customPaymentMethod}
+                      onChange={e => setCustomPaymentMethod(e.target.value)}
+                      style={{ minWidth: 80 }}
+                    />
+                  )}
                 </div>
                 <Button
                   size="sm"
                   className="bg-[#002540]"
-                  disabled={isPaymentSaving || (paymentTime === (ticket.paymentTime ? new Date(ticket.paymentTime).toISOString().slice(0,16) : "") && paymentMethod === (ticket.paymentMethod || ""))}
+                  disabled={isPaymentSaving || (paymentTime === (ticket.paymentTime ? new Date(ticket.paymentTime).toISOString().slice(0,16) : "") && paymentMethod === (ticket.paymentMethod || "") && (!customPaymentMethod || customPaymentMethod === (ticket.paymentMethod || "")))}
                   onClick={async () => {
                     setIsPaymentSaving(true);
                     try {
@@ -398,7 +441,9 @@ export function TicketView({
                       if (paymentTime !== (ticket.paymentTime ? new Date(ticket.paymentTime).toISOString().slice(0,16) : "")) {
                         payload.paymentTime = paymentTime ? new Date(paymentTime).toISOString() : null;
                       }
-                      if (paymentMethod !== (ticket.paymentMethod || "")) {
+                      if (paymentMethod === "other") {
+                        payload.paymentMethod = customPaymentMethod || "other";
+                      } else if (paymentMethod !== (ticket.paymentMethod || "")) {
                         payload.paymentMethod = paymentMethod;
                       }
                       const response = await fetch(`/api/tickets/${ticket._id}`, {

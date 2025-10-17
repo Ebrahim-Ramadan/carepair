@@ -1,6 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
+import * as XLSX from "xlsx"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { toast } from "sonner"
@@ -192,14 +195,72 @@ export function ProductsClient({
     return "—"
   }
 
+  // Export to PDF
+  const handleExportPDF = async () => {
+    const doc = new jsPDF()
+    // Embed Amiri font for Arabic
+    try {
+      const response = await fetch('/fonts/base64.txt');
+      const amiriFontData = await response.text();
+      doc.addFileToVFS('Amiri-Regular.ttf', amiriFontData);
+      doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+    } catch (e) {
+      // fallback: do nothing
+    }
+    doc.text("Products", 14, 12)
+    autoTable(doc, {
+      head: [["Name (EN)", "Name (AR)", "Category", "Price per piece", "Price per meter", "Stock", "Description"]],
+      body: products.map((p) => [
+        p.nameEn ?? "",
+        p.nameAr ?? "",
+        p.category ?? "",
+        typeof p.pricePerPiece === "number" ? p.pricePerPiece.toFixed(3) : "",
+        typeof p.pricePerMeter === "number" ? p.pricePerMeter.toFixed(3) : "",
+        p.stock ?? 0,
+        p.description ?? "",
+      ]),
+      styles: (data) => {
+        // Use Amiri font for Arabic column
+        if (data.column.index === 1) {
+          return { font: 'Amiri' }
+        }
+        return { font: 'helvetica' }
+      }
+    })
+    doc.save("products.pdf")
+  }
+
+  // Export to Excel
+  const handleExportExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(
+      products.map((p) => ({
+        "Name (EN)": p.nameEn ?? "",
+        "Name (AR)": p.nameAr ?? "",
+        Category: p.category ?? "",
+        "Price per piece": typeof p.pricePerPiece === "number" ? p.pricePerPiece.toFixed(3) : "",
+        "Price per meter": typeof p.pricePerMeter === "number" ? p.pricePerMeter.toFixed(3) : "",
+        Stock: p.stock ?? 0,
+        Description: p.description ?? "",
+      }))
+    )
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "Products")
+    XLSX.writeFile(wb, "products.xlsx")
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Products</h2>
-        <Button onClick={openAdd} size="sm">
-          <Plus size={16} />
-          Add
-        </Button>
+        <div className="flex gap-2">
+          
+          <Button variant="outline" size="sm" onClick={handleExportPDF}>Export PDF</Button>
+          <Button variant="outline" size="sm" onClick={handleExportExcel}>Export Excel</Button>
+          <Button onClick={openAdd} size="sm">
+            <Plus size={16} />
+            Add
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-md border overflow-auto">
@@ -207,7 +268,7 @@ export function ProductsClient({
           <thead>
             <tr className="text-left bg-muted/50">
               <th className="p-3">Name (EN)</th>
-              <th className="p-3">Name (AR)</th>
+              {/* <th className="p-3">Name (AR)</th> */}
               <th className="p-3">Category</th>
               <th className="p-3 text-right">Price</th>
               <th className="p-3 text-right">Stock</th>
@@ -225,7 +286,7 @@ export function ProductsClient({
               products.map((p) => (
                 <tr key={p._id} className="border-b hover:bg-muted/50">
                   <td className="p-3">{p.nameEn ??"-"}</td>
-                  <td className="p-3">{p.nameAr ?? "-"}</td>
+                  {/* <td className="p-3">{p.nameAr ?? "-"}</td> */}
                   <td className="p-3">{p.category}</td>
                   <td className="p-3 text-right">{priceLabel(p)}</td>
                   <td className="p-3 text-right">{p.stock ?? 0}</td>

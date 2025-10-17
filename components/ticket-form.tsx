@@ -31,12 +31,12 @@ type TicketFormProps = {
 }
 
 export function TicketForm({ onSuccess }: TicketFormProps) {
+  const [invoiceNo, setInvoiceNo] = useState("")
   const [plateNumber, setPlateNumber] = useState("")
   const [customerName, setCustomerName] = useState("")
   const [customerPhone, setCustomerPhone] = useState("")
   const [customerEmail, setCustomerEmail] = useState("")
   const [mileage, setMileage] = useState("")
-  const [repairParts, setRepairParts] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,7 +44,13 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
     setIsSubmitting(true)
 
     try {
+      if (!invoiceNo.trim()) {
+        toast.error("Invoice No is required.")
+        setIsSubmitting(false)
+        return
+      }
       const input: CreateTicketInput = {
+        invoiceNo,
         plateNumber,
         customerName,
         customerPhone,
@@ -76,6 +82,17 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Invoice No */}
+      <div className="space-y-2">
+        <Label htmlFor="invoiceNo">Invoice No *</Label>
+        <Input
+          id="invoiceNo"
+          value={invoiceNo}
+          onChange={(e) => setInvoiceNo(e.target.value)}
+          placeholder="Enter invoice number"
+          required
+        />
+      </div>
       {/* Vehicle Information */}
       <div className="space-y-4 -z-50">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Vehicle Information</h3>

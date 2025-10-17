@@ -215,7 +215,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
             {ticket.plateNumber}
           </h2>
           <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="font-mono">#{ticket._id?.slice(-6)}</span>
+            <span className="font-mono">#{ticket.invoiceNo}</span>
             <span>•</span>
             <span>{new Date(ticket.createdAt).toLocaleDateString()}</span>
           </div>

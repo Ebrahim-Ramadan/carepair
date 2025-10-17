@@ -100,6 +100,7 @@ export type TicketService = {
 
 export type Ticket = {
   _id?: string
+  invoiceNo: string
   plateNumber: string
   customerName: string
   customerPhone: string
@@ -111,6 +112,7 @@ export type Ticket = {
   createdAt: string
   updatedAt?: string
   paymentTime?: string
+  paymentMethod?: string
 }
 
 export type TicketSummary = {

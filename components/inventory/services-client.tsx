@@ -1,6 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
+import * as XLSX from "xlsx"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 // Render services grouped by category instead of a flat table
@@ -26,6 +29,49 @@ type ServicesClientProps = {
 }
 
 export function ServicesClient({ initialServices }: ServicesClientProps) {
+  // Export to PDF
+  const handleExportPDF = async () => {
+    const doc = new jsPDF()
+    // Embed Amiri font for Arabic
+    try {
+      const response = await fetch('/fonts/base64.txt');
+      const amiriFontData = await response.text();
+      doc.addFileToVFS('Amiri-Regular.ttf', amiriFontData);
+      doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+    } catch (e) {}
+    doc.text("Services", 14, 12)
+    autoTable(doc, {
+      head: [["Name (EN)", "Name (AR)", "Category", "Price (KWD)"]],
+      body: services.map((s) => [
+        s.nameEn,
+        s.nameAr,
+        s.category,
+        typeof s.price === "number" ? s.price.toFixed(3) : "",
+      ]),
+      styles: (data) => {
+        if (data.column.index === 1) {
+          return { font: 'Amiri' }
+        }
+        return { font: 'helvetica' }
+      }
+    })
+    doc.save("services.pdf")
+  }
+
+  // Export to Excel
+  const handleExportExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(
+      services.map((s) => ({
+        "Name (EN)": s.nameEn,
+        "Name (AR)": s.nameAr,
+        Category: s.category,
+        "Price (KWD)": typeof s.price === "number" ? s.price.toFixed(3) : "",
+      }))
+    )
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "Services")
+    XLSX.writeFile(wb, "services.xlsx")
+  }
   const [services, setServices] = useState(initialServices)
   const [searchQuery, setSearchQuery] = useState("")
   const [editingService, setEditingService] = useState<Service | null>(null)
@@ -135,10 +181,14 @@ export function ServicesClient({ initialServices }: ServicesClientProps) {
 
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Services Management</h1>
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <Plus className="w-4 h-4" />
-          Add 
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportPDF}>Export PDF</Button>
+          <Button variant="outline" size="sm" onClick={handleExportExcel}>Export Excel</Button>
+          <Button onClick={() => setIsDialogOpen(true)}>
+            <Plus className="w-4 h-4" />
+            Add 
+          </Button>
+        </div>
       </div>
 
       <div className="mb-4 flex gap-2">

@@ -32,13 +32,16 @@ export function MainNav({ isAdmin }: MainNavProps) {
     { href: "/inventory/services", label: "Services" },
     { href: "/customers", label: "Customers" },
     ...(isAdmin ? [      
-    { href: "/search", label: <Search/> },
       { href: "/HRDepartment", label: "HR" },
 
     ]:[]),
     ...(isAdmin ? [
       { href: "/users", label: "Management" },
-    ]:[])
+    ]:[]),
+     ...(isAdmin ? [      
+    { href: "/search", label: <Search/> },
+
+    ]:[]),
    
   ]
 

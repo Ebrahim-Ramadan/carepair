@@ -24,6 +24,25 @@ type PreviewPhoto = {
   uploadedPhotoId?: string
 }
 
+function S3Image({ src, alt }: { src: string; alt: string }) {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let isMounted = true;
+    if (!src) return;
+    // Call API to get presigned URL
+    fetch(`/api/images/${encodeURIComponent(src.split('/').pop() ?? '')}?photoUrl=${encodeURIComponent(src)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (isMounted && data.url) setSignedUrl(data.url);
+      })
+      .catch(() => setSignedUrl(null));
+    return () => { isMounted = false; };
+  }, [src]);
+  if (!src) return <img src="/placeholder.svg" alt={alt} className="h-full w-full object-cover" />;
+  if (!signedUrl) return <div className="h-full w-full flex items-center justify-center"><LoadingDots/></div>;
+  return <img src={signedUrl} alt={alt} className="h-full w-full object-cover" />;
+}
+
 export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: PhotoUploadProps) {
   const [localPhotos, setLocalPhotos] = useState<Photo[]>(photos ?? [])
   const [previewPhotos, setPreviewPhotos] = useState<PreviewPhoto[]>([])
@@ -69,11 +88,13 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
     setIsUploading(true)
 
     try {
+
+      // Use S3 upload endpoint
       const uploadPromises = unuploadedPhotos.map(async (previewPhoto) => {
         const formData = new FormData()
         formData.append("file", previewPhoto.file)
 
-        const response = await fetch("/api/upload", {
+        const response = await fetch("/api/s3-pics-upload", {
           method: "POST",
           body: formData,
         })
@@ -85,11 +106,11 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
       })
 
       const uploadResults = await Promise.all(uploadPromises)
-      
-      // Map Cloudinary response to Photo format for local photos
-      const formattedPhotos = uploadResults.map(({ uploadResult }) => ({
+
+      // Map S3 response to Photo format for local photos
+      const formattedPhotos = uploadResults.map(({ previewPhoto, uploadResult }) => ({
         url: uploadResult.url,
-        name: uploadResult.name
+        name: previewPhoto.name
       }))
       
       // Save to MongoDB immediately after successful upload
@@ -341,7 +362,8 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
                   key={photo.url}
                   className="group relative aspect-video overflow-hidden rounded-lg border border-border bg-secondary"
                 >
-                  <img src={photo.url || "/placeholder.svg"} alt={photo.name} className="h-full w-full object-cover" />
+                  {/* Use presigned URL for S3 images */}
+                  <S3Image src={photo.url} alt={photo.name} />
                   
                   {/* Loading overlay for deletion */}
                   {deletingPhotoUrl === photo.url && (

@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { v2 as cloudinary } from 'cloudinary';
+import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { ObjectId } from 'mongodb';
 import clientPromise from '@/lib/mongodb';
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
-  api_key: process.env.CLOUDINARY_API_KEY!,
-  api_secret: process.env.CLOUDINARY_API_SECRET!,
-});
-
-export async function DELETE(request: NextRequest) {
+export async function DELETE(request: NextRequest): Promise<Response> {
   try {
     const { searchParams } = new URL(request.url);
     const ticketId = searchParams.get('ticketId');
@@ -32,62 +26,50 @@ export async function DELETE(request: NextRequest) {
     }
 
     const decodedPhotoUrl = decodeURIComponent(photoUrl);
-    
-    // Extract public_id from Cloudinary URL
-    // URL format: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/folder/filename.ext
-    let publicId = '';
+
+    // Extract S3 key from the URL
+    let s3Key = '';
     try {
-      const urlParts = decodedPhotoUrl.split('/');
-      const uploadIndex = urlParts.findIndex(part => part === 'upload');
-      
-      if (uploadIndex !== -1 && uploadIndex < urlParts.length - 1) {
-        // Get everything after 'upload' and the version number (if present)
-        const pathAfterUpload = urlParts.slice(uploadIndex + 1);
-        
-        // Remove version number if present (starts with 'v' followed by digits)
-        const firstPart = pathAfterUpload[0];
-        if (firstPart && /^v\d+$/.test(firstPart)) {
-          pathAfterUpload.shift(); // Remove version number
-        }
-        
-        // Join remaining parts and remove file extension
-        const fullPath = pathAfterUpload.join('/');
-        publicId = fullPath.replace(/\.[^/.]+$/, ''); // Remove file extension
-      }
-      
-      if (!publicId) {
-        throw new Error('Could not extract public ID from URL');
-      }
+      // Example S3 URL: https://bucket.s3.region.amazonaws.com/key
+      const url = new URL(decodedPhotoUrl);
+      // The key is everything after the bucket host
+      s3Key = url.pathname.startsWith('/') ? url.pathname.slice(1) : url.pathname;
+      if (!s3Key) throw new Error('Could not extract S3 key from URL');
     } catch (error) {
-      console.error('Error extracting public ID from URL:', decodedPhotoUrl, error);
+      console.error('Error extracting S3 key from URL:', decodedPhotoUrl, error);
       return NextResponse.json(
-        { error: 'Invalid Cloudinary URL format' },
+        { error: 'Invalid S3 URL format' },
         { status: 400 }
       );
     }
 
-    console.log('Extracted public ID:', publicId, 'from URL:', decodedPhotoUrl);
-
-    // Delete from Cloudinary
-    let cloudinarySuccess = false;
+    // Delete from S3
+    let s3Success = false;
     try {
-      const cloudinaryResult = await cloudinary.uploader.destroy(publicId);
-      console.log('Cloudinary deletion result:', cloudinaryResult);
-      
-      if (cloudinaryResult.result === 'ok' || cloudinaryResult.result === 'not found') {
-        cloudinarySuccess = true;
-      } else {
-        console.error('Cloudinary deletion failed:', cloudinaryResult);
-      }
-    } catch (cloudinaryError) {
-      console.error('Error deleting from Cloudinary:', cloudinaryError);
-      // Continue with MongoDB deletion even if Cloudinary fails
+      const s3 = new S3Client({
+        region: process.env.AWS_REGION,
+        credentials: {
+          accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+        },
+      });
+      const deleteResult = await s3.send(
+        new DeleteObjectCommand({
+          Bucket: process.env.S3_BUCKET_NAME!,
+          Key: s3Key,
+        })
+      );
+      // S3 does not throw if the object does not exist, so treat as success
+      s3Success = true;
+    } catch (s3Error) {
+      console.error('Error deleting from S3:', s3Error);
+      // Continue with MongoDB deletion even if S3 fails
     }
 
     // Delete from MongoDB using URL as identifier
     const client = await clientPromise;
     const db = client.db('car_repair');
-    
+
     const updateQuery: any = {
       $pull: {},
       $set: {
@@ -116,16 +98,15 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Return appropriate message based on success
-    const message = cloudinarySuccess 
-      ? 'Image deleted successfully from both Cloudinary and database'
-      : 'Image deleted from database successfully (Cloudinary deletion may have failed)';
+    const message = s3Success
+      ? 'Image deleted successfully from both S3 and database'
+      : 'Image deleted from database successfully (S3 deletion may have failed)';
 
     return NextResponse.json({
       success: true,
       message,
-      cloudinarySuccess
+      s3Success
     });
-
   } catch (error) {
     console.error('Error deleting image:', error);
     return NextResponse.json(

@@ -501,10 +501,10 @@ export function TicketView({
             variant="outline"
             size="sm"
             onClick={async () => {
-              if (!noteValue.trim()) {
-                toast.error("Notes cannot be empty");
-                return;
-              }
+              // if (!noteValue.trim()) {
+              //   toast.error("Notes cannot be empty");
+              //   return;
+              // }
               if (noteValue.trim() === originalNote.trim()) {
                 toast.error("No changes to save");
                 return;
@@ -529,7 +529,7 @@ export function TicketView({
               }
               setnotesavingloading(false);
             }}
-            disabled={notesavingloading || !noteValue.trim() || noteValue.trim() === originalNote.trim()}
+            disabled={notesavingloading  || noteValue.trim() === originalNote.trim()}
           >
             {notesavingloading ? (
               <Spinner size="sm" className="" />

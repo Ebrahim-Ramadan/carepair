@@ -202,16 +202,20 @@ export default function SalesPage() {
                 const paymentFee = getPaymentFee(t.paymentMethod, totalBefore);
                 const totalAfter = totalBefore - paymentFee;
                 return (
-                  <tr key={t._id} className="border-b hover:bg-muted/50">
-                    <td className="p-3">{t._id}</td>
-                    <td className="p-3">{t.plateNumber}</td>
-                    <td className="p-3">{t.customerName}</td>
-                    <td className="p-3">{t.customerPhone || t.customerEmail || '-'}</td>
-                    <td className="p-3">{t.paymentTime ? format(new Date(t.paymentTime), 'yyyy-MM-dd HH:mm') : '-'}</td>
-                    <td className="p-3">{t.paymentMethod || '-'}</td>
-                    <td className="p-3 text-right">{totalBefore.toFixed(3)} KD</td>
-                    <td className="p-3 text-right">{totalAfter.toFixed(3)} KD</td>
-                    <td className="p-3">{t.notes || '-'}</td>
+                  <tr key={t._id} className="border-b hover:bg-muted/50 [&>*]:p-3">
+                    <td className="text-blue-600 ">
+                      <a href={`/inventory/tickets?ticketId=${t._id}`} target="_blank" className="text-blue-600 hover:underline">
+                        {t._id}
+                      </a>
+                      </td>
+                    <td >{t.plateNumber}</td>
+                    <td >{t.customerName}</td>
+                    <td >{t.customerPhone || t.customerEmail || '-'}</td>
+                    <td >{t.paymentTime ? format(new Date(t.paymentTime), 'yyyy-MM-dd HH:mm') : '-'}</td>
+                    <td >{t.paymentMethod || '-'}</td>
+                    <td className=" text-right">{totalBefore.toFixed(3)} KD</td>
+                    <td className=" text-right">{totalAfter.toFixed(3)} KD</td>
+                    <td >{t.notes || '-'}</td>
                   </tr>
                 )
               })

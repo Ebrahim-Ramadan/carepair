@@ -23,8 +23,8 @@ export function AccountMenu({ email }: { email: string }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handleLogout} disabled={loading}>
-          <LogOut size={16} className="mr-2" />
+        <DropdownMenuItem onClick={handleLogout} disabled={loading} className="text-red-500">
+          <LogOut size={16} className="mr-2 text-red-500 " />
           Log out
         </DropdownMenuItem>
       </DropdownMenuContent>

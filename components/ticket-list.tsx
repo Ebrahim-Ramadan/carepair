@@ -100,7 +100,7 @@ export function TicketList({ tickets, selectedTicket, onSelectTicket, onDeleteTi
             key={ticket._id}
             className={`group cursor-pointer rounded-lg border p-3 transition-colors ${
               selectedTicket?._id === ticket._id
-                ? "border-primary bg-primary/10"
+                ? "border-neutral-200 bg-primary/10"
                 : "border-border bg-secondary hover:border-primary/50"
             }`}
             onClick={() => onSelectTicket({ _id: ticket._id } as unknown as Ticket)}

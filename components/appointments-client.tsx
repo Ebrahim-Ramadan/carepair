@@ -88,6 +88,7 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null)
   const [copiedPhone, setCopiedPhone] = useState<string | null>(null)
+  const [lastSortBy, setLastSortBy] = useState<string>(initialData.sortBy)
 
   // Export to PDF
   const handleExportPDF = () => {
@@ -131,28 +132,27 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
   }
 
   const handleSortChange = async (sortBy: string) => {
-    setIsLoading(true)
-    
+    if (sortBy === lastSortBy) return;
+    setLastSortBy(sortBy);
+    setIsLoading(true);
     try {
-      const url = new URL(window.location.href)
-      url.searchParams.set("sortBy", sortBy)
-      url.searchParams.set("page", "1")
+      const url = new URL(window.location.href);
+      url.searchParams.set("sortBy", sortBy);
+      url.searchParams.set("page", "1");
+      console.log('fetching ass');
       
-      const response = await fetch(`/api/appointments?page=1&sortBy=${sortBy}&limit=10`)
-      
+      const response = await fetch(`/api/appointments?page=1&sortBy=${sortBy}&limit=10`);
       if (!response.ok) {
-        throw new Error("Failed to fetch appointments")
+        throw new Error("Failed to fetch appointments");
       }
-      
-      const newData = await response.json()
-      setData(newData)
-      
-      router.push(url.toString())
+      const newData = await response.json();
+      setData(newData);
+      router.push(url.toString());
     } catch (error) {
-      console.error("Sort error:", error)
-      toast.error("Failed to sort appointments")
+      console.error("Sort error:", error);
+      toast.error("Failed to sort appointments");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -191,7 +191,7 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
     // Show browser alert for confirmation
     const customerName = `${appointment.customer.firstName} ${appointment.customer.lastName}`
     const confirmed = window.confirm(
-      `Are you sure you want to change ${customerName}'s appointment status to ${newStatus}? An email notification will be sent to the customer.`
+      `Are you sure you want to change ${customerName}'s appointment status to ${newStatus}?`
     )
 
     if (confirmed) {

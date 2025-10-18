@@ -179,13 +179,13 @@ export function ServicesClient({ initialServices }: ServicesClientProps) {
         isLoading={isLoading}
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-end">
         {/* <h1 className="text-2xl font-bold">Services Management</h1> */}
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           <Button variant="outline" size="sm" onClick={handleExportPDF}>Export PDF</Button>
           <Button variant="outline" size="sm" onClick={handleExportExcel}>Export Excel</Button>
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="w-4 h-4" />
+          <Button onClick={() => setIsDialogOpen(true)} size='sm'>
+            <Plus className="w-2 h-2" />
             Add 
           </Button>
         </div>

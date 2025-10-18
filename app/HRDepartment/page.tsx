@@ -3,6 +3,7 @@ import { HRDepartmentClient } from "@/components/hr-department-client"
 import { Spinner } from "@/components/ui/spinner"
 import clientPromise from "@/lib/mongodb"
 import { Metadata } from "next"
+import LoadingDots from "@/components/ui/loading-spinner"
 
 export const metadata: Metadata = {
   title: "HR Department | NintyNine",
@@ -44,7 +45,7 @@ export default async function HRDepartmentPage({ searchParams }: PageProps) {
   return (
     <Suspense fallback={
       <div className="flex h-[50vh] items-center justify-center">
-        <Spinner size="lg" />
+<LoadingDots/>
       </div>
     }>
       <HRDepartmentClient 

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Upload, X, Check, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import type { Photo } from "@/lib/types"
+import LoadingDots from "./ui/loading-spinner"
 
 type PhotoUploadProps = {
   title: string
@@ -346,7 +347,8 @@ export function PhotoUpload({ title, photos = [], onPhotosChange, ticketId }: Ph
                   {deletingPhotoUrl === photo.url && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                       <div className="bg-white text-black p-2 rounded-full">
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {/* <Loader2 className="h-4 w-4 animate-spin" /> */}
+                        <LoadingDots/>
                       </div>
                     </div>
                   )}

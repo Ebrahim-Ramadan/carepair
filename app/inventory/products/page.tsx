@@ -3,6 +3,7 @@ import { Metadata } from "next"
 import clientPromise from "@/lib/mongodb"
 import { ProductsClient } from "@/components/products-client"
 import { Spinner } from "@/components/ui/spinner"
+import LoadingDots from "@/components/ui/loading-spinner"
 
 export const metadata: Metadata = {
   title: "Products | Inventory",
@@ -47,7 +48,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
       <Suspense
         fallback={
           <div className="flex items-center justify-center py-12">
-            <Spinner size="lg" />
+            <LoadingDots/>
           </div>
         }
       >

@@ -222,9 +222,10 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
                   <SelectLabel>Service Category</SelectLabel>
                   <SelectItem value="all">All Categories</SelectItem>
                   <SelectItem value="protection">Protection</SelectItem>
-                  <SelectItem value="polish">Polishing</SelectItem>
-                  <SelectItem value="customization">Customization</SelectItem>
-                  <SelectItem value="restoration">Restoration</SelectItem>
+                  <SelectItem value="tanting">Tanting</SelectItem>
+                  <SelectItem value="painting">Painting</SelectItem>
+                  <SelectItem value="detailing">Detailing</SelectItem>
+                  <SelectItem value="repair">Repair</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>

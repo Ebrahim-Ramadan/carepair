@@ -98,16 +98,25 @@ export function TicketList({ tickets, selectedTicket, onSelectTicket, onDeleteTi
         {tickets.map((ticket) => (
           <div
             key={ticket._id}
-            className={`group cursor-pointer rounded-lg border p-3 transition-colors ${
+            className={`relative group cursor-pointer rounded-lg border p-3 transition-colors ${
               selectedTicket?._id === ticket._id
-                ? "border-neutral-200 bg-primary/10"
+                ? " border-neutral-200 bg-primary/10"
                 : "border-border bg-secondary hover:border-primary/50"
             }`}
             onClick={() => onSelectTicket({ _id: ticket._id } as unknown as Ticket)}
           >
+      {selectedTicket?._id === ticket._id && (
+  <div className="absolute -top-1 -left-1">
+    {/* Static inner circle */}
+    <div className="w-3 h-3 rounded-full bg-[#002540]"></div>
+    
+    {/* Animated outer circle that fades away */}
+    <div className="absolute top-0 left-0 w-3 h-3 rounded-full bg-[#002540] animate-ping"></div>
+  </div>
+)}
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 space-y-1">
-                <div className="font-mono text-sm font-semibold text-foreground">{ticket.plateNumber}</div>
+                <div className={`font-mono  ${selectedTicket?._id === ticket._id ? "text-base font-bold text-[#002540]" : "text-sm font-semibold"}`}>{ticket.plateNumber}</div>
                 <div className="text-sm text-muted-foreground">{ticket.customerName}</div>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3" />

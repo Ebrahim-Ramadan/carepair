@@ -1,8 +1,8 @@
 import { Suspense } from "react"
 import { AppointmentsClient } from "@/components/appointments-client"
-import { Spinner } from "@/components/ui/spinner"
 import { Metadata } from "next"
 import { headers } from 'next/headers'
+import LoadingDots from "@/components/ui/loading-spinner"
 
 export const metadata: Metadata = {
   title: "Appointments | NintyNine",
@@ -73,7 +73,9 @@ async function AppointmentsData({ searchParams }: { searchParams: SearchParams }
 export default function AppointmentsPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <div className="mx-auto min-h-screen">
-      <Suspense fallback={<div className="flex w-full flex-col items-center justify-center rounded-lg border border-border bg-card p-6"><Spinner/></div>}>
+      <Suspense fallback={<div className="flex w-full flex-col items-center justify-center rounded-lg border border-border bg-card p-6">
+        <LoadingDots/>
+      </div>}>
         <AppointmentsData searchParams={searchParams} />
       </Suspense>
     </div>

@@ -389,7 +389,7 @@ export function TicketView({
                   <Receipt className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">Total</span>
                 </div>
-                <div className="font-semibold text-lg">{totalAmount} KD</div>
+                <div className="font-semibold text-lg">{totalAmount} KWD</div>
               </div>
               <div className="flex flex-col md:flex-row gap-2 justify-between items-center">
                 <div className="flex items-center gap-2">

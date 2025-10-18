@@ -290,7 +290,7 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
           </p>
         </div>
         
-        <div className="flex items-center gap-4 justify-end">
+        <div className="flex items-center justify-end">
           {/* Export Buttons */}
           <Button variant="outline" size="sm" onClick={handleExportPDF} className="mr-2">
             Export PDF
@@ -300,7 +300,7 @@ export function AppointmentsClient({ initialData }: AppointmentsClientProps) {
           </Button>
           {/* Sort Dropdown */}
           <div className="flex items-center gap-2">
-            <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+            {/* <ArrowUpDown className="h-4 w-4 text-muted-foreground" /> */}
             <Select value={data.sortBy} onValueChange={handleSortChange} disabled={isLoading}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue />

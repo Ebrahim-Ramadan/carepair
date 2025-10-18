@@ -180,7 +180,7 @@ export function ServicesClient({ initialServices }: ServicesClientProps) {
       />
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Services Management</h1>
+        {/* <h1 className="text-2xl font-bold">Services Management</h1> */}
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleExportPDF}>Export PDF</Button>
           <Button variant="outline" size="sm" onClick={handleExportExcel}>Export Excel</Button>

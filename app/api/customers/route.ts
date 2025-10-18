@@ -25,7 +25,7 @@ export async function GET() {
             vehicles: {
               $addToSet: {
                 plateNumber: "$plateNumber",
-                mileage: "$mileage"
+                ticketId: "$_id"
               }
             }
           }

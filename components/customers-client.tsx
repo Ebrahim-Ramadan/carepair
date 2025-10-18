@@ -16,7 +16,7 @@ type Customer = {
   lastVisit: string
   vehicles: Array<{
     plateNumber: string
-    mileage: number
+    ticketId: string
   }>
 }
 
@@ -31,10 +31,12 @@ type CustomersClientProps = {
 
 export function CustomersClient({ initialCustomers }: CustomersClientProps) {
   const [customers] = useState<Customer[]>(initialCustomers)
+    console.log('initialCustomers', initialCustomers);
 
   // Export to PDF
   const handleExportPDF = () => {
     const doc = new jsPDF()
+    
     doc.text("Customers", 14, 12)
     autoTable(doc, {
       head: [["Name", "Email", "Phone", "Vehicles", "Total Tickets", "Last Visit"]],
@@ -141,7 +143,13 @@ export function CustomersClient({ initialCustomers }: CustomersClientProps) {
                 <td className="px-2 md:px-4 py-1.5 md:py-3">
                   <div className="flex flex-wrap gap-1">
                     {customer.vehicles.map((vehicle, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
+                      <Badge
+                        key={index}
+                        variant="outline"
+                        className="text-xs cursor-pointer hover:bg-blue-100"
+                        onClick={() => window.location.href = `/inventory/tickets?ticketId=${vehicle.ticketId}`}
+                        title={`Ticket ID: ${vehicle.ticketId}`}
+                      >
                         {vehicle.plateNumber}
                       </Badge>
                     ))}

@@ -34,6 +34,9 @@ export function TicketView({
   onOpenAddService,
   onScrollToServices,
 }: TicketViewProps) {
+  // Partial payment state
+  const [amountPaid, setAmountPaid] = useState<number | ''>(typeof ticket.amountPaid === 'number' ? ticket.amountPaid : '');
+  const [isAmountPaidSaving, setIsAmountPaidSaving] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false)
   const [noteValue, setNoteValue] = useState(ticket.notes || "")
   const [notesavingloading, setnotesavingloading] = useState(false)
@@ -102,8 +105,9 @@ export function TicketView({
       return 0;
     }
 
-    const paymentFee = getPaymentFee(paymentMethod || ticket.paymentMethod || '', totalAmount);
-    const totalAfterFee = totalAmount - paymentFee;
+  const paymentFee = getPaymentFee(paymentMethod || ticket.paymentMethod || '', totalAmount);
+  const totalAfterFee = totalAmount - paymentFee;
+  const remainingAmount = typeof amountPaid === 'number' ? Math.max(0, totalAfterFee - amountPaid) : totalAfterFee;
 
   // Update total in database if it's different
   useEffect(() => {
@@ -387,11 +391,55 @@ export function TicketView({
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Receipt className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">Total</span>
+                  <span className="font-medium">Total Cost</span>
                 </div>
                 <div className="font-semibold text-lg">{totalAmount} KWD</div>
               </div>
+              <div className=" flex flex-col md:flex-row gap-2 justify-end items-center">
+                 <div className="flex items-center gap-2">
+                  <label className="text-sm text-muted-foreground font-medium">Amount Paid:</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="any"
+                    className="border rounded px-2 py-1 text-sm"
+                    value={amountPaid}
+                    onChange={e => setAmountPaid(e.target.value === '' ? '' : Number(e.target.value))}
+                    style={{ width: 100 }}
+                  />
+                  <Button
+                    size="sm"
+                    className="bg-[#002540]"
+                    disabled={isAmountPaidSaving || amountPaid === (typeof ticket.amountPaid === 'number' ? ticket.amountPaid : '')}
+                    onClick={async () => {
+                      setIsAmountPaidSaving(true);
+                      try {
+                        const response = await fetch(`/api/tickets/${ticket._id}`, {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ amountPaid: amountPaid === '' ? null : amountPaid }),
+                        });
+                        if (!response.ok) throw new Error("Failed to update amount paid");
+                        const updatedTicket = await response.json();
+                        toast.success("Amount paid updated!");
+                        onUpdate?.(updatedTicket);
+                      } catch (error) {
+                        toast.error("Failed to update amount paid");
+                      }
+                      setIsAmountPaidSaving(false);
+                    }}
+                  >
+                    {isAmountPaidSaving ? <Spinner size="sm" /> : "Save"}
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground font-medium">Remaining:</span>
+                  <span className="font-semibold text-lg text-green-600">{remainingAmount} KWD</span>
+                </div>
+              </div>
               <div className="flex flex-col md:flex-row gap-2 justify-between items-center">
+                {/* Partial Payment Section */}
+               
                 <div className="flex items-center gap-2">
                   <label className="text-sm text-muted-foreground font-medium">Payment Time:</label>
                   <input

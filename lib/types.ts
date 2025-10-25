@@ -109,6 +109,7 @@ export type Ticket = {
   services: TicketService[]
   notes?: string
   totalAmount?: number
+  amountPaid?: number // NEW: partial payment
   createdAt: string
   updatedAt?: string
   paymentTime?: string

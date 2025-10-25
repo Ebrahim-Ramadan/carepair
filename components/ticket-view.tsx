@@ -256,16 +256,25 @@ export function TicketView({
       }
 
       // Total
-      const finalY = (doc as any).lastAutoTable?.finalY ?? servicesStartY + 40
-      doc.setFontSize(12)
-      const totalLabel =  `Total: ${Number(totalAmount).toFixed(3)} KWD`
-      doc.text(totalLabel,  14, finalY + 12, { align: "left" })
-    doc.setFontSize(10)
-    const feeLabel = `Payment Method Fee: ${paymentFee > 0 ? '- ' + paymentFee.toFixed(3) : '0.000'} KWD`
-    doc.text(feeLabel, 14, finalY + 20, { align: "left" })
-    doc.setFontSize(12)
-    const afterFeeLabel = `Total After Fee: ${totalAfterFee.toFixed(3)} KWD`
-    doc.text(afterFeeLabel, 14, finalY + 30, { align: "left" })
+      const finalY = (doc as any).lastAutoTable?.finalY ?? servicesStartY + 40;
+      doc.setFontSize(12);
+      const totalLabel = `Total: ${Number(totalAmount).toFixed(3)} KWD`;
+      doc.text(totalLabel, 14, finalY + 12, { align: "left" });
+      doc.setFontSize(10);
+      const feeLabel = `Payment Method Fee: ${paymentFee > 0 ? '- ' + paymentFee.toFixed(3) : '0.000'} KWD`;
+      doc.text(feeLabel, 14, finalY + 20, { align: "left" });
+      doc.setFontSize(12);
+      const afterFeeLabel = `Total After Fee: ${totalAfterFee.toFixed(3)} KWD`;
+      doc.text(afterFeeLabel, 14, finalY + 30, { align: "left" });
+      // Amount Paid
+      const paidLabel = `Amount Paid: ${(typeof ticket.amountPaid === 'number' ? ticket.amountPaid.toFixed(3) : '0.000')} KWD`;
+      doc.setFontSize(12);
+      doc.text(paidLabel, 14, finalY + 40, { align: "left" });
+      // Remaining
+      const remaining = typeof ticket.amountPaid === 'number' ? Math.max(0, totalAfterFee - ticket.amountPaid) : totalAfterFee;
+      const remainingLabel = `Remaining: ${remaining.toFixed(3)} KWD`;
+      doc.setFontSize(12);
+      doc.text(remainingLabel, 14, finalY + 50, { align: "left" });
 
       // Signature boxes
       const pageHeight = doc.internal.pageSize.getHeight()

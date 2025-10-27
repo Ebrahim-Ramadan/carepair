@@ -10,9 +10,9 @@ export async function PUT(
     const client = await clientPromise;
     const db = client.db("car_repair");
     const body = await request.json();
-    
-    const { name, quantity, cost, note } = body;
-    
+
+    const { name, quantity, cost, note, category } = body;
+
     if (!name || !quantity || !cost) {
       return NextResponse.json(
         { error: "Name, quantity and cost are required" },
@@ -20,17 +20,20 @@ export async function PUT(
       );
     }
 
+    const updateFields: any = {
+      name,
+      quantity: Number(quantity),
+      cost: Number(cost),
+      note: note || "",
+      updatedAt: new Date(),
+    };
+    if (category !== undefined) {
+      updateFields.category = category;
+    }
+
     const result = await db.collection("expenses").updateOne(
       { _id: new ObjectId(params.id) },
-      {
-        $set: {
-          name,
-          quantity: Number(quantity),
-          cost: Number(cost),
-          note: note || "",
-          updatedAt: new Date(),
-        },
-      }
+      { $set: updateFields }
     );
 
     if (result.matchedCount === 0) {

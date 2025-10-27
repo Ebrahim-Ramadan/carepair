@@ -18,14 +18,23 @@ type Expense = {
   name: string;
   quantity: number;
   cost: number;
+  category: string;
   note?: string;
   createdAt?: string;
 };
 
-export function ExpensesClient() {
+type Category = {
+  _id: string;
+  name: string;
+};
+
+export function ExpensesClient() { // Add this component declaration
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState<'excel' | 'pdf' | null>(null);
 
   const fetchExpenses = async () => {
     try {
@@ -41,17 +50,30 @@ export function ExpensesClient() {
     fetchExpenses();
   }, []);
 
+  // Fetch categories when dialog opens
+  useEffect(() => {
+    if (isDialogOpen) {
+      setCategoriesLoading(true);
+      fetch('/api/categories')
+        .then(res => res.json())
+        .then(data => setCategories(Array.isArray(data) ? data : []))
+        .finally(() => setCategoriesLoading(false));
+    }
+  }, [isDialogOpen]);
+
   const handleSubmit = async (formData: any) => {
     try {
+      if (!formData.category) {
+        alert('Please select a category.');
+        return;
+      }
       if (selectedExpense) {
-        // Handle edit (you'll need to create the PUT endpoint)
         await fetch(`/api/inventory/expenses/${selectedExpense._id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
         });
       } else {
-        // Handle create
         await fetch("/api/inventory/expenses", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -82,9 +104,6 @@ export function ExpensesClient() {
     setSelectedExpense(expense);
     setIsDialogOpen(true);
   };
-
-  // ...existing code...
-  const [isExporting, setIsExporting] = useState<'excel' | 'pdf' | null>(null);
 
   const handleExportExcel = async () => {
     setIsExporting('excel');
@@ -121,12 +140,13 @@ export function ExpensesClient() {
       doc.setFontSize(10);
       doc.text(`Total Expenses: ${expenses.length}`, 14, 25);
       autoTable(doc, {
-        head: [['Name', 'Quantity', 'Cost', 'Note', 'Date']],
+        head: [['Name', 'Quantity', 'Cost', 'Category', 'Note', 'Date']],
         body: expenses.map(exp => [
           exp.name,
           exp.quantity,
           exp.cost,
-          exp.note,
+          exp.category,
+          exp.note ?? '',
           exp.createdAt ? new Date(exp.createdAt).toLocaleDateString() : ''
         ]),
         startY: 30,
@@ -173,6 +193,7 @@ export function ExpensesClient() {
             <TableHead>Name</TableHead>
             <TableHead>Quantity</TableHead>
             <TableHead>Cost</TableHead>
+            <TableHead>Category</TableHead>
             <TableHead>Note</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Actions</TableHead>
@@ -184,6 +205,7 @@ export function ExpensesClient() {
               <TableCell>{expense.name}</TableCell>
               <TableCell>{expense.quantity}</TableCell>
               <TableCell>KWD{expense.cost.toFixed(2)}</TableCell>
+              <TableCell>{expense.category}</TableCell>
               <TableCell>{expense.note}</TableCell>
               <TableCell>{expense.createdAt ? new Date(expense.createdAt).toLocaleDateString() : ''}</TableCell>
               <TableCell>
@@ -217,7 +239,9 @@ export function ExpensesClient() {
         }}
         expense={selectedExpense}
         onSubmit={handleSubmit}
+        categories={categories}
+        categoriesLoading={categoriesLoading}
       />
     </div>
   );
-}
+} // Close the component here

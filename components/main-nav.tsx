@@ -23,7 +23,8 @@ export function MainNav({ isAdmin }: MainNavProps) {
         children: [
           { href: "/inventory/expenses", label: "Expenses" },
           { href: "/inventory/sales", label: "Sales" },
-          { href: "/inventory/products", label: "Products" }
+          { href: "/inventory/products", label: "Products" },
+          { href: "/categories", label: "Categories" },
         ]
       },
 

@@ -14,22 +14,32 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+type Category = {
+  _id: string;
+  name: string;
+};
+
 export function ExpenseDialog({ 
   isOpen, 
   onOpenChange, 
   expense = null,
-  onSubmit 
+  onSubmit,
+  categories = [],
+  categoriesLoading = false
 }: { 
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  expense?: { name: string; quantity: number; cost: number; note?: string } | null;
+  expense?: { name: string; quantity: number; cost: number; note?: string; category?: string } | null;
   onSubmit: (data: any) => void;
+  categories?: Category[];
+  categoriesLoading?: boolean;
 }) {
   const [formData, setFormData] = useState({
     name: "",
     quantity: "",
     cost: "",
     note: "",
+    category: ""
   });
 
   useEffect(() => {
@@ -39,6 +49,7 @@ export function ExpenseDialog({
         quantity: expense.quantity.toString(),
         cost: expense.cost.toString(),
         note: expense.note || "",
+        category: expense.category || ""
       });
     } else {
       setFormData({
@@ -46,6 +57,7 @@ export function ExpenseDialog({
         quantity: "",
         cost: "",
         note: "",
+        category: ""
       });
     }
   }, [expense]);
@@ -54,7 +66,7 @@ export function ExpenseDialog({
     e.preventDefault();
     onSubmit(formData);
     onOpenChange(false);
-    setFormData({ name: "", quantity: "", cost: "", note: "" });
+    setFormData({ name: "", quantity: "", cost: "", note: "", category: "" });
   };
 
   return (
@@ -77,6 +89,22 @@ export function ExpenseDialog({
               }
               required
             />
+          </div>
+          <div>
+            <Label htmlFor="category">Category</Label>
+            <select
+              id="category"
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              value={formData.category}
+              onChange={e => setFormData({ ...formData, category: e.target.value })}
+              required
+              disabled={categoriesLoading}
+            >
+              <option value="">{categoriesLoading ? 'Loading...' : 'Select category'}</option>
+              {categories.map(cat => (
+                <option key={cat._id} value={cat.name}>{cat.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <Label htmlFor="quantity">Quantity</Label>

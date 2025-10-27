@@ -1,6 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
+type Category = {
+  _id: string;
+  name: string;
+};
 import * as Dialog from "@radix-ui/react-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,11 +30,11 @@ export function ServiceDialog({
   const [form, setForm] = useState<Partial<Service>>({
     nameEn: service?.nameEn ?? "",
     nameAr: service?.nameAr ?? "",
-    // descriptionEn: service?.descriptionEn ?? "",
-    // descriptionAr: service?.descriptionAr ?? "",
     price: service?.price ?? 0,
     category: service?.category ?? ""
-  })
+  });
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
 
   // Reset form when service prop changes
   useEffect(() => {
@@ -38,13 +42,22 @@ export function ServiceDialog({
       setForm({
         nameEn: service.nameEn,
         nameAr: service.nameAr,
-        // descriptionEn: service.descriptionEn,
-        // descriptionAr: service.descriptionAr,
         price: service.price,
         category: service.category
-      })
+      });
     }
-  }, [service])
+  }, [service]);
+
+  // Fetch categories when dialog opens
+  useEffect(() => {
+    if (open) {
+      setCategoriesLoading(true);
+      fetch('/api/categories')
+        .then(res => res.json())
+        .then(data => setCategories(Array.isArray(data) ? data : []))
+        .finally(() => setCategoriesLoading(false));
+    }
+  }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -96,13 +109,12 @@ export function ServiceDialog({
                   required
                   value={form.category}
                   onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+                  disabled={categoriesLoading}
                 >
-                  <option value="">Select category</option>
-                  <option value="protection">Protection</option>
-                  <option value="tanting">Tanting</option>
-                  <option value="painting">Painting</option>
-                  <option value="detailing">Detailing</option>
-                  <option value="repair">Repair</option>
+                  <option value="">{categoriesLoading ? 'Loading...' : 'Select category'}</option>
+                  {categories.map(cat => (
+                    <option key={cat._id} value={cat.name}>{cat.name}</option>
+                  ))}
                 </select>
               </div>
               <div className="space-y-2">

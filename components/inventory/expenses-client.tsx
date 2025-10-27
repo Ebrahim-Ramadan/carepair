@@ -11,7 +11,9 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ExpenseDialog } from "./expense-dialog";
+import { Spinner } from "@/components/ui/spinner";
 import { PencilIcon, Plus, Trash2 } from "lucide-react";
+import LoadingDots from "../ui/loading-spinner";
 
 type Expense = {
   _id: string;
@@ -35,14 +37,18 @@ export function ExpensesClient() { // Add this component declaration
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [isExporting, setIsExporting] = useState<'excel' | 'pdf' | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchExpenses = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch("/api/inventory/expenses");
       const data = await response.json();
       setExpenses(data);
     } catch (error) {
       console.error("Failed to fetch expenses:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -187,49 +193,55 @@ export function ExpensesClient() { // Add this component declaration
         </div>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Quantity</TableHead>
-            <TableHead>Cost</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Note</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {expenses.map((expense) => (
-            <TableRow key={expense._id}>
-              <TableCell>{expense.name}</TableCell>
-              <TableCell>{expense.quantity}</TableCell>
-              <TableCell>KWD{expense.cost.toFixed(2)}</TableCell>
-              <TableCell>{expense.category}</TableCell>
-              <TableCell>{expense.note}</TableCell>
-              <TableCell>{expense.createdAt ? new Date(expense.createdAt).toLocaleDateString() : ''}</TableCell>
-              <TableCell>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEdit(expense)}
-                  >
-                    <PencilIcon />
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(expense._id)}
-                  >
-                    <Trash2 className="text-white" />
-                  </Button>
-                </div>
-              </TableCell>
+      {isLoading ? (
+        <div className="flex justify-center items-center py-12">
+         <LoadingDots/>
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Quantity</TableHead>
+              <TableHead>Cost</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Note</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {expenses.map((expense) => (
+              <TableRow key={expense._id}>
+                <TableCell>{expense.name}</TableCell>
+                <TableCell>{expense.quantity}</TableCell>
+                <TableCell>KWD{expense.cost.toFixed(2)}</TableCell>
+                <TableCell>{expense.category}</TableCell>
+                <TableCell>{expense.note}</TableCell>
+                <TableCell>{expense.createdAt ? new Date(expense.createdAt).toLocaleDateString() : ''}</TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(expense)}
+                    >
+                      <PencilIcon />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(expense._id)}
+                    >
+                      <Trash2 className="text-white" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
       <ExpenseDialog
         isOpen={isDialogOpen}

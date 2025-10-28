@@ -105,10 +105,10 @@ export function TicketView({
       return 0;
     }
 
+  // Ignore payment method fee for remaining calculation
   const paymentFee = getPaymentFee(paymentMethod || ticket.paymentMethod || '', totalAmount);
-  const totalAfterFee = totalAmount - paymentFee;
   const totalPaid = payments.reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0);
-  const remainingAmount = Math.max(0, totalAfterFee - totalPaid);
+  const remainingAmount = Math.max(0, totalAmount - totalPaid);
 
   // Update total in database if it's different
   useEffect(() => {
@@ -259,14 +259,9 @@ export function TicketView({
       // Total
       const finalY = (doc as any).lastAutoTable?.finalY ?? servicesStartY + 40;
       doc.setFontSize(12);
-      const totalLabel = `Total: ${Number(totalAmount).toFixed(3)} KWD`;
-      doc.text(totalLabel, 14, finalY + 12, { align: "left" });
-      doc.setFontSize(10);
-      const feeLabel = `Payment Method Fee: ${paymentFee > 0 ? '- ' + paymentFee.toFixed(3) : '0.000'} KWD`;
-      doc.text(feeLabel, 14, finalY + 20, { align: "left" });
-      doc.setFontSize(12);
-      const afterFeeLabel = `Total After Fee: ${totalAfterFee.toFixed(3)} KWD`;
-      doc.text(afterFeeLabel, 14, finalY + 30, { align: "left" });
+  const totalLabel = `Total: ${Number(totalAmount).toFixed(3)} KWD`;
+  doc.text(totalLabel, 14, finalY + 12, { align: "left" });
+  // Payment fee and after-fee are ignored for remaining calculation
       // Payments Table
       doc.setFontSize(12);
       doc.text("Payments:", 14, finalY + 40, { align: "left" });
@@ -419,9 +414,21 @@ export function TicketView({
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <Receipt className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">Total Cost</span>
+                  <span className="font-medium">Total Amount</span>
                 </div>
-                <div className="font-semibold text-lg">{totalAmount} KWD</div>
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-1">
+                    <span className="font-semibold text-lg">{totalAmount} KWD</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-muted-foreground font-medium">Remaining:</span>
+                    <span className="font-semibold text-lg text-green-600">{remainingAmount.toFixed(3)} KWD</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-muted-foreground font-medium">Total Paid:</span>
+                    <span className="font-semibold text-lg text-blue-600">{totalPaid.toFixed(3)} KWD</span>
+                  </div>
+                </div>
               </div>
               {/* Payments Section */}
               <div className="flex flex-col gap-2 w-full md:w-auto">
@@ -484,14 +491,12 @@ export function TicketView({
                   >
                     {isPaymentsSaving ? <Spinner size="sm" /> : "Save Payments"}
                   </Button>
-                  <span className="text-sm text-muted-foreground font-medium">Remaining:</span>
-                  <span className="font-semibold text-lg text-green-600">{remainingAmount.toFixed(3)} KWD</span>
                 </div>
               </div>
               <div className="flex flex-col md:flex-row gap-2 justify-between items-center">
                 {/* Partial Payment Section */}
                
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                   <label className="text-sm text-muted-foreground font-medium">Payment Time:</label>
                   <input
                     type="datetime-local"
@@ -499,7 +504,7 @@ export function TicketView({
                     value={paymentTime}
                     onChange={e => setPaymentTime(e.target.value)}
                   />
-                </div>
+                </div> */}
                 <div className="flex items-center gap-2">
                   <label className="text-sm text-muted-foreground font-medium">Payment Method:</label>
                   <select

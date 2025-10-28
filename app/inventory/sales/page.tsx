@@ -25,7 +25,7 @@ export default function SalesPage() {
     doc.text("Sales (Tickets)", 14, 12)
     autoTable(doc, {
       head: [[
-        "Ticket ID", "Plate Number", "Customer Name", "Contact", "Payment Date", "Payment Method", "Total Before", "Total After", "Notes"
+        "Ticket ID", "Invoice No", "Plate Number", "Customer Name", "Contact", "Payment Date", "Payment Method", "Total Before", "Total After", "Notes"
       ]],
       body: tickets.map((t: any) => {
         function getPaymentFee(method: string, amount: number): number {
@@ -43,6 +43,7 @@ export default function SalesPage() {
         const totalAfter = totalBefore - paymentFee;
         return [
           t._id.slice(0, 8),
+          t.invoiceNo || '-',
           t.plateNumber,
           t.customerName,
           t.customerPhone || t.customerEmail || '-',
@@ -76,6 +77,7 @@ export default function SalesPage() {
         const totalAfter = totalBefore - paymentFee;
         return {
           "Ticket ID": t._id,
+          "Invoice No": t.invoiceNo || '-',
           "Plate Number": t.plateNumber,
           "Customer Name": t.customerName,
           "Contact": t.customerPhone || t.customerEmail || '-',
@@ -170,10 +172,11 @@ export default function SalesPage() {
           <thead>
             <tr className="text-left bg-muted/50">
               <th className="p-3">Ticket ID</th>
+              <th className="p-3">Invoice No</th>
               <th className="p-3">Plate Number</th>
               <th className="p-3">Customer Name</th>
               <th className="p-3">Contact</th>
-              <th className="p-3">Payment Date</th>
+              <th className="p-3">Invoice Date</th>
               <th className="p-3">Payment Method</th>
               <th className="p-3 text-right">Total Before</th>
               <th className="p-3 text-right">Total After</th>
@@ -207,15 +210,16 @@ export default function SalesPage() {
                       <a href={`/inventory/tickets?ticketId=${t._id}`} target="_blank" className="text-blue-600 hover:underline">
                         {t._id}
                       </a>
-                      </td>
-                    <td >{t.plateNumber}</td>
-                    <td >{t.customerName}</td>
-                    <td >{t.customerPhone || t.customerEmail || '-'}</td>
-                    <td >{t.paymentTime ? format(new Date(t.paymentTime), 'yyyy-MM-dd HH:mm') : '-'}</td>
-                    <td >{t.paymentMethod || '-'}</td>
+                    </td>
+                    <td>{t.invoiceNo || '-'}</td>
+                    <td>{t.plateNumber}</td>
+                    <td>{t.customerName}</td>
+                    <td>{t.customerPhone || t.customerEmail || '-'}</td>
+                    <td>{t.paymentTime ? format(new Date(t.paymentTime), 'yyyy-MM-dd HH:mm') : '-'}</td>
+                    <td>{t.paymentMethod || '-'}</td>
                     <td className=" text-right">{totalBefore.toFixed(3)} KD</td>
                     <td className=" text-right">{totalAfter.toFixed(3)} KD</td>
-                    <td >{t.notes || '-'}</td>
+                    <td>{t.notes || '-'}</td>
                   </tr>
                 )
               })

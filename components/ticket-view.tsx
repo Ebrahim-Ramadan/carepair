@@ -412,19 +412,17 @@ export function TicketView({
 
             <div className="mt-2 pt-4 border-t border-border flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Receipt className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">Total Amount</span>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-1">
+               
+                <div className="flex flex-col items-end gap-1 w-full">
+                  <div className="flex justify-between w-full">
+                    <span className="text-sm text-muted-foreground font-medium">Total Amount:</span>
                     <span className="font-semibold text-lg">{totalAmount} KWD</span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex justify-between w-full">
                     <span className="text-sm text-muted-foreground font-medium">Remaining:</span>
                     <span className="font-semibold text-lg text-green-600">{remainingAmount.toFixed(3)} KWD</span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex justify-between w-full">
                     <span className="text-sm text-muted-foreground font-medium">Total Paid:</span>
                     <span className="font-semibold text-lg text-blue-600">{totalPaid.toFixed(3)} KWD</span>
                   </div>

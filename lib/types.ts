@@ -98,6 +98,11 @@ export type TicketService = {
   finalPrice?: number
 }
 
+export type Payment = {
+  amount: number;
+  date: string; // ISO string
+};
+
 export type Ticket = {
   _id?: string
   invoiceNo: string
@@ -109,11 +114,14 @@ export type Ticket = {
   services: TicketService[]
   notes?: string
   totalAmount?: number
-  amountPaid?: number // NEW: partial payment
+  payments?: Payment[]
   createdAt: string
   updatedAt?: string
   paymentTime?: string
   paymentMethod?: string
+  vehicleConditionPoints?: DamagePoint[]
+  beforePhotos?: Photo[]
+  afterPhotos?: Photo[]
 }
 
 export type TicketSummary = {

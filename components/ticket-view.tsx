@@ -5,7 +5,7 @@ import { VehicleConditionRecord } from "@/components/vehicle-condition-record"
 import { PhotoUpload } from "@/components/photo-upload"
 import { EditableTicketInfo } from "@/components/editable-ticket-info"
 import { toast } from "sonner"
-import type { Ticket, DamagePoint, Photo } from "@/lib/types"
+import type { Ticket, DamagePoint, Photo, Payment } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Plus, X, Trash2, Receipt } from "lucide-react"
@@ -34,9 +34,9 @@ export function TicketView({
   onOpenAddService,
   onScrollToServices,
 }: TicketViewProps) {
-  // Partial payment state
-  const [amountPaid, setAmountPaid] = useState<number | ''>(typeof ticket.amountPaid === 'number' ? ticket.amountPaid : '');
-  const [isAmountPaidSaving, setIsAmountPaidSaving] = useState(false);
+  // Multiple payments state
+  const [payments, setPayments] = useState<Payment[]>(ticket.payments && Array.isArray(ticket.payments) ? ticket.payments : []);
+  const [isPaymentsSaving, setIsPaymentsSaving] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false)
   const [noteValue, setNoteValue] = useState(ticket.notes || "")
   const [notesavingloading, setnotesavingloading] = useState(false)
@@ -107,7 +107,8 @@ export function TicketView({
 
   const paymentFee = getPaymentFee(paymentMethod || ticket.paymentMethod || '', totalAmount);
   const totalAfterFee = totalAmount - paymentFee;
-  const remainingAmount = typeof amountPaid === 'number' ? Math.max(0, totalAfterFee - amountPaid) : totalAfterFee;
+  const totalPaid = payments.reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0);
+  const remainingAmount = Math.max(0, totalAfterFee - totalPaid);
 
   // Update total in database if it's different
   useEffect(() => {
@@ -266,15 +267,33 @@ export function TicketView({
       doc.setFontSize(12);
       const afterFeeLabel = `Total After Fee: ${totalAfterFee.toFixed(3)} KWD`;
       doc.text(afterFeeLabel, 14, finalY + 30, { align: "left" });
-      // Amount Paid
-      const paidLabel = `Amount Paid: ${(typeof ticket.amountPaid === 'number' ? ticket.amountPaid.toFixed(3) : '0.000')} KWD`;
+      // Payments Table
       doc.setFontSize(12);
-      doc.text(paidLabel, 14, finalY + 40, { align: "left" });
-      // Remaining
-      const remaining = typeof ticket.amountPaid === 'number' ? Math.max(0, totalAfterFee - ticket.amountPaid) : totalAfterFee;
-      const remainingLabel = `Remaining: ${remaining.toFixed(3)} KWD`;
+      doc.text("Payments:", 14, finalY + 40, { align: "left" });
+      if (payments.length > 0) {
+        const paymentsTable = payments.map((p, idx) => [
+          String(idx + 1),
+          new Date(p.date).toLocaleString(),
+          typeof p.amount === 'number' ? p.amount.toFixed(3) : '0.000',
+        ]);
+        autoTable(doc, {
+          head: [["#", "Date", "Amount (KWD)"]],
+          body: paymentsTable,
+          startY: finalY + 45,
+          styles: { fontSize: 10, font: isArabic ? "Amiri" : "helvetica", halign: "left" },
+          headStyles: { fillColor: [2, 119, 189], textColor: 255, font: isArabic ? "Amiri" : "helvetica", halign: "left" },
+        });
+      } else {
+        doc.setFontSize(10);
+        doc.text("No payments recorded", 14, finalY + 50, { align: "left" });
+      }
+      // Paid/Remaining
+      const paidLabel = `Total Paid: ${totalPaid.toFixed(3)} KWD`;
       doc.setFontSize(12);
-      doc.text(remainingLabel, 14, finalY + 50, { align: "left" });
+      doc.text(paidLabel, 14, (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 10 : finalY + 60, { align: "left" });
+      const remainingLabel = `Remaining: ${remainingAmount.toFixed(3)} KWD`;
+      doc.setFontSize(12);
+      doc.text(remainingLabel, 14, (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 20 : finalY + 70, { align: "left" });
 
       // Signature boxes
       const pageHeight = doc.internal.pageSize.getHeight()
@@ -305,7 +324,7 @@ export function TicketView({
   return (
     <div className="space-y-4">
       {/* Editable Ticket Information */}
-      <EditableTicketInfo ticket={ticket} onUpdate={onUpdate} />
+  <EditableTicketInfo ticket={ticket} onUpdate={onUpdate ?? (() => {})} />
 
       {/* Services Section - Add ref here */}
       <div ref={servicesRef} className="rounded-lg border border-border bg-card p-4">
@@ -404,46 +423,69 @@ export function TicketView({
                 </div>
                 <div className="font-semibold text-lg">{totalAmount} KWD</div>
               </div>
-              <div className=" flex flex-col md:flex-row gap-2 justify-end items-center">
-                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-muted-foreground font-medium">Amount Paid:</label>
-                  <input
-                    type="number"
-                    min={0}
-                    step="any"
-                    className="border rounded px-2 py-1 text-sm"
-                    value={amountPaid}
-                    onChange={e => setAmountPaid(e.target.value === '' ? '' : Number(e.target.value))}
-                    style={{ width: 100 }}
-                  />
+              {/* Payments Section */}
+              <div className="flex flex-col gap-2 w-full md:w-auto">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm text-muted-foreground font-medium">Payments:</span>
+                  <Button size="sm" variant="outline" onClick={() => setPayments([...payments, { amount: 0, date: new Date().toISOString() }])}>
+                    <Plus className="h-4 w-4" /> Add Payment
+                  </Button>
+                </div>
+                {payments.length === 0 && <span className="text-xs text-muted-foreground">No payments yet.</span>}
+                {payments.map((p, idx) => (
+                  <div key={idx} className="flex items-center gap-2 mb-1">
+                    <input
+                      type="number"
+                      min={0}
+                      step="any"
+                      className="border rounded px-2 py-1 text-sm"
+                      value={p.amount}
+                      onChange={e => {
+                        const val = Number(e.target.value);
+                        setPayments(payments.map((pay, i) => i === idx ? { ...pay, amount: val } : pay));
+                      }}
+                      style={{ width: 100 }}
+                    />
+                    <input
+                      type="datetime-local"
+                      className="border rounded px-2 py-1 text-sm"
+                      value={p.date ? new Date(p.date).toISOString().slice(0,16) : ''}
+                      onChange={e => {
+                        setPayments(payments.map((pay, i) => i === idx ? { ...pay, date: new Date(e.target.value).toISOString() } : pay));
+                      }}
+                    />
+                    <Button size="icon" variant="ghost" onClick={() => setPayments(payments.filter((_, i) => i !== idx))}>
+                      <X className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                ))}
+                <div className="flex items-center gap-2 mt-2">
                   <Button
                     size="sm"
                     className="bg-[#002540]"
-                    disabled={isAmountPaidSaving || amountPaid === (typeof ticket.amountPaid === 'number' ? ticket.amountPaid : '')}
+                    disabled={isPaymentsSaving || JSON.stringify(payments) === JSON.stringify(ticket.payments || [])}
                     onClick={async () => {
-                      setIsAmountPaidSaving(true);
+                      setIsPaymentsSaving(true);
                       try {
                         const response = await fetch(`/api/tickets/${ticket._id}`, {
                           method: "PUT",
                           headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ amountPaid: amountPaid === '' ? null : amountPaid }),
+                          body: JSON.stringify({ payments }),
                         });
-                        if (!response.ok) throw new Error("Failed to update amount paid");
+                        if (!response.ok) throw new Error("Failed to update payments");
                         const updatedTicket = await response.json();
-                        toast.success("Amount paid updated!");
+                        toast.success("Payments updated!");
                         onUpdate?.(updatedTicket);
                       } catch (error) {
-                        toast.error("Failed to update amount paid");
+                        toast.error("Failed to update payments");
                       }
-                      setIsAmountPaidSaving(false);
+                      setIsPaymentsSaving(false);
                     }}
                   >
-                    {isAmountPaidSaving ? <Spinner size="sm" /> : "Save"}
+                    {isPaymentsSaving ? <Spinner size="sm" /> : "Save Payments"}
                   </Button>
-                </div>
-                <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground font-medium">Remaining:</span>
-                  <span className="font-semibold text-lg text-green-600">{remainingAmount} KWD</span>
+                  <span className="font-semibold text-lg text-green-600">{remainingAmount.toFixed(3)} KWD</span>
                 </div>
               </div>
               <div className="flex flex-col md:flex-row gap-2 justify-between items-center">
@@ -538,13 +580,13 @@ export function TicketView({
         <div className="grid gap-6 lg:grid-cols-2">
           <PhotoUpload
             title="Before pictures"
-            photos={ticket.beforePhotos}
+            photos={ticket.beforePhotos as Photo[] ?? []}
             onPhotosChange={(photos) => handlePhotosUpdate("before", photos)}
             ticketId={ticket._id!}
           />
           <PhotoUpload
             title="After pictures"
-            photos={ticket.afterPhotos}
+            photos={ticket.afterPhotos as Photo[] ?? []}
             onPhotosChange={(photos) => handlePhotosUpdate("after", photos)}
             ticketId={ticket._id!}
           />

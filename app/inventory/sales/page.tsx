@@ -161,8 +161,9 @@ export default function SalesPage() {
               <th className="p-3">Invoice Date</th>
               <th className="p-3">Payment Method</th>
               <th className="p-3 text-right">Total Amount</th>
+               <th className="p-3 text-right">Total Paid</th>
               <th className="p-3 text-right">Remaining</th>
-              <th className="p-3 text-right">Total Paid</th>
+             
               <th className="p-3">Notes</th>
             </tr>
           </thead>
@@ -201,8 +202,9 @@ export default function SalesPage() {
                     <td>{t.paymentTime ? format(new Date(t.paymentTime), 'yyyy-MM-dd HH:mm') : '-'}</td>
                     <td>{t.paymentMethod || '-'}</td>
                     <td className=" text-right">{(t.totalAmount || 0).toFixed(3)} KD</td>
-                    <td className=" text-right">{(Math.max(0, (t.totalAmount || 0) - (Array.isArray(t.payments) ? t.payments.reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0))).toFixed(3)} KD</td>
                     <td className=" text-right">{(Array.isArray(t.payments) ? t.payments.reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0).toFixed(3)} KD</td>
+                    
+                    <td className=" text-right">{(Math.max(0, (t.totalAmount || 0) - (Array.isArray(t.payments) ? t.payments.reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0))).toFixed(3)} KD</td>
                     <td>{t.notes || '-'}</td>
                   </tr>
                 )

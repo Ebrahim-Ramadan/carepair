@@ -122,6 +122,7 @@ export type Ticket = {
   vehicleConditionPoints?: DamagePoint[]
   beforePhotos?: Photo[]
   afterPhotos?: Photo[]
+  isCheckup?: boolean
 }
 
 export type TicketSummary = {

@@ -4,7 +4,8 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Edit, Save, X, User, Phone, Mail, Gauge, Car, MessageCircle } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Edit, Save, X, User, Phone, Mail, Gauge, Car, MessageCircle, Calendar } from "lucide-react"
 import { toast } from "sonner"
 import type { Ticket } from "@/lib/types"
 
@@ -25,6 +26,8 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
   const [customerPhone, setCustomerPhone] = useState(ticket.customerPhone)
   const [customerEmail, setCustomerEmail] = useState(ticket.customerEmail || "")
   const [mileage, setMileage] = useState(ticket.mileage.toString())
+  const [isCheckup, setIsCheckup] = useState(ticket.isCheckup || false)
+  const [createdAt, setCreatedAt] = useState(ticket.createdAt ? new Date(ticket.createdAt).toISOString().split('T')[0] : "")
 
   const handleEmailClick = (email: string) => {
     // window.open(`mailto:${email}`, '_blank')
@@ -53,6 +56,8 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
     setCustomerPhone(ticket.customerPhone)
     setCustomerEmail(ticket.customerEmail || "")
     setMileage(ticket.mileage?.toString())
+    setIsCheckup(ticket.isCheckup || false)
+    setCreatedAt(ticket.createdAt ? new Date(ticket.createdAt).toISOString().split('T')[0] : "")
     setIsEditing(false)
   }
 
@@ -71,6 +76,8 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
         customerPhone: customerPhone.trim(),
         customerEmail: customerEmail.trim() || undefined,
         mileage: Number(mileage),
+        isCheckup: isCheckup,
+        createdAt: createdAt ? new Date(createdAt).toISOString() : undefined,
       }
 
       const response = await fetch(`/api/tickets/${ticket._id}`, {
@@ -148,6 +155,23 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
                   required
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-createdAt">Ticket Date</Label>
+                <Input
+                  id="edit-createdAt"
+                  type="date"
+                  value={createdAt}
+                  onChange={(e) => setCreatedAt(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center space-x-2 mt-2">
+                <Checkbox
+                  id="edit-checkup"
+                  checked={isCheckup}
+                  onCheckedChange={(checked) => setIsCheckup(checked as boolean)}
+                />
+                <Label htmlFor="edit-checkup">Checkup </Label>
+              </div>
             </div>
           </div>
 
@@ -217,7 +241,10 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
           <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
             <span className="font-mono">#{ticket.invoiceNo}</span>
             <span>•</span>
-            <span>{new Date(ticket.createdAt).toLocaleDateString()}</span>
+            <span className="flex justify-center items-center flex-row">
+              <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
+              
+              {new Date(ticket.createdAt).toLocaleDateString()}</span>
           </div>
         </div>
         <Button variant="outline" size="sm" onClick={handleEdit}>
@@ -276,7 +303,19 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
               <Gauge className="h-4 w-4 text-muted-foreground" />
               <span className="text-foreground">{ticket.mileage?.toLocaleString()} km</span>
             </div>
-            
+            {/* <div className="flex items-center gap-2 text-sm">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-foreground">
+                {new Date(ticket.createdAt).toLocaleDateString()}
+              </span>
+            </div> */}
+            {ticket.isCheckup && (
+              <div className="flex items-center gap-2 text-sm mt-1">
+                <span className="px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-medium">
+                  Checkup 
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>

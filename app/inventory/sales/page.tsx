@@ -5,6 +5,7 @@ import { format } from "date-fns"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import * as XLSX from "xlsx"
+import type { Payment } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
@@ -23,54 +24,83 @@ export default function SalesPage() {
   const handleExportPDF = () => {
     const doc = new jsPDF()
     doc.text("Sales (Tickets)", 14, 12)
+    
+    // Process tickets to include payment details
+    const rows = tickets.map((t: any) => {
+      const totalAmount = t.totalAmount || 0;
+      const totalPaid = Array.isArray(t.payments) ? t.payments.reduce((sum: number, p: Payment) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0;
+      const remaining = Math.max(0, totalAmount - totalPaid);
+      
+      // Format payments as a list under the date
+      const paymentsText = Array.isArray(t.payments) && t.payments.length > 0
+        ? t.payments.map((p: Payment) => `${p.amount.toFixed(3)}KD-${format(new Date(p.date), 'MM/dd HH:mm')}`).join('\n')
+        : '-';
+
+      // Main ticket row with payments included in the date column
+      return [
+        t._id.slice(0, 8),
+        t.invoiceNo || '-',
+        t.plateNumber,
+        t.customerName,
+        t.customerPhone || t.customerEmail || '-',
+        t.createdAt ? `${format(new Date(t.createdAt), 'yyyy-MM-dd HH:mm')}\n${paymentsText}` : paymentsText,
+        t.paymentMethod || '-',
+        totalAmount.toFixed(3) + ' KD',
+        remaining.toFixed(3) + ' KD',
+        totalPaid.toFixed(3) + ' KD',
+        t.notes || '-',
+      ];
+    });
+
     autoTable(doc, {
       head: [[
-        "Ticket ID", "Invoice No", "Plate Number", "Customer Name", "Contact", "Payment Date", "Payment Method", "Total Amount", "Remaining", "Total Paid", "Notes"
+        "Ticket ID", "Invoice No", "Plate Number", "Customer Name", "Contact", "Date", "Payment Method", "Total Amount", "Remaining", "Total Paid", "Notes"
       ]],
-      body: tickets.map((t: any) => {
-        const totalAmount = t.totalAmount || 0;
-        const totalPaid = Array.isArray(t.payments) ? t.payments.reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0;
-        const remaining = Math.max(0, totalAmount - totalPaid);
-        return [
-          t._id.slice(0, 8),
-          t.invoiceNo || '-',
-          t.plateNumber,
-          t.customerName,
-          t.customerPhone || t.customerEmail || '-',
-          t.paymentTime ? format(new Date(t.paymentTime), 'yyyy-MM-dd HH:mm') : '-',
-          t.paymentMethod || '-',
-          totalAmount.toFixed(3) + ' KD',
-          remaining.toFixed(3) + ' KD',
-          totalPaid.toFixed(3) + ' KD',
-          t.notes || '-',
-        ]
-      })
-    })
+      body: rows,
+      styles: {
+        cellPadding: 2,
+        fontSize: 8
+      },
+      didParseCell: function(data) {
+        // Style payment detail rows differently
+        if (data.row.raw[2] === '↳ Payment') {
+          data.cell.styles.textColor = [100, 100, 100];
+          data.cell.styles.fontSize = 7;
+        }
+      }
+    });
     doc.save("sales-tickets.pdf")
   }
 
   // Export to Excel
   const handleExportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(
-      tickets.map((t: any) => {
-        const totalAmount = t.totalAmount || 0;
-        const totalPaid = Array.isArray(t.payments) ? t.payments.reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0;
-        const remaining = Math.max(0, totalAmount - totalPaid);
-        return {
-          "Ticket ID": t._id,
-          "Invoice No": t.invoiceNo || '-',
-          "Plate Number": t.plateNumber,
-          "Customer Name": t.customerName,
-          "Contact": t.customerPhone || t.customerEmail || '-',
-          "Payment Date": t.paymentTime ? format(new Date(t.paymentTime), 'yyyy-MM-dd HH:mm') : '-',
-          "Payment Method": t.paymentMethod || '-',
-          "Total Amount": totalAmount.toFixed(3) + ' KD',
-          "Remaining": remaining.toFixed(3) + ' KD',
-          "Total Paid": totalPaid.toFixed(3) + ' KD',
-          "Notes": t.notes || '-',
-        }
-      })
-    )
+    const rows = tickets.map((t: any) => {
+      const totalAmount = t.totalAmount || 0;
+      const totalPaid = Array.isArray(t.payments) ? t.payments.reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0;
+      const remaining = Math.max(0, totalAmount - totalPaid);
+
+      // Format payments as a list under the date
+      const paymentsText = Array.isArray(t.payments) && t.payments.length > 0
+        ? t.payments.map(p => `${p.amount.toFixed(3)}KD-${format(new Date(p.date), 'MM/dd HH:mm')}`).join('\n')
+        : '-';
+
+      // Single row with payments included in the date column
+      return {
+        "Ticket ID": t._id,
+        "Invoice No": t.invoiceNo || '-',
+        "Plate Number": t.plateNumber,
+        "Customer Name": t.customerName,
+        "Contact": t.customerPhone || t.customerEmail || '-',
+        "Date": t.createdAt ? `${format(new Date(t.createdAt), 'yyyy-MM-dd HH:mm')}\n${paymentsText}` : paymentsText,
+        "Payment Method": t.paymentMethod || '-',
+        "Total Amount": totalAmount.toFixed(3) + ' KD',
+        "Remaining": remaining.toFixed(3) + ' KD',
+        "Total Paid": totalPaid.toFixed(3) + ' KD',
+        "Notes": t.notes || '-',
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, "SalesTickets")
     XLSX.writeFile(wb, "sales-tickets.xlsx")

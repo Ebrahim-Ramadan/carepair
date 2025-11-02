@@ -25,22 +25,12 @@ export default function SalesPage() {
     doc.text("Sales (Tickets)", 14, 12)
     autoTable(doc, {
       head: [[
-        "Ticket ID", "Invoice No", "Plate Number", "Customer Name", "Contact", "Payment Date", "Payment Method", "Total Before", "Total After", "Notes"
+        "Ticket ID", "Invoice No", "Plate Number", "Customer Name", "Contact", "Payment Date", "Payment Method", "Total Amount", "Remaining", "Total Paid", "Notes"
       ]],
       body: tickets.map((t: any) => {
-        function getPaymentFee(method: string, amount: number): number {
-          if (!method) return 0;
-          const m = method.toLowerCase();
-          if (m === 'myfatoorah' || m === 'maifatoora' || m === 'ماي فاتورة') return 0.275;
-          if (m === 'knet' || m === 'knent') return 0;
-          if (m === 'cash') return 0;
-          if (m === 'tabby' || m === 'tabbykib') return amount * 0.0799;
-          if (m === 'kib') return amount * 0.10;
-          return 0;
-        }
-        const totalBefore = t.totalAmount || 0;
-        const paymentFee = getPaymentFee(t.paymentMethod, totalBefore);
-        const totalAfter = totalBefore - paymentFee;
+        const totalAmount = t.totalAmount || 0;
+        const totalPaid = Array.isArray(t.payments) ? t.payments.reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0;
+        const remaining = Math.max(0, totalAmount - totalPaid);
         return [
           t._id.slice(0, 8),
           t.invoiceNo || '-',
@@ -49,8 +39,9 @@ export default function SalesPage() {
           t.customerPhone || t.customerEmail || '-',
           t.paymentTime ? format(new Date(t.paymentTime), 'yyyy-MM-dd HH:mm') : '-',
           t.paymentMethod || '-',
-          totalBefore.toFixed(3) + ' KD',
-          totalAfter.toFixed(3) + ' KD',
+          totalAmount.toFixed(3) + ' KD',
+          remaining.toFixed(3) + ' KD',
+          totalPaid.toFixed(3) + ' KD',
           t.notes || '-',
         ]
       })
@@ -62,19 +53,9 @@ export default function SalesPage() {
   const handleExportExcel = () => {
     const ws = XLSX.utils.json_to_sheet(
       tickets.map((t: any) => {
-        function getPaymentFee(method: string, amount: number): number {
-          if (!method) return 0;
-          const m = method.toLowerCase();
-          if (m === 'myfatoorah' || m === 'maifatoora' || m === 'ماي فاتورة') return 0.275;
-          if (m === 'knet' || m === 'knent') return 0;
-          if (m === 'cash') return 0;
-          if (m === 'tabby' || m === 'tabbykib') return amount * 0.0799;
-          if (m === 'kib') return amount * 0.10;
-          return 0;
-        }
-        const totalBefore = t.totalAmount || 0;
-        const paymentFee = getPaymentFee(t.paymentMethod, totalBefore);
-        const totalAfter = totalBefore - paymentFee;
+        const totalAmount = t.totalAmount || 0;
+        const totalPaid = Array.isArray(t.payments) ? t.payments.reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0;
+        const remaining = Math.max(0, totalAmount - totalPaid);
         return {
           "Ticket ID": t._id,
           "Invoice No": t.invoiceNo || '-',
@@ -83,8 +64,9 @@ export default function SalesPage() {
           "Contact": t.customerPhone || t.customerEmail || '-',
           "Payment Date": t.paymentTime ? format(new Date(t.paymentTime), 'yyyy-MM-dd HH:mm') : '-',
           "Payment Method": t.paymentMethod || '-',
-          "Total Before": totalBefore.toFixed(3) + ' KD',
-          "Total After": totalAfter.toFixed(3) + ' KD',
+          "Total Amount": totalAmount.toFixed(3) + ' KD',
+          "Remaining": remaining.toFixed(3) + ' KD',
+          "Total Paid": totalPaid.toFixed(3) + ' KD',
           "Notes": t.notes || '-',
         }
       })
@@ -178,8 +160,9 @@ export default function SalesPage() {
               <th className="p-3">Contact</th>
               <th className="p-3">Invoice Date</th>
               <th className="p-3">Payment Method</th>
-              <th className="p-3 text-right">Total Before</th>
-              <th className="p-3 text-right">Total After</th>
+              <th className="p-3 text-right">Total Amount</th>
+              <th className="p-3 text-right">Remaining</th>
+              <th className="p-3 text-right">Total Paid</th>
               <th className="p-3">Notes</th>
             </tr>
           </thead>
@@ -217,8 +200,9 @@ export default function SalesPage() {
                     <td>{t.customerPhone || t.customerEmail || '-'}</td>
                     <td>{t.paymentTime ? format(new Date(t.paymentTime), 'yyyy-MM-dd HH:mm') : '-'}</td>
                     <td>{t.paymentMethod || '-'}</td>
-                    <td className=" text-right">{totalBefore.toFixed(3)} KD</td>
-                    <td className=" text-right">{totalAfter.toFixed(3)} KD</td>
+                    <td className=" text-right">{(t.totalAmount || 0).toFixed(3)} KD</td>
+                    <td className=" text-right">{(Math.max(0, (t.totalAmount || 0) - (Array.isArray(t.payments) ? t.payments.reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0))).toFixed(3)} KD</td>
+                    <td className=" text-right">{(Array.isArray(t.payments) ? t.payments.reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0).toFixed(3)} KD</td>
                     <td>{t.notes || '-'}</td>
                   </tr>
                 )

@@ -22,6 +22,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
   
   // Form state
   const [plateNumber, setPlateNumber] = useState(ticket.plateNumber)
+  const [invoiceNo, setInvoiceNo] = useState(ticket.invoiceNo)
   const [customerName, setCustomerName] = useState(ticket.customerName)
   const [customerPhone, setCustomerPhone] = useState(ticket.customerPhone)
   const [customerEmail, setCustomerEmail] = useState(ticket.customerEmail || "")
@@ -51,6 +52,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
 
   const handleCancel = () => {
     // Reset form to original values
+    setInvoiceNo(ticket.invoiceNo)
     setPlateNumber(ticket.plateNumber)
     setCustomerName(ticket.customerName)
     setCustomerPhone(ticket.customerPhone)
@@ -71,6 +73,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
 
     try {
       const updateData = {
+        invoiceNo: invoiceNo?.trim(),
         plateNumber: plateNumber.trim(),
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
@@ -134,6 +137,15 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
           <div className="space-y-4">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Vehicle Information</h3>
             <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="edit-invoiceNo">Invoice No</Label>
+                <Input
+                  id="edit-invoiceNo"
+                  value={invoiceNo}
+                  onChange={(e) => setInvoiceNo(e.target.value)}
+                  placeholder="Invoice No"
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-plateNumber">Plate Number *</Label>
                 <Input

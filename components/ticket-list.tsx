@@ -126,7 +126,7 @@ export function TicketList({ tickets, selectedTicket, onSelectTicket, onDeleteTi
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
+                className="h-8 w-8 "
                 onClick={(e) => handleDelete(e, ticket._id!)}
               >
                 <Trash2 className="h-4 w-4 text-destructive" />

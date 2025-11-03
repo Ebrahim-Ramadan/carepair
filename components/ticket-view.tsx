@@ -189,16 +189,18 @@ export function TicketView({
       const paymentTimeDisplay = ticket.paymentTime ? (isArabic ? new Date(ticket.paymentTime).toLocaleString('ar-EG') : new Date(ticket.paymentTime).toLocaleString()) : "-"
       const meta = isArabic ? [
         ["رقم التذكرة", String(ticket._id ?? "")],
-        ["العميل", String(ticket.customerName ?? "")],
+        ["معلومات العميل", `${String(ticket.customerName ?? "")}، ${String(ticket.customerPhone ?? "")}، ${String(ticket.customerEmail ?? "-")}`],
         ["رقم اللوحة", String(ticket.plateNumber ?? "")],
         ["تاريخ الإنشاء", ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('ar-EG') : ""],
+        ["تاريخ الفاتورة", ticket.invoiceDate ? new Date(ticket.invoiceDate).toLocaleString('ar-EG') : ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('ar-EG') : ""],
         ["طريقة الدفع", paymentMethodDisplay],
         ["تاريخ الدفع", paymentTimeDisplay],
       ] : [
         ["Ticket ID", String(ticket._id ?? "")],
-        ["Customer", String(ticket.customerName ?? "")],
+        ["Customer Info", `${String(ticket.customerName ?? "")}, ${String(ticket.customerPhone ?? "")}, ${String(ticket.customerEmail ?? "-")}`],
         ["Plate Number", String(ticket.plateNumber ?? "")],
         ["Created At", ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : ""],
+        ["Invoice Date", ticket.invoiceDate ? new Date(ticket.invoiceDate).toLocaleString() : ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : ""],
         ["Payment Method", paymentMethodDisplay],
         ["Payment Time", paymentTimeDisplay],
       ]

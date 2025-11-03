@@ -32,6 +32,7 @@ type TicketFormProps = {
 
 export function TicketForm({ onSuccess }: TicketFormProps) {
   const [invoiceNo, setInvoiceNo] = useState("")
+  const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0])
   const [plateNumber, setPlateNumber] = useState("")
   const [customerName, setCustomerName] = useState("")
   const [customerPhone, setCustomerPhone] = useState("")
@@ -51,6 +52,7 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
       }
       const input: CreateTicketInput = {
         invoiceNo,
+        invoiceDate: invoiceDate ? new Date(invoiceDate).toISOString() : undefined,
         plateNumber,
         customerName,
         customerPhone,
@@ -82,16 +84,30 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Invoice No */}
-      <div className="space-y-2">
-        <Label htmlFor="invoiceNo">Invoice No *</Label>
-        <Input
-          id="invoiceNo"
-          value={invoiceNo}
-          onChange={(e) => setInvoiceNo(e.target.value)}
-          placeholder="Enter invoice number"
-          required
-        />
+      {/* Invoice Information */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Invoice Information</h3>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="invoiceNo">Invoice No *</Label>
+            <Input
+              id="invoiceNo"
+              value={invoiceNo}
+              onChange={(e) => setInvoiceNo(e.target.value)}
+              placeholder="Enter invoice number"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="invoiceDate">Invoice Date</Label>
+            <Input
+              id="invoiceDate"
+              type="date"
+              value={invoiceDate}
+              onChange={(e) => setInvoiceDate(e.target.value)}
+            />
+          </div>
+        </div>
       </div>
       {/* Vehicle Information */}
       <div className="space-y-4 -z-50">

@@ -29,6 +29,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
   const [mileage, setMileage] = useState(ticket.mileage.toString())
   const [isCheckup, setIsCheckup] = useState(ticket.isCheckup || false)
   const [createdAt, setCreatedAt] = useState(ticket.createdAt ? new Date(ticket.createdAt).toISOString().split('T')[0] : "")
+  const [invoiceDate, setInvoiceDate] = useState(ticket.invoiceDate ? new Date(ticket.invoiceDate).toISOString().split('T')[0] : ticket.createdAt ? new Date(ticket.createdAt).toISOString().split('T')[0] : "")
 
   const handleEmailClick = (email: string) => {
     // window.open(`mailto:${email}`, '_blank')
@@ -60,6 +61,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
     setMileage(ticket.mileage?.toString())
     setIsCheckup(ticket.isCheckup || false)
     setCreatedAt(ticket.createdAt ? new Date(ticket.createdAt).toISOString().split('T')[0] : "")
+    setInvoiceDate(ticket.invoiceDate ? new Date(ticket.invoiceDate).toISOString().split('T')[0] : ticket.createdAt ? new Date(ticket.createdAt).toISOString().split('T')[0] : "")
     setIsEditing(false)
   }
 
@@ -74,6 +76,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
     try {
       const updateData = {
         invoiceNo: invoiceNo?.trim(),
+        invoiceDate: invoiceDate ? new Date(invoiceDate).toISOString() : undefined,
         plateNumber: plateNumber.trim(),
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
@@ -144,6 +147,15 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
                   value={invoiceNo}
                   onChange={(e) => setInvoiceNo(e.target.value)}
                   placeholder="Invoice No"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-invoiceDate">Invoice Date</Label>
+                <Input
+                  id="edit-invoiceDate"
+                  type="date"
+                  value={invoiceDate}
+                  onChange={(e) => setInvoiceDate(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -255,8 +267,14 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
             <span>•</span>
             <span className="flex justify-center items-center flex-row">
               <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
-              
-              {new Date(ticket.createdAt).toLocaleDateString()}</span>
+              {ticket.invoiceDate ? new Date(ticket.invoiceDate).toLocaleDateString() : new Date(ticket.createdAt).toLocaleDateString()}
+            </span>
+            {ticket.invoiceDate !== ticket.createdAt && (
+              <>
+                <span>•</span>
+                <span className="text-xs text-muted-foreground">(Created: {new Date(ticket.createdAt).toLocaleDateString()})</span>
+              </>
+            )}
           </div>
         </div>
         <Button variant="outline" size="sm" onClick={handleEdit}>

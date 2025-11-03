@@ -14,6 +14,8 @@ export interface Photo {
 
 
 export interface CreateTicketInput {
+  invoiceNo: string
+  invoiceDate?: string
   plateNumber: string
   customerName: string
   customerPhone: string
@@ -105,6 +107,7 @@ export type Payment = {
 
 export type Ticket = {
   _id?: string
+  invoiceDate?: string
   invoiceNo: string
   plateNumber: string
   customerName: string

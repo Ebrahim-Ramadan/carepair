@@ -118,7 +118,14 @@ export function ServiceDialog({
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const response = await fetch('/api/services', {cache: 'no-store'})
+        // Force no caching (client + intermediaries)
+        const response = await fetch('/api/services', {
+          cache: 'no-store',
+          headers: {
+            // Hint to any intermediary or service worker not to cache this response
+            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+          }
+        })
         if (!response.ok) throw new Error('Failed to fetch services')
         const data = await response.json()
         setServices(data)

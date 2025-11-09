@@ -141,5 +141,7 @@ export type Employee = {
   name: string
   jobTitle: string
   salary: number
+  absenceDays: number
+  workingDays: number
   createdAt: string
 }

@@ -12,7 +12,7 @@ export async function PUT(
     const db = client.db("car_repair")
     
     const body = await request.json()
-    const { name, jobTitle, salary } = body
+    const { name, jobTitle, salary, absenceDays, workingDays } = body
 
     const result = await db.collection("employees").updateOne(
       { _id: new ObjectId(params.id) },
@@ -21,6 +21,8 @@ export async function PUT(
           name, 
           jobTitle, 
           salary: Number(salary),
+          absenceDays: Number(absenceDays) || 0,
+          workingDays: Number(workingDays) || 30,
           updatedAt: new Date().toISOString()
         } 
       }

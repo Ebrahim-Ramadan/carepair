@@ -31,7 +31,9 @@ export function HRDepartmentClient({
   const [newEmployee, setNewEmployee] = useState({
     name: "",
     jobTitle: "",
-    salary: ""
+    salary: "",
+    absenceDays: "0",
+    workingDays: "30"
   })
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
   const [deletingIds, setDeletingIds] = useState<string[]>([])
@@ -50,6 +52,8 @@ export function HRDepartmentClient({
         body: JSON.stringify({
           ...newEmployee,
           salary: Number(newEmployee.salary),
+          absenceDays: Number(newEmployee.absenceDays),
+          workingDays: Number(newEmployee.workingDays),
           createdAt: new Date().toISOString()
         })
       })
@@ -59,7 +63,7 @@ export function HRDepartmentClient({
       const addedEmployee = await response.json()
       setEmployees([...employees, addedEmployee])
       setIsAddingEmployee(false)
-      setNewEmployee({ name: "", jobTitle: "", salary: "" })
+      setNewEmployee({ name: "", jobTitle: "", salary: "", absenceDays: "0", workingDays: "30" })
       toast.success('Employee added successfully')
     } catch (error) {
       console.error('Error adding employee:', error)
@@ -89,7 +93,9 @@ export function HRDepartmentClient({
         body: JSON.stringify({
           name: editingEmployee.name,
           jobTitle: editingEmployee.jobTitle,
-          salary: Number(editingEmployee.salary)
+          salary: Number(editingEmployee.salary),
+          absenceDays: Number(editingEmployee.absenceDays),
+          workingDays: Number(editingEmployee.workingDays)
         })
       })
 
@@ -141,12 +147,19 @@ export function HRDepartmentClient({
       const XLSX = await import('xlsx')
 
       const workbook = XLSX.utils.book_new()
-      const worksheet = XLSX.utils.json_to_sheet(allEmployees.map(emp => ({
-        Name: emp.name,
-        'Job Title': emp.jobTitle,
-        'Salary (KWD)': emp.salary,
-        'Created At': new Date(emp.createdAt).toLocaleDateString()
-      })))
+      const worksheet = XLSX.utils.json_to_sheet(allEmployees.map(emp => {
+        const dailyRate = Number(emp.salary) / 30
+        const finalSalary = dailyRate * (Number(emp.workingDays) - Number(emp.absenceDays))
+        return {
+          Name: emp.name,
+          'Job Title': emp.jobTitle,
+          'Base Salary (KWD)': Number(emp.salary).toFixed(3),
+          'Working Days': emp.workingDays,
+          'Absence Days': emp.absenceDays,
+          'Final Salary (KWD)': finalSalary.toFixed(3),
+          'Created At': new Date(emp.createdAt).toLocaleDateString()
+        }
+      }))
 
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Employees')
       XLSX.writeFile(workbook, 'employees.xlsx')
@@ -176,22 +189,28 @@ export function HRDepartmentClient({
       const doc = new jsPDF()
 
       doc.setFontSize(16)
-      doc.text('Employee List', 14, 15)
+      doc.text('Employee Salary Report', 14, 15)
       doc.setFontSize(10)
       doc.text(`Total Employees: ${allEmployees.length}`, 14, 25)
 
       autoTable(doc, {
-        head: [['Name', 'Job Title', 'Salary (KWD)', 'Created At']],
-        body: allEmployees.map(emp => [
-          emp.name,
-          emp.jobTitle,
-          emp.salary,
-          new Date(emp.createdAt).toLocaleDateString()
-        ]),
+        head: [['Name', 'Job Title', 'Base Salary', 'Working Days', 'Absence Days', 'Final Salary']],
+        body: allEmployees.map(emp => {
+          const dailyRate = Number(emp.salary) / 30
+          const finalSalary = dailyRate * (Number(emp.workingDays) - Number(emp.absenceDays))
+          return [
+            emp.name,
+            emp.jobTitle,
+            Number(emp.salary).toFixed(3),
+            emp.workingDays,
+            emp.absenceDays,
+            finalSalary.toFixed(3)
+          ]
+        }),
         startY: 30,
       })
 
-      doc.save('employees.pdf')
+      doc.save('employees-salary-report.pdf')
       toast.success('Successfully exported to PDF')
     } catch (error) {
       console.error('Error exporting to PDF:', error)
@@ -257,43 +276,53 @@ export function HRDepartmentClient({
             <tr>
               <th className="text-left p-4">Name</th>
               <th className="text-left p-4">Job Title</th>
-              <th className="text-left p-4">Salary</th>
+              <th className="text-left p-4">Base Salary</th>
+              <th className="text-left p-4">Working Days</th>
+              <th className="text-left p-4">Absence Days</th>
+              <th className="text-left p-4">Final Salary</th>
               <th className="text-left p-4">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {employees.map((employee) => (
-              <tr key={employee._id} className="border-t">
-                <td className="p-4">{employee.name}</td>
-                <td className="p-4">{employee.jobTitle}</td>
-                <td className="p-4">{employee.salary} KWD</td>
-                <td className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
-                      onClick={() => handleEditEmployee(employee)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                      onClick={() => handleDeleteEmployee(employee._id!)}
-                      disabled={deletingIds.includes(employee._id!)}
-                    >
-                      {deletingIds.includes(employee._id!) ? (
-                        <Spinner size="sm" className="text-red-500" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {employees.map((employee) => {
+              const dailyRate = Number(employee.salary) / 30
+              const finalSalary = dailyRate * (Number(employee.workingDays) - Number(employee.absenceDays))
+              return (
+                <tr key={employee._id} className="border-t">
+                  <td className="p-4">{employee.name}</td>
+                  <td className="p-4">{employee.jobTitle}</td>
+                  <td className="p-4">{Number(employee.salary).toFixed(3)} KWD</td>
+                  <td className="p-4">{employee.workingDays}</td>
+                  <td className="p-4">{employee.absenceDays}</td>
+                  <td className="p-4 font-semibold text-green-600">{finalSalary.toFixed(3)} KWD</td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                        onClick={() => handleEditEmployee(employee)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                        onClick={() => handleDeleteEmployee(employee._id!)}
+                        disabled={deletingIds.includes(employee._id!)}
+                      >
+                        {deletingIds.includes(employee._id!) ? (
+                          <Spinner size="sm" className="text-red-500" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -376,7 +405,7 @@ export function HRDepartmentClient({
               </div>
 
               <div>
-                <label htmlFor="salary" className="block text-sm mb-2">Salary (KWD)</label>
+                <label htmlFor="salary" className="block text-sm mb-2">Base Salary (KWD)</label>
                 <Input
                   id="salary"
                   type="number"
@@ -384,6 +413,34 @@ export function HRDepartmentClient({
                   step="0.001"
                   value={newEmployee.salary}
                   onChange={(e) => setNewEmployee({ ...newEmployee, salary: e.target.value })}
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="workingDays" className="block text-sm mb-2">Working Days</label>
+                <Input
+                  id="workingDays"
+                  type="number"
+                  min="0"
+                  max="31"
+                  value={newEmployee.workingDays}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, workingDays: e.target.value })}
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="absenceDays" className="block text-sm mb-2">Absence Days</label>
+                <Input
+                  id="absenceDays"
+                  type="number"
+                  min="0"
+                  max="31"
+                  value={newEmployee.absenceDays}
+                  onChange={(e) => setNewEmployee({ ...newEmployee, absenceDays: e.target.value })}
                   required
                   disabled={isSubmitting}
                 />
@@ -468,7 +525,7 @@ export function HRDepartmentClient({
                 </div>
 
                 <div>
-                  <label htmlFor="edit-salary" className="block text-sm mb-2">Salary (KWD)</label>
+                  <label htmlFor="edit-salary" className="block text-sm mb-2">Base Salary (KWD)</label>
                   <Input
                     id="edit-salary"
                     type="number"
@@ -476,6 +533,34 @@ export function HRDepartmentClient({
                     step="0.001"
                     value={editingEmployee.salary}
                     onChange={(e) => setEditingEmployee({ ...editingEmployee, salary: e.target.value })}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="edit-workingDays" className="block text-sm mb-2">Working Days</label>
+                  <Input
+                    id="edit-workingDays"
+                    type="number"
+                    min="0"
+                    max="31"
+                    value={editingEmployee.workingDays}
+                    onChange={(e) => setEditingEmployee({ ...editingEmployee, workingDays: e.target.value })}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="edit-absenceDays" className="block text-sm mb-2">Absence Days</label>
+                  <Input
+                    id="edit-absenceDays"
+                    type="number"
+                    min="0"
+                    max="31"
+                    value={editingEmployee.absenceDays}
+                    onChange={(e) => setEditingEmployee({ ...editingEmployee, absenceDays: e.target.value })}
                     required
                     disabled={isSubmitting}
                   />

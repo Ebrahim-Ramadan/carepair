@@ -15,7 +15,7 @@ export default async function Home({ searchParams }: { searchParams?: { page?: s
     const [tickets, total] = await Promise.all([
       db
         .collection("tickets")
-        .find({}, { projection: { _id: 1, plateNumber: 1, customerName: 1, createdAt: 1 } })
+        .find({}, { projection: { _id: 1, plateNumber: 1, customerName: 1, createdAt: 1, isCheckup: 1 } })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(pageSize)
@@ -28,6 +28,7 @@ export default async function Home({ searchParams }: { searchParams?: { page?: s
       plateNumber: t.plateNumber,
       customerName: t.customerName,
       createdAt: t.createdAt ? new Date(t.createdAt).toISOString() : new Date(0).toISOString(),
+      isCheckup: t.isCheckup || false,
     }))
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize))

@@ -130,6 +130,7 @@ export type Ticket = {
 
 export type TicketSummary = {
   _id: string
+  isCheckup?: boolean
   customerName: string
   plateNumber: string
   createdAt: string

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Edit, Save, X, User, Phone, Mail, Gauge, Car, MessageCircle, Calendar } from "lucide-react"
 import { toast } from "sonner"
 import type { Ticket } from "@/lib/types"
+import { ticketEventEmitter } from "@/lib/event-emitter"
 
 
 type EditableTicketInfoProps = {
@@ -30,6 +31,26 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
   const [isCheckup, setIsCheckup] = useState(ticket.isCheckup || false)
   const [createdAt, setCreatedAt] = useState(ticket.createdAt ? new Date(ticket.createdAt).toISOString().split('T')[0] : "")
   const [invoiceDate, setInvoiceDate] = useState(ticket.invoiceDate ? new Date(ticket.invoiceDate).toISOString().split('T')[0] : ticket.createdAt ? new Date(ticket.createdAt).toISOString().split('T')[0] : "")
+
+  // Sync isCheckup when ticket prop changes
+  useEffect(() => {
+    setIsCheckup(ticket.isCheckup || false)
+  }, [ticket.isCheckup])
+
+  // Listen for checkup updates from other components
+  useEffect(() => {
+    const handleCheckupUpdate = (data: { ticketId: string; isCheckup: boolean }) => {
+      if (data.ticketId === ticket._id) {
+        setIsCheckup(data.isCheckup)
+      }
+    }
+
+    ticketEventEmitter.on('checkup-updated', handleCheckupUpdate)
+    
+    return () => {
+      ticketEventEmitter.off('checkup-updated', handleCheckupUpdate)
+    }
+  }, [ticket._id])
 
   const handleEmailClick = (email: string) => {
     // window.open(`mailto:${email}`, '_blank')
@@ -98,6 +119,12 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
       if (!response.ok) throw new Error("Failed to update ticket")
 
       const updatedTicket = await response.json()
+      
+      // Emit event for other components to sync (if checkup status changed)
+      if (updateData.isCheckup !== ticket.isCheckup) {
+        ticketEventEmitter.emit('checkup-updated', { ticketId: ticket._id, isCheckup: updateData.isCheckup })
+      }
+
       toast.success("Ticket information updated successfully!")
       onUpdate(updatedTicket)
       setIsEditing(false)
@@ -339,7 +366,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
                 {new Date(ticket.createdAt).toLocaleDateString()}
               </span>
             </div> */}
-            {ticket.isCheckup && (
+            {isCheckup && (
               <div className="flex items-center gap-2 text-sm mt-1">
                 <span className="px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-medium">
                   Checkup 

@@ -83,7 +83,7 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
 
   const handleTicketCreated = (ticket: Ticket) => {
     setTickets([
-      { _id: ticket._id!, plateNumber: ticket.plateNumber, customerName: ticket.customerName, createdAt: new Date(ticket.createdAt).toISOString() },
+      { _id: ticket._id!, plateNumber: ticket.plateNumber, customerName: ticket.customerName, createdAt: new Date(ticket.createdAt).toISOString(), isCheckup: ticket.isCheckup || false },
       ...tickets,
     ])
     setIsCreating(false)
@@ -96,7 +96,7 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
   }
 
   const handleTicketUpdated = (updatedTicket: Ticket) => {
-    setTickets(tickets.map((t) => (t._id === updatedTicket._id ? { _id: updatedTicket._id!, plateNumber: updatedTicket.plateNumber, customerName: updatedTicket.customerName, createdAt: new Date(updatedTicket.createdAt).toISOString() } : t)))
+    setTickets(tickets.map((t) => (t._id === updatedTicket._id ? { _id: updatedTicket._id!, plateNumber: updatedTicket.plateNumber, customerName: updatedTicket.customerName, createdAt: new Date(updatedTicket.createdAt).toISOString(), isCheckup: updatedTicket.isCheckup || false } : t)))
     setSelectedTicket(updatedTicket)
   }
 

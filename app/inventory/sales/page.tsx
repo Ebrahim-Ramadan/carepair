@@ -23,84 +23,187 @@ export default function SalesPage() {
   // Export to PDF
   const handleExportPDF = () => {
     const doc = new jsPDF()
-    doc.text("Sales (Tickets)", 14, 12)
-    
-    // Process tickets to include payment details
-    const rows = tickets.map((t: any) => {
-      const totalAmount = t.totalAmount || 0;
-      const totalPaid = Array.isArray(t.payments) ? t.payments.reduce((sum: number, p: Payment) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0;
-      const remaining = Math.max(0, totalAmount - totalPaid);
-      
-      // Format payments as a list under the date
-      const paymentsText = Array.isArray(t.payments) && t.payments.length > 0
-        ? t.payments.map((p: Payment) => `${p.amount.toFixed(3)}KD-${format(new Date(p.date), 'MM/dd HH:mm')}`).join('\n')
-        : '-';
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+    const margin = 14
+    let yPosition = 20
 
-      // Main ticket row with payments included in the date column
-      return [
-        t._id.slice(0, 8),
-        t.invoiceNo || '-',
-        t.plateNumber,
-        t.customerName,
-        t.customerPhone || t.customerEmail || '-',
-        t.createdAt ? `${format(new Date(t.createdAt), 'yyyy-MM-dd HH:mm')}\n${paymentsText}` : paymentsText,
-        t.paymentMethod || '-',
-        totalAmount.toFixed(3) + ' KD',
-        remaining.toFixed(3) + ' KD',
-        totalPaid.toFixed(3) + ' KD',
-        t.notes || '-',
-      ];
-    });
+    doc.setFontSize(16)
+    doc.text("Sales Report", margin, yPosition)
+    doc.setFontSize(10)
+    doc.text(`Generated: ${format(new Date(), 'yyyy-MM-dd HH:mm')}`, margin, yPosition + 8)
+    yPosition += 20
 
-    autoTable(doc, {
-      head: [[
-        "Ticket ID", "Invoice No", "Plate Number", "Customer Name", "Contact", "Date", "Payment Method", "Total Amount", "Remaining", "Total Paid", "Notes"
-      ]],
-      body: rows,
-      styles: {
-        cellPadding: 2,
-        fontSize: 8
-      },
-      didParseCell: function(data) {
-        // Style payment detail rows differently
-        if (data.row.raw[2] === '↳ Payment') {
-          data.cell.styles.textColor = [100, 100, 100];
-          data.cell.styles.fontSize = 7;
-        }
+    // Process each ticket
+    tickets.forEach((t: any, ticketIndex: number) => {
+      const totalAmount = t.totalAmount || 0
+      const totalPaid = Array.isArray(t.payments) ? t.payments.reduce((sum: number, p: Payment) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0
+      const remaining = Math.max(0, totalAmount - totalPaid)
+
+      // Check if we need a new page
+      if (yPosition > pageHeight - 40) {
+        doc.addPage()
+        yPosition = 20
       }
-    });
+
+      // Ticket header
+      doc.setFontSize(11)
+      doc.setFont(undefined, 'bold')
+      doc.text(`Ticket #${ticketIndex + 1}`, margin, yPosition)
+      yPosition += 7
+
+      // Reset font for content
+      doc.setFont(undefined, 'normal')
+      doc.setFontSize(9)
+
+      // Ticket details
+      const details = [
+        { label: 'Ticket ID', value: t._id },
+        { label: 'Invoice No', value: t.invoiceNo || '-' },
+        { label: 'Plate Number', value: t.plateNumber },
+        { label: 'Customer Name', value: t.customerName },
+        { label: 'Contact', value: t.customerPhone || t.customerEmail || '-' },
+        { label: 'Invoice Date', value: t.invoiceDate ? format(new Date(t.invoiceDate), 'yyyy-MM-dd HH:mm') : t.createdAt ? format(new Date(t.createdAt), 'yyyy-MM-dd HH:mm') : '-' },
+        { label: 'Payment Method', value: t.paymentMethod || '-' },
+        { label: 'Total Amount', value: totalAmount.toFixed(3) + ' KD' },
+        { label: 'Total Paid', value: totalPaid.toFixed(3) + ' KD' },
+        { label: 'Remaining', value: remaining.toFixed(3) + ' KD' },
+      ]
+
+      details.forEach((detail) => {
+        if (yPosition > pageHeight - 20) {
+          doc.addPage()
+          yPosition = 20
+        }
+        doc.setFont(undefined, 'bold')
+        doc.text(`${detail.label}:`, margin, yPosition)
+        doc.setFont(undefined, 'normal')
+        doc.text(String(detail.value), margin + 50, yPosition)
+        yPosition += 6
+      })
+
+      // Payments section
+      if (Array.isArray(t.payments) && t.payments.length > 0) {
+        if (yPosition > pageHeight - 30) {
+          doc.addPage()
+          yPosition = 20
+        }
+        yPosition += 2
+        doc.setFont(undefined, 'bold')
+        doc.text('Payments:', margin, yPosition)
+        yPosition += 6
+
+        t.payments.forEach((p: Payment, pIdx: number) => {
+          if (yPosition > pageHeight - 20) {
+            doc.addPage()
+            yPosition = 20
+          }
+          doc.setFont(undefined, 'normal')
+          const paymentText = `Payment ${pIdx + 1}: ${p.amount.toFixed(3)} KD - ${format(new Date(p.date), 'yyyy-MM-dd HH:mm')}`
+          doc.text(paymentText, margin + 10, yPosition)
+          yPosition += 5
+        })
+      }
+
+      // Notes section
+      if (t.notes) {
+        if (yPosition > pageHeight - 30) {
+          doc.addPage()
+          yPosition = 20
+        }
+        yPosition += 2
+        doc.setFont(undefined, 'bold')
+        doc.text('Notes:', margin, yPosition)
+        yPosition += 6
+        doc.setFont(undefined, 'normal')
+        const notesLines = doc.splitTextToSize(t.notes, pageWidth - 2 * margin - 10)
+        notesLines.forEach((line: string) => {
+          if (yPosition > pageHeight - 20) {
+            doc.addPage()
+            yPosition = 20
+          }
+          doc.text(line, margin + 10, yPosition)
+          yPosition += 5
+        })
+      }
+
+      // Separator between tickets
+      yPosition += 8
+      doc.setDrawColor(200, 200, 200)
+      doc.line(margin, yPosition, pageWidth - margin, yPosition)
+      yPosition += 8
+    })
+
     doc.save("sales-tickets.pdf")
   }
 
   // Export to Excel
   const handleExportExcel = () => {
+    // Find the maximum number of payments to determine column count
+    const maxPayments = tickets.reduce((max: number, t: any) => {
+      const paymentCount = t.payments && Array.isArray(t.payments) ? t.payments.length : 0;
+      return Math.max(max, paymentCount);
+    }, 0);
+
+    // Build the header row with proper column order
+    const headers: string[] = [
+      "Ticket ID",
+      "Invoice No",
+      "Plate Number",
+      "Customer Name",
+      "Contact",
+      "Invoice Date",
+      "Payment Method",
+      "Total Amount",
+      "Total Paid",
+      "Remaining",
+    ];
+
+    // Add payment headers
+    for (let i = 1; i <= maxPayments; i++) {
+      headers.push(`Payment${i} Cost`);
+      headers.push(`Payment${i} Date`);
+    }
+
+    headers.push("Notes");
+
     const rows = tickets.map((t: any) => {
       const totalAmount = t.totalAmount || 0;
-      const totalPaid = Array.isArray(t.payments) ? t.payments.reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0;
+      const totalPaid = Array.isArray(t.payments) ? t.payments.reduce((sum: number, p: Payment) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0;
       const remaining = Math.max(0, totalAmount - totalPaid);
 
-      // Format payments as a list under the date
-      const paymentsText = Array.isArray(t.payments) && t.payments.length > 0
-        ? t.payments.map(p => `${p.amount.toFixed(3)}KD-${format(new Date(p.date), 'MM/dd HH:mm')}`).join('\n')
-        : '-';
+      const row: any[] = [
+        t._id,
+        t.invoiceNo || '-',
+        t.plateNumber,
+        t.customerName,
+        t.customerPhone || t.customerEmail || '-',
+        t.invoiceDate ? format(new Date(t.invoiceDate), 'yyyy-MM-dd HH:mm') : t.createdAt ? format(new Date(t.createdAt), 'yyyy-MM-dd HH:mm') : '-',
+        t.paymentMethod || '-',
+        totalAmount.toFixed(3) + ' KD',
+        totalPaid.toFixed(3) + ' KD',
+        remaining.toFixed(3) + ' KD',
+      ];
 
-      // Single row with payments included in the date column
-      return {
-        "Ticket ID": t._id,
-        "Invoice No": t.invoiceNo || '-',
-        "Plate Number": t.plateNumber,
-        "Customer Name": t.customerName,
-        "Contact": t.customerPhone || t.customerEmail || '-',
-        "Date": t.createdAt ? `${format(new Date(t.createdAt), 'yyyy-MM-dd HH:mm')}\n${paymentsText}` : paymentsText,
-        "Payment Method": t.paymentMethod || '-',
-        "Total Amount": totalAmount.toFixed(3) + ' KD',
-        "Remaining": remaining.toFixed(3) + ' KD',
-        "Total Paid": totalPaid.toFixed(3) + ' KD',
-        "Notes": t.notes || '-',
-      };
+      // Add payment data
+      if (t.payments && Array.isArray(t.payments)) {
+        t.payments.forEach((p: Payment) => {
+          row.push(p.amount.toFixed(3) + ' KD');
+          row.push(format(new Date(p.date), 'yyyy-MM-dd HH:mm'));
+        });
+      }
+      
+      // Fill empty payment slots
+      for (let i = (t.payments?.length || 0); i < maxPayments; i++) {
+        row.push('-');
+        row.push('-');
+      }
+
+      row.push(t.notes || '-');
+      return row;
     });
 
-    const ws = XLSX.utils.json_to_sheet(rows)
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, "SalesTickets")
     XLSX.writeFile(wb, "sales-tickets.xlsx")
@@ -231,9 +334,9 @@ export default function SalesPage() {
                     <td>{t.invoiceDate ? format(new Date(t.invoiceDate), 'yyyy-MM-dd HH:mm') : t.createdAt ? format(new Date(t.createdAt), 'yyyy-MM-dd HH:mm') : '-'}</td>
                     <td>{t.paymentMethod || '-'}</td>
                     <td className=" text-right">{(t.totalAmount || 0).toFixed(3)} KD</td>
-                    <td className=" text-right">{(Array.isArray(t.payments) ? t.payments.reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0).toFixed(3)} KD</td>
+                    <td className=" text-right">{(Array.isArray(t.payments) ? t.payments.reduce((sum: number, p: Payment) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0).toFixed(3)} KD</td>
                     
-                    <td className=" text-right">{(Math.max(0, (t.totalAmount || 0) - (Array.isArray(t.payments) ? t.payments.reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0))).toFixed(3)} KD</td>
+                    <td className=" text-right">{(Math.max(0, (t.totalAmount || 0) - (Array.isArray(t.payments) ? t.payments.reduce((sum: number, p: Payment) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0))).toFixed(3)} KD</td>
                     <td>{t.notes || '-'}</td>
                   </tr>
                 )

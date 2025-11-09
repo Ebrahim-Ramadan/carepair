@@ -2,12 +2,13 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Trash2, Calendar, FileSpreadsheet } from "lucide-react"
+import { Trash2, Calendar, FileSpreadsheet, CheckSquare, Square } from "lucide-react"
 import { toast } from "sonner"
 import type { Ticket, TicketSummary } from "@/lib/types"
 import { Spinner } from "@/components/ui/spinner"
+import { ticketEventEmitter } from "@/lib/event-emitter"
 
 type TicketListProps = {
   tickets: TicketSummary[]
@@ -17,7 +18,35 @@ type TicketListProps = {
 }
 
 export function TicketList({ tickets, selectedTicket, onSelectTicket, onDeleteTicket }: TicketListProps) {
+  console.log('TicketList, tickets', tickets);
+  
   const [isExporting, setIsExporting] = useState(false)
+  const [updatingCheckup, setUpdatingCheckup] = useState<string | null>(null)
+  const [localTickets, setLocalTickets] = useState(tickets)
+
+  // Sync with prop changes
+  useEffect(() => {
+    setLocalTickets(tickets)
+  }, [tickets])
+
+  // Listen for checkup updates from other components
+  useEffect(() => {
+    const handleCheckupUpdate = (data: { ticketId: string; isCheckup: boolean }) => {
+      setLocalTickets(prev => 
+        prev.map(ticket => 
+          ticket._id === data.ticketId 
+            ? { ...ticket, isCheckup: data.isCheckup }
+            : ticket
+        )
+      )
+    }
+
+    ticketEventEmitter.on('checkup-updated', handleCheckupUpdate)
+    
+    return () => {
+      ticketEventEmitter.off('checkup-updated', handleCheckupUpdate)
+    }
+  }, [])
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
@@ -36,6 +65,31 @@ export function TicketList({ tickets, selectedTicket, onSelectTicket, onDeleteTi
     } catch (error) {
       console.error("Error deleting ticket:", error)
       toast.error("Failed to delete ticket. Please try again.")
+    }
+  }
+
+  const handleCheckupToggle = async (e: React.MouseEvent, id: string, currentCheckup: boolean) => {
+    e.stopPropagation()
+    setUpdatingCheckup(id)
+    
+    try {
+      const response = await fetch(`/api/tickets/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isCheckup: !currentCheckup }),
+      })
+
+      if (!response.ok) throw new Error("Failed to update checkup status")
+
+      // Emit event for other components to sync
+      ticketEventEmitter.emit('checkup-updated', { ticketId: id, isCheckup: !currentCheckup })
+
+      toast.success(!currentCheckup ? "Checkup marked" : "Checkup unmarked")
+    } catch (error) {
+      console.error("Error updating checkup status:", error)
+      toast.error("Failed to update checkup status. Please try again.")
+    } finally {
+      setUpdatingCheckup(null)
     }
   }
 
@@ -82,7 +136,7 @@ export function TicketList({ tickets, selectedTicket, onSelectTicket, onDeleteTi
     }
   }
 
-  if (tickets.length === 0) {
+  if (localTickets.length === 0) {
     return (
       <div className="py-8 text-center">
         <p className="text-sm text-muted-foreground">No tickets yet</p>
@@ -95,7 +149,7 @@ export function TicketList({ tickets, selectedTicket, onSelectTicket, onDeleteTi
      
 
       <div className="space-y-2">
-        {tickets.map((ticket) => (
+        {localTickets.map((ticket) => (
           <div
             key={ticket._id}
             className={`relative group cursor-pointer rounded-lg border p-3 transition-colors ${
@@ -123,14 +177,32 @@ export function TicketList({ tickets, selectedTicket, onSelectTicket, onDeleteTi
                   {new Date(ticket.createdAt).toLocaleDateString()}
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 "
-                onClick={(e) => handleDelete(e, ticket._id!)}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={(e) => handleCheckupToggle(e, ticket._id!, ticket.isCheckup || false)}
+                  disabled={updatingCheckup === ticket._id}
+                  title={ticket.isCheckup ? "Unmark checkup" : "Mark checkup"}
+                >
+                  {updatingCheckup === ticket._id ? (
+                    <Spinner size="sm" />
+                  ) : ticket.isCheckup ? (
+                    <CheckSquare className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Square className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={(e) => handleDelete(e, ticket._id!)}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
             </div>
           </div>
         ))}

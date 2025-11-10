@@ -44,7 +44,7 @@ export function HRDepartmentClient({
     employeeId: "",
     year: new Date().getFullYear(),
     month: new Date().getMonth() + 1,
-    workingDays: "30",
+    workingDays: "26",
     absenceDays: "0"
   })
   const [editingRecord, setEditingRecord] = useState<{
@@ -162,7 +162,7 @@ export function HRDepartmentClient({
         employeeId: "",
         year: new Date().getFullYear(),
         month: new Date().getMonth() + 1,
-        workingDays: "30",
+        workingDays: "26",
         absenceDays: "0"
       })
       toast.success('Monthly record added successfully')
@@ -847,25 +847,28 @@ export function HRDepartmentClient({
                   id="record-workingDays"
                   type="number"
                   min="0"
-                  max="31"
+                  max="26"
                   value={newRecord.workingDays}
-                  onChange={(e) => setNewRecord({ ...newRecord, workingDays: e.target.value })}
+                  onChange={(e) => {
+                    const workingDays = Number(e.target.value)
+                    const absenceDays = Math.max(0, 26 - workingDays)
+                    setNewRecord({ ...newRecord, workingDays: e.target.value, absenceDays: String(absenceDays) })
+                  }}
                   required
                   disabled={isSubmitting}
                 />
               </div>
 
               <div>
-                <label htmlFor="record-absenceDays" className="block text-sm mb-2">Absence Days</label>
+                <label htmlFor="record-absenceDays" className="block text-sm mb-2">Absence Days (Auto-calculated)</label>
                 <Input
                   id="record-absenceDays"
                   type="number"
                   min="0"
-                  max="31"
+                  max="26"
                   value={newRecord.absenceDays}
-                  onChange={(e) => setNewRecord({ ...newRecord, absenceDays: e.target.value })}
-                  required
-                  disabled={isSubmitting}
+                  disabled={true}
+                  className="bg-muted/50 cursor-not-allowed"
                 />
               </div>
 
@@ -959,25 +962,28 @@ export function HRDepartmentClient({
                     id="edit-record-workingDays"
                     type="number"
                     min="0"
-                    max="31"
+                    max="26"
                     value={editingRecord.workingDays}
-                    onChange={(e) => setEditingRecord({ ...editingRecord, workingDays: e.target.value })}
+                    onChange={(e) => {
+                      const workingDays = Number(e.target.value)
+                      const absenceDays = Math.max(0, 26 - workingDays)
+                      setEditingRecord({ ...editingRecord, workingDays: e.target.value, absenceDays: String(absenceDays) })
+                    }}
                     required
                     disabled={isSubmitting}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="edit-record-absenceDays" className="block text-sm mb-2">Absence Days</label>
+                  <label htmlFor="edit-record-absenceDays" className="block text-sm mb-2">Absence Days (Auto-calculated)</label>
                   <Input
                     id="edit-record-absenceDays"
                     type="number"
                     min="0"
-                    max="31"
+                    max="26"
                     value={editingRecord.absenceDays}
-                    onChange={(e) => setEditingRecord({ ...editingRecord, absenceDays: e.target.value })}
-                    required
-                    disabled={isSubmitting}
+                    disabled={true}
+                    className="bg-muted/50 cursor-not-allowed"
                   />
                 </div>
 

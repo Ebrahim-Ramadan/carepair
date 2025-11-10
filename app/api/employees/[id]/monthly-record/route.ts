@@ -26,8 +26,8 @@ export async function POST(
     }
 
     // Calculate final salary
-    const dailyRate = Number(employee.salary) / 30
-    const finalSalary = dailyRate * (Number(workingDays) - Number(absenceDays))
+    const dailyRate = Number(employee.salary) / 26
+    const finalSalary = dailyRate * Number(workingDays)
 
     // Check if record already exists for this month/year
     const existingRecord = employee.monthlyRecords?.find(
@@ -107,8 +107,8 @@ export async function PUT(
     }
 
     // Calculate final salary
-    const dailyRate = Number(employee.salary) / 30
-    const finalSalary = dailyRate * (Number(workingDays) - Number(absenceDays))
+    const dailyRate = Number(employee.salary) / 26
+    const finalSalary = dailyRate * Number(workingDays)
 
     // Update the record
     const result = await db.collection("employees").updateOne(

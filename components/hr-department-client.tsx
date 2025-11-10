@@ -30,8 +30,10 @@ export function HRDepartmentClient({
   const [isAddingEmployee, setIsAddingEmployee] = useState(false)
   const [isEditingEmployee, setIsEditingEmployee] = useState(false)
   const [isAddingRecord, setIsAddingRecord] = useState(false)
+  const [isEditingRecord, setIsEditingRecord] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [expandedEmployeeId, setExpandedEmployeeId] = useState<string | null>(null)
+  const [deletingRecords, setDeletingRecords] = useState<string[]>([])
   const [newEmployee, setNewEmployee] = useState({
     name: "",
     jobTitle: "",
@@ -45,6 +47,15 @@ export function HRDepartmentClient({
     workingDays: "30",
     absenceDays: "0"
   })
+  const [editingRecord, setEditingRecord] = useState<{
+    employeeId: string
+    originalYear: number
+    originalMonth: number
+    year: number
+    month: number
+    workingDays: string
+    absenceDays: string
+  } | null>(null)
   const [deletingIds, setDeletingIds] = useState<string[]>([])
   const [isExporting, setIsExporting] = useState<'excel' | 'pdf' | null>(null)
 
@@ -160,6 +171,80 @@ export function HRDepartmentClient({
       toast.error('Failed to add monthly record')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleEditMonthlyRecord = (employeeId: string, record: MonthlyRecord) => {
+    setEditingRecord({
+      employeeId,
+      originalYear: record.year,
+      originalMonth: record.month,
+      year: record.year,
+      month: record.month,
+      workingDays: String(record.workingDays),
+      absenceDays: String(record.absenceDays)
+    })
+    setIsEditingRecord(true)
+  }
+
+  const handleUpdateMonthlyRecord = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingRecord) return
+
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch(`/api/employees/${editingRecord.employeeId}/monthly-record`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          year: Number(editingRecord.year),
+          month: Number(editingRecord.month),
+          workingDays: Number(editingRecord.workingDays),
+          absenceDays: Number(editingRecord.absenceDays)
+        })
+      })
+
+      if (!response.ok) throw new Error('Failed to update monthly record')
+
+      const updatedEmployee = await response.json()
+      setEmployees(employees.map(emp => 
+        emp._id === editingRecord.employeeId ? updatedEmployee : emp
+      ))
+      setIsEditingRecord(false)
+      setEditingRecord(null)
+      toast.success('Monthly record updated successfully')
+    } catch (error) {
+      console.error('Error updating monthly record:', error)
+      toast.error('Failed to update monthly record')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDeleteMonthlyRecord = async (employeeId: string, year: number, month: number) => {
+    const recordKey = `${employeeId}-${year}-${month}`
+    setDeletingRecords(prev => [...prev, recordKey])
+
+    try {
+      const response = await fetch(`/api/employees/${employeeId}/monthly-record?year=${year}&month=${month}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) throw new Error('Failed to delete monthly record')
+
+      const updatedEmployee = await response.json()
+      setEmployees(employees.map(emp => 
+        emp._id === employeeId ? updatedEmployee : emp
+      ))
+      toast.success('Monthly record deleted successfully')
+    } catch (error) {
+      console.error('Error deleting monthly record:', error)
+      toast.error('Failed to delete monthly record')
+    } finally {
+      setDeletingRecords(prev => prev.filter(key => key !== recordKey))
     }
   }
 
@@ -436,6 +521,7 @@ export function HRDepartmentClient({
                                   <th className="text-left p-2">Working Days</th>
                                   <th className="text-left p-2">Absence Days</th>
                                   <th className="text-left p-2">Final Salary</th>
+                                  <th className="text-left p-2">Actions</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -446,6 +532,31 @@ export function HRDepartmentClient({
                                     <td className="p-2">{record.workingDays}</td>
                                     <td className="p-2">{record.absenceDays}</td>
                                     <td className="p-2 font-semibold text-green-600">{record.finalSalary.toFixed(3)} KWD</td>
+                                    <td className="p-2">
+                                      <div className="flex items-center gap-1">
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-6 w-6 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                                          onClick={() => handleEditMonthlyRecord(employee._id!, record)}
+                                        >
+                                          <Edit className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-6 w-6 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                          onClick={() => handleDeleteMonthlyRecord(employee._id!, record.year, record.month)}
+                                          disabled={deletingRecords.includes(`${employee._id}-${record.year}-${record.month}`)}
+                                        >
+                                          {deletingRecords.includes(`${employee._id}-${record.year}-${record.month}`) ? (
+                                            <Spinner size="sm" className="text-red-500" />
+                                          ) : (
+                                            <Trash2 className="h-3 w-3" />
+                                          )}
+                                        </Button>
+                                      </div>
+                                    </td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -779,6 +890,119 @@ export function HRDepartmentClient({
                 </Button>
               </div>
             </form>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      {/* Edit Monthly Record Dialog */}
+      <Dialog.Root 
+        open={isEditingRecord} 
+        onOpenChange={(open) => {
+          if (isSubmitting && !open) return
+          setIsEditingRecord(open)
+          if (!open) setEditingRecord(null)
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[95vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border bg-card p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <Dialog.Title className="text-xl font-semibold">
+                Edit Monthly Record
+              </Dialog.Title>
+              <Dialog.Close asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8"
+                  disabled={isSubmitting}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </Dialog.Close>
+            </div>
+
+            {editingRecord && (
+              <form onSubmit={handleUpdateMonthlyRecord} className="space-y-4">
+                <div>
+                  <label htmlFor="edit-record-year" className="block text-sm mb-2">Year</label>
+                  <Input
+                    id="edit-record-year"
+                    type="number"
+                    min="2020"
+                    max={new Date().getFullYear() + 1}
+                    value={editingRecord.year}
+                    onChange={(e) => setEditingRecord({ ...editingRecord, year: Number(e.target.value) })}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="edit-record-month" className="block text-sm mb-2">Month</label>
+                  <select
+                    id="edit-record-month"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2"
+                    value={editingRecord.month}
+                    onChange={(e) => setEditingRecord({ ...editingRecord, month: Number(e.target.value) })}
+                    disabled={isSubmitting}
+                  >
+                    {MONTH_NAMES.map((month, idx) => (
+                      <option key={idx} value={idx + 1}>{month}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="edit-record-workingDays" className="block text-sm mb-2">Working Days</label>
+                  <Input
+                    id="edit-record-workingDays"
+                    type="number"
+                    min="0"
+                    max="31"
+                    value={editingRecord.workingDays}
+                    onChange={(e) => setEditingRecord({ ...editingRecord, workingDays: e.target.value })}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="edit-record-absenceDays" className="block text-sm mb-2">Absence Days</label>
+                  <Input
+                    id="edit-record-absenceDays"
+                    type="number"
+                    min="0"
+                    max="31"
+                    value={editingRecord.absenceDays}
+                    onChange={(e) => setEditingRecord({ ...editingRecord, absenceDays: e.target.value })}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsEditingRecord(false)}
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="bg-[#002540]" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Spinner size="sm" className="mr-2" />
+                        Updating...
+                      </>
+                    ) : (
+                      'Update Record'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>

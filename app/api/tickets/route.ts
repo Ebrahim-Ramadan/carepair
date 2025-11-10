@@ -11,37 +11,113 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, Number(url.searchParams.get('page') ?? 1) || 1)
     const pageSize = 10
     const skip = (page - 1) * pageSize
+    const listOnly = url.searchParams.get('list') === 'true'
+    const salesMode = url.searchParams.get('sales') === 'true'
+    const period = url.searchParams.get('period') || 'month'
+    const startDate = url.searchParams.get('startDate')
+    const endDate = url.searchParams.get('endDate')
 
     const client = await clientPromise
     const db = client.db("car_repair")
 
-    const [tickets, total] = await Promise.all([
-      db
-        .collection("tickets")
-        .find({}, { projection: { _id: 1, plateNumber: 1, customerName: 1, createdAt: 1, isCheckup: 1 } })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(pageSize)
-        .toArray(),
-      db.collection("tickets").countDocuments({}),
-    ])
+    // Build date filter for sales mode
+    let dateFilter = {}
+    if (salesMode) {
+      const now = new Date()
+      let start = new Date()
 
-    const plainTickets = tickets.map((t: any) => ({
-      _id: t._id?.toString(),
-      plateNumber: t.plateNumber,
-      customerName: t.customerName,
-      createdAt: t.createdAt ? new Date(t.createdAt).toISOString() : new Date(0).toISOString(),
-      isCheckup: t.isCheckup || false,
-    }))
+      switch (period) {
+        case 'month':
+          start.setDate(now.getDate() - 30)
+          break
+        case 'quarter':
+          start.setDate(now.getDate() - 90)
+          break
+        case 'year':
+          start.setFullYear(now.getFullYear() - 1)
+          break
+        case 'custom':
+          if (startDate && endDate) {
+            start = new Date(startDate)
+            const end = new Date(endDate)
+            end.setHours(23, 59, 59, 999)
+            dateFilter = { createdAt: { $gte: start, $lte: end } }
+            break
+          }
+          break
+        case 'all':
+        default:
+          dateFilter = {}
+          break
+      }
 
-    const totalPages = Math.max(1, Math.ceil(total / pageSize))
+      if (!dateFilter) {
+        dateFilter = { createdAt: { $gte: start, $lte: now } }
+      }
+    }
 
-    const response = NextResponse.json({
-      tickets: plainTickets,
-      page,
-      totalPages,
-      total
-    })
+    // Use limited projection only if list=true and not in sales mode
+    const projection = listOnly && !salesMode
+      ? { _id: 1, plateNumber: 1, customerName: 1, createdAt: 1, isCheckup: 1 }
+      : undefined
+
+    let query = db.collection("tickets").find(dateFilter, projection ? { projection } : {}).sort({ createdAt: -1 })
+    
+    // Apply pagination only if not in sales mode
+    if (!salesMode) {
+      query = query.skip(skip).limit(pageSize)
+    }
+
+    const tickets = await query.toArray()
+    
+    let total = 0
+    if (!salesMode) {
+      total = await db.collection("tickets").countDocuments(dateFilter)
+    }
+
+    const plainTickets = listOnly && !salesMode
+      ? tickets.map((t: any) => ({
+          _id: t._id?.toString(),
+          plateNumber: t.plateNumber,
+          customerName: t.customerName,
+          createdAt: t.createdAt ? new Date(t.createdAt).toISOString() : new Date(0).toISOString(),
+          isCheckup: t.isCheckup || false,
+        }))
+      : tickets.map((t: any) => ({
+          _id: t._id?.toString(),
+          invoiceNo: t.invoiceNo || '',
+          plateNumber: t.plateNumber,
+          customerName: t.customerName,
+          customerPhone: t.customerPhone || '',
+          customerEmail: t.customerEmail || '',
+          invoiceDate: t.invoiceDate ? new Date(t.invoiceDate).toISOString() : null,
+          createdAt: t.createdAt ? new Date(t.createdAt).toISOString() : new Date(0).toISOString(),
+          paymentMethod: t.paymentMethod || '',
+          totalAmount: t.totalAmount || 0,
+          payments: Array.isArray(t.payments) ? t.payments.map((p: any) => ({
+            amount: typeof p.amount === 'number' ? p.amount : 0,
+            date: p.date ? new Date(p.date).toISOString() : new Date(0).toISOString()
+          })) : [],
+          services: Array.isArray(t.services) ? t.services : [],
+          notes: t.notes || '',
+          isCheckup: t.isCheckup || false
+        }))
+
+    // Return format depends on mode
+    let response
+    if (salesMode) {
+      // Sales mode returns array directly
+      response = NextResponse.json(plainTickets)
+    } else {
+      // List/dashboard mode returns paginated object
+      const totalPages = Math.max(1, Math.ceil(total / pageSize))
+      response = NextResponse.json({
+        tickets: plainTickets,
+        page,
+        totalPages,
+        total
+      })
+    }
 
     // Add cache control headers to prevent caching
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0')

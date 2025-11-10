@@ -223,20 +223,22 @@ export default function SalesPage() {
   const fetchTickets = async () => {
     setIsLoading(true)
     try {
-      let url = "/api/tickets?period=" + period
+      let url = "/api/tickets?sales=true&period=" + period
       if (period === "custom" && startDate && endDate) {
         url += `&startDate=${startDate}&endDate=${endDate}`
       }
-      const res = await fetch(url)
+      const res = await fetch(url, { cache: 'no-store' })
       if (!res.ok) throw new Error("Failed to fetch tickets")
       const data = await res.json()
-      setTickets(data)
+      // API returns array directly in sales mode 
+      setTickets(Array.isArray(data) ? data : [])
     } catch (err) {
       toast.error("Failed to load tickets")
     } finally {
       setIsLoading(false)
     }
   }
+console.log('ass tickets', tickets);
 
   return (
     <div className="p-4 space-y-6">

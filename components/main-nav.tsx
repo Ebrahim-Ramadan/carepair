@@ -77,13 +77,13 @@ export function MainNav({ isAdmin }: MainNavProps) {
                       key={child.href}
                       className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
-                      <Link 
+                      <a 
                         href={child.href}
                         className="w-full"
-                        prefetch={false}
+                        // prefetc
                       >
                         {child.label}
-                      </Link>
+                      </a>
                     </DropdownMenu.Item>
                   ))}
                 </DropdownMenu.Content>
@@ -104,9 +104,9 @@ export function MainNav({ isAdmin }: MainNavProps) {
               "text-white/90 hover:text-white hover:bg-white/10"
             }`}
           >
-            <Link href={route.href} prefetch={false}>
+            <a href={route.href} >
               {route.label}
-            </Link>
+            </a>
           </Button>
         )
       })}

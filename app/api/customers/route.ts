@@ -16,7 +16,11 @@ export async function GET() {
       .aggregate([
         {
           $group: {
-            _id: "$customerEmail",
+            // Group by combination of name and phone (more reliable than email which may be empty)
+            _id: {
+              name: "$customerName",
+              phone: "$customerPhone"
+            },
             customerName: { $first: "$customerName" },
             customerPhone: { $first: "$customerPhone" },
             customerEmail: { $first: "$customerEmail" },

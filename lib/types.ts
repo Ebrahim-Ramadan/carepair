@@ -136,12 +136,19 @@ export type TicketSummary = {
   createdAt: string
 }
 
+export type MonthlyRecord = {
+  year: number
+  month: number // 1-12
+  workingDays: number
+  absenceDays: number
+  finalSalary: number
+}
+
 export type Employee = {
   _id?: string
   name: string
   jobTitle: string
   salary: number
-  absenceDays: number
-  workingDays: number
+  monthlyRecords: MonthlyRecord[]
   createdAt: string
 }

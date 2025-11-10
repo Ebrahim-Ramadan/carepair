@@ -3,11 +3,11 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, X, Trash2, FileSpreadsheet, File, ChevronLeft, ChevronRight, Edit } from "lucide-react"
+import { Plus, X, Trash2, FileSpreadsheet, File, ChevronLeft, ChevronRight, Edit, ChevronDown, ChevronUp } from "lucide-react"
 import * as Dialog from "@radix-ui/react-dialog"
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
-import type { Employee } from "@/lib/types"
+import type { Employee, MonthlyRecord } from "@/lib/types"
 import { useRouter } from "next/navigation"
 
 interface HRDepartmentClientProps {
@@ -16,6 +16,8 @@ interface HRDepartmentClientProps {
   totalPages: number
   total: number
 }
+
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 export function HRDepartmentClient({ 
   initialEmployees,
@@ -27,15 +29,22 @@ export function HRDepartmentClient({
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees)
   const [isAddingEmployee, setIsAddingEmployee] = useState(false)
   const [isEditingEmployee, setIsEditingEmployee] = useState(false)
+  const [isAddingRecord, setIsAddingRecord] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [expandedEmployeeId, setExpandedEmployeeId] = useState<string | null>(null)
   const [newEmployee, setNewEmployee] = useState({
     name: "",
     jobTitle: "",
-    salary: "",
-    absenceDays: "0",
-    workingDays: "30"
+    salary: ""
   })
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
+  const [newRecord, setNewRecord] = useState({
+    employeeId: "",
+    year: new Date().getFullYear(),
+    month: new Date().getMonth() + 1,
+    workingDays: "30",
+    absenceDays: "0"
+  })
   const [deletingIds, setDeletingIds] = useState<string[]>([])
   const [isExporting, setIsExporting] = useState<'excel' | 'pdf' | null>(null)
 
@@ -52,8 +61,7 @@ export function HRDepartmentClient({
         body: JSON.stringify({
           ...newEmployee,
           salary: Number(newEmployee.salary),
-          absenceDays: Number(newEmployee.absenceDays),
-          workingDays: Number(newEmployee.workingDays),
+          monthlyRecords: [],
           createdAt: new Date().toISOString()
         })
       })
@@ -63,7 +71,7 @@ export function HRDepartmentClient({
       const addedEmployee = await response.json()
       setEmployees([...employees, addedEmployee])
       setIsAddingEmployee(false)
-      setNewEmployee({ name: "", jobTitle: "", salary: "", absenceDays: "0", workingDays: "30" })
+      setNewEmployee({ name: "", jobTitle: "", salary: "" })
       toast.success('Employee added successfully')
     } catch (error) {
       console.error('Error adding employee:', error)
@@ -93,9 +101,7 @@ export function HRDepartmentClient({
         body: JSON.stringify({
           name: editingEmployee.name,
           jobTitle: editingEmployee.jobTitle,
-          salary: Number(editingEmployee.salary),
-          absenceDays: Number(editingEmployee.absenceDays),
-          workingDays: Number(editingEmployee.workingDays)
+          salary: Number(editingEmployee.salary)
         })
       })
 
@@ -111,6 +117,47 @@ export function HRDepartmentClient({
     } catch (error) {
       console.error('Error updating employee:', error)
       toast.error('Failed to update employee')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleAddMonthlyRecord = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch(`/api/employees/${newRecord.employeeId}/monthly-record`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          year: Number(newRecord.year),
+          month: Number(newRecord.month),
+          workingDays: Number(newRecord.workingDays),
+          absenceDays: Number(newRecord.absenceDays)
+        })
+      })
+
+      if (!response.ok) throw new Error('Failed to add monthly record')
+
+      const updatedEmployee = await response.json()
+      setEmployees(employees.map(emp => 
+        emp._id === newRecord.employeeId ? updatedEmployee : emp
+      ))
+      setIsAddingRecord(false)
+      setNewRecord({
+        employeeId: "",
+        year: new Date().getFullYear(),
+        month: new Date().getMonth() + 1,
+        workingDays: "30",
+        absenceDays: "0"
+      })
+      toast.success('Monthly record added successfully')
+    } catch (error) {
+      console.error('Error adding monthly record:', error)
+      toast.error('Failed to add monthly record')
     } finally {
       setIsSubmitting(false)
     }
@@ -143,27 +190,40 @@ export function HRDepartmentClient({
       if (!response.ok) throw new Error('Failed to fetch employees')
       const allEmployees = await response.json()
 
-      // Dynamically import XLSX
       const XLSX = await import('xlsx')
 
       const workbook = XLSX.utils.book_new()
-      const worksheet = XLSX.utils.json_to_sheet(allEmployees.map(emp => {
-        const dailyRate = Number(emp.salary) / 30
-        const finalSalary = dailyRate * (Number(emp.workingDays) - Number(emp.absenceDays))
-        return {
-          Name: emp.name,
-          'Job Title': emp.jobTitle,
-          'Base Salary (KWD)': Number(emp.salary).toFixed(3),
-          'Working Days': emp.workingDays,
-          'Absence Days': emp.absenceDays,
-          'Final Salary (KWD)': finalSalary.toFixed(3),
-          'Created At': new Date(emp.createdAt).toLocaleDateString()
-        }
-      }))
-
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Employees')
-      XLSX.writeFile(workbook, 'employees.xlsx')
       
+      // Summary sheet
+      const summaryData = allEmployees.map(emp => ({
+        Name: emp.name,
+        'Job Title': emp.jobTitle,
+        'Base Salary (KWD)': Number(emp.salary).toFixed(3),
+        'Total Records': emp.monthlyRecords?.length || 0
+      }))
+      const summarySheet = XLSX.utils.json_to_sheet(summaryData)
+      XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary')
+
+      // Monthly records sheet
+      const monthlyData: any[] = []
+      allEmployees.forEach(emp => {
+        emp.monthlyRecords?.forEach((record: any) => {
+          monthlyData.push({
+            'Employee Name': emp.name,
+            'Job Title': emp.jobTitle,
+            'Base Salary': Number(emp.salary).toFixed(3),
+            'Month': MONTH_NAMES[record.month - 1],
+            'Year': record.year,
+            'Working Days': record.workingDays,
+            'Absence Days': record.absenceDays,
+            'Final Salary (KWD)': record.finalSalary.toFixed(3)
+          })
+        })
+      })
+      const monthlySheet = XLSX.utils.json_to_sheet(monthlyData)
+      XLSX.utils.book_append_sheet(workbook, monthlySheet, 'Monthly Records')
+
+      XLSX.writeFile(workbook, 'employees-monthly-records.xlsx')
       toast.success('Successfully exported to Excel')
     } catch (error) {
       console.error('Error exporting to Excel:', error)
@@ -180,7 +240,6 @@ export function HRDepartmentClient({
       if (!response.ok) throw new Error('Failed to fetch employees')
       const allEmployees = await response.json()
 
-      // Dynamically import jsPDF and autoTable
       const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
         import('jspdf'),
         import('jspdf-autotable')
@@ -189,28 +248,44 @@ export function HRDepartmentClient({
       const doc = new jsPDF()
 
       doc.setFontSize(16)
-      doc.text('Employee Salary Report', 14, 15)
+      doc.text('Employee Monthly Salary Report', 14, 15)
       doc.setFontSize(10)
       doc.text(`Total Employees: ${allEmployees.length}`, 14, 25)
 
-      autoTable(doc, {
-        head: [['Name', 'Job Title', 'Base Salary', 'Working Days', 'Absence Days', 'Final Salary']],
-        body: allEmployees.map(emp => {
-          const dailyRate = Number(emp.salary) / 30
-          const finalSalary = dailyRate * (Number(emp.workingDays) - Number(emp.absenceDays))
-          return [
-            emp.name,
-            emp.jobTitle,
-            Number(emp.salary).toFixed(3),
-            emp.workingDays,
-            emp.absenceDays,
-            finalSalary.toFixed(3)
-          ]
-        }),
-        startY: 30,
+      let currentY = 30
+
+      allEmployees.forEach((emp, idx) => {
+        if (currentY > 250) {
+          doc.addPage()
+          currentY = 20
+        }
+
+        doc.setFontSize(11)
+        doc.text(`${emp.name} - ${emp.jobTitle} (Base: ${Number(emp.salary).toFixed(3)} KWD)`, 14, currentY)
+        currentY += 8
+
+        if (emp.monthlyRecords && emp.monthlyRecords.length > 0) {
+          autoTable(doc, {
+            head: [['Month', 'Year', 'Working Days', 'Absence Days', 'Final Salary']],
+            body: emp.monthlyRecords.map((record: any) => [
+              MONTH_NAMES[record.month - 1],
+              record.year,
+              record.workingDays,
+              record.absenceDays,
+              record.finalSalary.toFixed(3)
+            ]),
+            startY: currentY,
+            margin: { left: 14, right: 14 }
+          })
+          currentY = (doc as any).lastAutoTable.finalY + 10
+        } else {
+          doc.setFontSize(9)
+          doc.text('No monthly records', 14, currentY)
+          currentY += 6
+        }
       })
 
-      doc.save('employees-salary-report.pdf')
+      doc.save('employees-monthly-salary-report.pdf')
       toast.success('Successfully exported to PDF')
     } catch (error) {
       console.error('Error exporting to PDF:', error)
@@ -270,31 +345,40 @@ export function HRDepartmentClient({
         </div>
       </div>
 
-      <div className="rounded-lg border">
+      <div className="rounded-lg border overflow-x-auto">
         <table className="w-full">
           <thead className="bg-muted/50">
             <tr>
+              <th className="text-left p-4 w-8"></th>
               <th className="text-left p-4">Name</th>
               <th className="text-left p-4">Job Title</th>
               <th className="text-left p-4">Base Salary</th>
-              <th className="text-left p-4">Working Days</th>
-              <th className="text-left p-4">Absence Days</th>
-              <th className="text-left p-4">Final Salary</th>
+              <th className="text-left p-4">Monthly Records</th>
               <th className="text-left p-4">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {employees.map((employee) => {
-              const dailyRate = Number(employee.salary) / 30
-              const finalSalary = dailyRate * (Number(employee.workingDays) - Number(employee.absenceDays))
-              return (
-                <tr key={employee._id} className="border-t">
+            {employees.map((employee) => (
+              <>
+                <tr key={employee._id}>
+                  <td className="p-4 text-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => setExpandedEmployeeId(expandedEmployeeId === employee._id ? null : employee._id)}
+                    >
+                      {expandedEmployeeId === employee._id ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </td>
                   <td className="p-4">{employee.name}</td>
                   <td className="p-4">{employee.jobTitle}</td>
                   <td className="p-4">{Number(employee.salary).toFixed(3)} KWD</td>
-                  <td className="p-4">{employee.workingDays}</td>
-                  <td className="p-4">{employee.absenceDays}</td>
-                  <td className="p-4 font-semibold text-green-600">{finalSalary.toFixed(3)} KWD</td>
+                  <td className="p-4">{employee.monthlyRecords?.length || 0} records</td>
                   <td className="p-4">
                     <div className="flex items-center gap-2">
                       <Button
@@ -321,8 +405,61 @@ export function HRDepartmentClient({
                     </div>
                   </td>
                 </tr>
-              )
-            })}
+
+                {/* Expanded monthly records */}
+                {expandedEmployeeId === employee._id && (
+                  <tr>
+                    <td colSpan={6} className="p-0 bg-muted/20">
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="font-semibold">Monthly Records</h4>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setNewRecord({ ...newRecord, employeeId: employee._id! })
+                              setIsAddingRecord(true)
+                            }}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Record
+                          </Button>
+                        </div>
+
+                        {employee.monthlyRecords && employee.monthlyRecords.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm border-t">
+                              <thead className="bg-background">
+                                <tr>
+                                  <th className="text-left p-2">Month</th>
+                                  <th className="text-left p-2">Year</th>
+                                  <th className="text-left p-2">Working Days</th>
+                                  <th className="text-left p-2">Absence Days</th>
+                                  <th className="text-left p-2">Final Salary</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {employee.monthlyRecords.map((record, idx) => (
+                                  <tr key={idx} className="border-t">
+                                    <td className="p-2">{MONTH_NAMES[record.month - 1]}</td>
+                                    <td className="p-2">{record.year}</td>
+                                    <td className="p-2">{record.workingDays}</td>
+                                    <td className="p-2">{record.absenceDays}</td>
+                                    <td className="p-2 font-semibold text-green-600">{record.finalSalary.toFixed(3)} KWD</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No monthly records yet</p>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </>
+            ))}
           </tbody>
         </table>
       </div>
@@ -413,34 +550,6 @@ export function HRDepartmentClient({
                   step="0.001"
                   value={newEmployee.salary}
                   onChange={(e) => setNewEmployee({ ...newEmployee, salary: e.target.value })}
-                  required
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="workingDays" className="block text-sm mb-2">Working Days</label>
-                <Input
-                  id="workingDays"
-                  type="number"
-                  min="0"
-                  max="31"
-                  value={newEmployee.workingDays}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, workingDays: e.target.value })}
-                  required
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="absenceDays" className="block text-sm mb-2">Absence Days</label>
-                <Input
-                  id="absenceDays"
-                  type="number"
-                  min="0"
-                  max="31"
-                  value={newEmployee.absenceDays}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, absenceDays: e.target.value })}
                   required
                   disabled={isSubmitting}
                 />
@@ -538,34 +647,6 @@ export function HRDepartmentClient({
                   />
                 </div>
 
-                <div>
-                  <label htmlFor="edit-workingDays" className="block text-sm mb-2">Working Days</label>
-                  <Input
-                    id="edit-workingDays"
-                    type="number"
-                    min="0"
-                    max="31"
-                    value={editingEmployee.workingDays}
-                    onChange={(e) => setEditingEmployee({ ...editingEmployee, workingDays: e.target.value })}
-                    required
-                    disabled={isSubmitting}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="edit-absenceDays" className="block text-sm mb-2">Absence Days</label>
-                  <Input
-                    id="edit-absenceDays"
-                    type="number"
-                    min="0"
-                    max="31"
-                    value={editingEmployee.absenceDays}
-                    onChange={(e) => setEditingEmployee({ ...editingEmployee, absenceDays: e.target.value })}
-                    required
-                    disabled={isSubmitting}
-                  />
-                </div>
-
                 <div className="flex justify-end gap-2">
                   <Button 
                     type="button" 
@@ -588,6 +669,116 @@ export function HRDepartmentClient({
                 </div>
               </form>
             )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      {/* Add Monthly Record Dialog */}
+      <Dialog.Root 
+        open={isAddingRecord} 
+        onOpenChange={(open) => {
+          if (isSubmitting && !open) return
+          setIsAddingRecord(open)
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[95vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border bg-card p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <Dialog.Title className="text-xl font-semibold">
+                Add Monthly Record
+              </Dialog.Title>
+              <Dialog.Close asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8"
+                  disabled={isSubmitting}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </Dialog.Close>
+            </div>
+
+            <form onSubmit={handleAddMonthlyRecord} className="space-y-4">
+              <div>
+                <label htmlFor="record-year" className="block text-sm mb-2">Year</label>
+                <Input
+                  id="record-year"
+                  type="number"
+                  min="2020"
+                  max={new Date().getFullYear() + 1}
+                  value={newRecord.year}
+                  onChange={(e) => setNewRecord({ ...newRecord, year: e.target.value as any })}
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="record-month" className="block text-sm mb-2">Month</label>
+                <select
+                  id="record-month"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2"
+                  value={newRecord.month}
+                  onChange={(e) => setNewRecord({ ...newRecord, month: e.target.value as any })}
+                  disabled={isSubmitting}
+                >
+                  {MONTH_NAMES.map((month, idx) => (
+                    <option key={idx} value={idx + 1}>{month}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="record-workingDays" className="block text-sm mb-2">Working Days</label>
+                <Input
+                  id="record-workingDays"
+                  type="number"
+                  min="0"
+                  max="31"
+                  value={newRecord.workingDays}
+                  onChange={(e) => setNewRecord({ ...newRecord, workingDays: e.target.value })}
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="record-absenceDays" className="block text-sm mb-2">Absence Days</label>
+                <Input
+                  id="record-absenceDays"
+                  type="number"
+                  min="0"
+                  max="31"
+                  value={newRecord.absenceDays}
+                  onChange={(e) => setNewRecord({ ...newRecord, absenceDays: e.target.value })}
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsAddingRecord(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-[#002540]" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Spinner size="sm" className="mr-2" />
+                      Adding...
+                    </>
+                  ) : (
+                    'Add Record'
+                  )}
+                </Button>
+              </div>
+            </form>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>

@@ -49,7 +49,7 @@ export type AnalyticsData = {
 }
 
 export async function getAnalyticsData({
-  period = 'month',
+  period = 'all',
   category = 'all',
   startDate,
   endDate
@@ -95,7 +95,8 @@ export async function getAnalyticsData({
         break
       case 'all':
       default:
-        // No date filter
+        // No date filter - get all tickets
+        dateFilter = {}
         break
     }
   }
@@ -114,6 +115,12 @@ export async function getAnalyticsData({
   
   // Get all tickets matching the filter
   const tickets = await collection.find(filter).toArray()
+  
+  console.log('Analytics filter:', filter)
+  console.log('Tickets found:', tickets.length)
+  if (tickets.length > 0) {
+    console.log('First ticket:', tickets[0])
+  }
   
   // Calculate total revenue
   const totalRevenue = tickets.reduce((sum, ticket) => sum + (ticket.totalAmount || 0), 0)

@@ -45,7 +45,9 @@ export function HRDepartmentClient({
     year: new Date().getFullYear(),
     month: new Date().getMonth() + 1,
     workingDays: "26",
-    absenceDays: "0"
+    absenceDays: "0",
+    additionalAmount: "0",
+    deductionAmount: "0"
   })
   const [editingRecord, setEditingRecord] = useState<{
     employeeId: string
@@ -55,6 +57,8 @@ export function HRDepartmentClient({
     month: number
     workingDays: string
     absenceDays: string
+    additionalAmount: string
+    deductionAmount: string
   } | null>(null)
   const [deletingIds, setDeletingIds] = useState<string[]>([])
   const [isExporting, setIsExporting] = useState<'excel' | 'pdf' | null>(null)
@@ -147,7 +151,9 @@ export function HRDepartmentClient({
           year: Number(newRecord.year),
           month: Number(newRecord.month),
           workingDays: Number(newRecord.workingDays),
-          absenceDays: Number(newRecord.absenceDays)
+          absenceDays: Number(newRecord.absenceDays),
+          additionalAmount: Number(newRecord.additionalAmount),
+          deductionAmount: Number(newRecord.deductionAmount)
         })
       })
 
@@ -163,7 +169,9 @@ export function HRDepartmentClient({
         year: new Date().getFullYear(),
         month: new Date().getMonth() + 1,
         workingDays: "26",
-        absenceDays: "0"
+        absenceDays: "0",
+        additionalAmount: "0",
+        deductionAmount: "0"
       })
       toast.success('Monthly record added successfully')
     } catch (error) {
@@ -182,7 +190,9 @@ export function HRDepartmentClient({
       year: record.year,
       month: record.month,
       workingDays: String(record.workingDays),
-      absenceDays: String(record.absenceDays)
+      absenceDays: String(record.absenceDays),
+      additionalAmount: String(record.additionalAmount || 0),
+      deductionAmount: String(record.deductionAmount || 0)
     })
     setIsEditingRecord(true)
   }
@@ -203,7 +213,9 @@ export function HRDepartmentClient({
           year: Number(editingRecord.year),
           month: Number(editingRecord.month),
           workingDays: Number(editingRecord.workingDays),
-          absenceDays: Number(editingRecord.absenceDays)
+          absenceDays: Number(editingRecord.absenceDays),
+          additionalAmount: Number(editingRecord.additionalAmount),
+          deductionAmount: Number(editingRecord.deductionAmount)
         })
       })
 
@@ -291,7 +303,7 @@ export function HRDepartmentClient({
 
       // Monthly records sheet
       const monthlyData: any[] = []
-      allEmployees.forEach(emp => {
+      allEmployees.forEach((emp: any) => {
         emp.monthlyRecords?.forEach((record: any) => {
           monthlyData.push({
             'Employee Name': emp.name,
@@ -301,6 +313,8 @@ export function HRDepartmentClient({
             'Year': record.year,
             'Working Days': record.workingDays,
             'Absence Days': record.absenceDays,
+            'Additional Amount': (record.additionalAmount || 0).toFixed(3),
+            'Deduction Amount': (record.deductionAmount || 0).toFixed(3),
             'Final Salary (KWD)': record.finalSalary.toFixed(3)
           })
         })
@@ -351,12 +365,14 @@ export function HRDepartmentClient({
 
         if (emp.monthlyRecords && emp.monthlyRecords.length > 0) {
           autoTable(doc, {
-            head: [['Month', 'Year', 'Working Days', 'Absence Days', 'Final Salary']],
+            head: [['Month', 'Year', 'Working Days', 'Absence Days', 'Extra', 'Deduction', 'Final Salary']],
             body: emp.monthlyRecords.map((record: any) => [
               MONTH_NAMES[record.month - 1],
               record.year,
               record.workingDays,
               record.absenceDays,
+              (record.additionalAmount || 0).toFixed(3),
+              (record.deductionAmount || 0).toFixed(3),
               record.finalSalary.toFixed(3)
             ]),
             startY: currentY,
@@ -520,6 +536,8 @@ export function HRDepartmentClient({
                                   <th className="text-left p-2">Year</th>
                                   <th className="text-left p-2">Working Days</th>
                                   <th className="text-left p-2">Absence Days</th>
+                                  <th className="text-left p-2">Extra</th>
+                                  <th className="text-left p-2">Deduction</th>
                                   <th className="text-left p-2">Final Salary</th>
                                   <th className="text-left p-2">Actions</th>
                                 </tr>
@@ -531,6 +549,8 @@ export function HRDepartmentClient({
                                     <td className="p-2">{record.year}</td>
                                     <td className="p-2">{record.workingDays}</td>
                                     <td className="p-2">{record.absenceDays}</td>
+                                    <td className="p-2 text-green-600">{(record.additionalAmount || 0).toFixed(3)}</td>
+                                    <td className="p-2 text-red-600">{(record.deductionAmount || 0).toFixed(3)}</td>
                                     <td className="p-2 font-semibold text-green-600">{record.finalSalary.toFixed(3)} KWD</td>
                                     <td className="p-2">
                                       <div className="flex items-center gap-1">
@@ -872,6 +892,32 @@ export function HRDepartmentClient({
                 />
               </div>
 
+              <div>
+                <label htmlFor="record-additionalAmount" className="block text-sm mb-2">Additional Amount (KWD)</label>
+                <Input
+                  id="record-additionalAmount"
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  value={newRecord.additionalAmount}
+                  onChange={(e) => setNewRecord({ ...newRecord, additionalAmount: e.target.value })}
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="record-deductionAmount" className="block text-sm mb-2">Deduction Amount (KWD)</label>
+                <Input
+                  id="record-deductionAmount"
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  value={newRecord.deductionAmount}
+                  onChange={(e) => setNewRecord({ ...newRecord, deductionAmount: e.target.value })}
+                  disabled={isSubmitting}
+                />
+              </div>
+
               <div className="flex justify-end gap-2">
                 <Button 
                   type="button" 
@@ -984,6 +1030,32 @@ export function HRDepartmentClient({
                     value={editingRecord.absenceDays}
                     disabled={true}
                     className="bg-muted/50 cursor-not-allowed"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="edit-record-additionalAmount" className="block text-sm mb-2">Additional Amount (KWD)</label>
+                  <Input
+                    id="edit-record-additionalAmount"
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    value={editingRecord.additionalAmount}
+                    onChange={(e) => setEditingRecord({ ...editingRecord, additionalAmount: e.target.value })}
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="edit-record-deductionAmount" className="block text-sm mb-2">Deduction Amount (KWD)</label>
+                  <Input
+                    id="edit-record-deductionAmount"
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    value={editingRecord.deductionAmount}
+                    onChange={(e) => setEditingRecord({ ...editingRecord, deductionAmount: e.target.value })}
+                    disabled={isSubmitting}
                   />
                 </div>
 

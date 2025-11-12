@@ -142,6 +142,8 @@ export type MonthlyRecord = {
   workingDays: number
   absenceDays: number
   finalSalary: number
+  additionalAmount?: number // Added amount to salary
+  deductionAmount?: number // Deducted amount from salary
 }
 
 export type Employee = {

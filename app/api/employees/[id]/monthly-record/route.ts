@@ -11,7 +11,7 @@ export async function POST(
     const db = client.db("car_repair")
     
     const body = await request.json()
-    const { year, month, workingDays, absenceDays } = body
+    const { year, month, workingDays, absenceDays, additionalAmount = 0, deductionAmount = 0 } = body
 
     // Fetch the employee to get their base salary
     const employee = await db.collection("employees").findOne({
@@ -25,9 +25,10 @@ export async function POST(
       )
     }
 
-    // Calculate final salary
+    // Calculate final salary: base + additional - deduction
     const dailyRate = Number(employee.salary) / 26
-    const finalSalary = dailyRate * Number(workingDays)
+    const baseSalary = dailyRate * Number(workingDays)
+    const finalSalary = baseSalary + Number(additionalAmount) - Number(deductionAmount)
 
     // Check if record already exists for this month/year
     const existingRecord = employee.monthlyRecords?.find(
@@ -43,6 +44,8 @@ export async function POST(
             "monthlyRecords.$.workingDays": Number(workingDays),
             "monthlyRecords.$.absenceDays": Number(absenceDays),
             "monthlyRecords.$.finalSalary": finalSalary,
+            "monthlyRecords.$.additionalAmount": Number(additionalAmount),
+            "monthlyRecords.$.deductionAmount": Number(deductionAmount),
             updatedAt: new Date().toISOString()
           } 
         }
@@ -58,7 +61,9 @@ export async function POST(
               month: Number(month),
               workingDays: Number(workingDays),
               absenceDays: Number(absenceDays),
-              finalSalary
+              finalSalary,
+              additionalAmount: Number(additionalAmount),
+              deductionAmount: Number(deductionAmount)
             } as any
           },
           $set: {
@@ -92,7 +97,7 @@ export async function PUT(
     const db = client.db("car_repair")
     
     const body = await request.json()
-    const { year, month, workingDays, absenceDays } = body
+    const { year, month, workingDays, absenceDays, additionalAmount = 0, deductionAmount = 0 } = body
 
     // Fetch the employee to get their base salary
     const employee = await db.collection("employees").findOne({
@@ -106,9 +111,10 @@ export async function PUT(
       )
     }
 
-    // Calculate final salary
+    // Calculate final salary: base + additional - deduction
     const dailyRate = Number(employee.salary) / 26
-    const finalSalary = dailyRate * Number(workingDays)
+    const baseSalary = dailyRate * Number(workingDays)
+    const finalSalary = baseSalary + Number(additionalAmount) - Number(deductionAmount)
 
     // Update the record
     const result = await db.collection("employees").updateOne(
@@ -118,6 +124,8 @@ export async function PUT(
           "monthlyRecords.$.workingDays": Number(workingDays),
           "monthlyRecords.$.absenceDays": Number(absenceDays),
           "monthlyRecords.$.finalSalary": finalSalary,
+          "monthlyRecords.$.additionalAmount": Number(additionalAmount),
+          "monthlyRecords.$.deductionAmount": Number(deductionAmount),
           updatedAt: new Date().toISOString()
         } 
       }

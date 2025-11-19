@@ -43,8 +43,6 @@ export function TicketView({
   const [originalNote] = useState(ticket.notes || "")
   const [exportLanguageMenuOpen, setExportLanguageMenuOpen] = useState(false)
   const [paymentTime, setPaymentTime] = useState(ticket.paymentTime ? new Date(ticket.paymentTime).toISOString().slice(0,16) : "")
-  const [paymentMethod, setPaymentMethod] = useState(ticket.paymentMethod || "")
-  const [customPaymentMethod, setCustomPaymentMethod] = useState("")
   const [isPaymentSaving, setIsPaymentSaving] = useState(false)
 
   const handleConditionUpdate = async (points: DamagePoint[]) => {
@@ -92,7 +90,7 @@ export function TicketView({
     sum + (service.finalPrice ?? service.price), 0
   ) ?? 0
 
-    // Payment method fee logic
+    // Payment method fee logic (per payment)
     function getPaymentFee(method: string, amount: number): number {
       if (!method) return 0;
       const m = method.toLowerCase();
@@ -105,8 +103,6 @@ export function TicketView({
       return 0;
     }
 
-  // Ignore payment method fee for remaining calculation
-  const paymentFee = getPaymentFee(paymentMethod || ticket.paymentMethod || '', totalAmount);
   const totalPaid = payments.reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0);
   const remainingAmount = Math.max(0, totalAmount - totalPaid);
 
@@ -272,9 +268,10 @@ export function TicketView({
           String(idx + 1),
           new Date(p.date).toLocaleString(),
           typeof p.amount === 'number' ? p.amount.toFixed(3) : '0.000',
+          p.paymentMethod || 'N/A'
         ]);
         autoTable(doc, {
-          head: [["#", "Date", "Amount (KWD)"]],
+          head: [["#", "Date", "Amount (KWD)", "Method"]],
           body: paymentsTable,
           startY: finalY + 45,
           styles: { fontSize: 10, font: isArabic ? "Amiri" : "helvetica", halign: "left" },
@@ -434,13 +431,13 @@ export function TicketView({
               <div className="flex flex-col gap-2 w-full md:w-auto">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-sm text-muted-foreground font-medium">Payments:</span>
-                  <Button size="sm" variant="outline" onClick={() => setPayments([...payments, { amount: 0, date: new Date().toISOString() }])}>
+                  <Button size="sm" variant="outline" onClick={() => setPayments([...payments, { amount: 0, date: new Date().toISOString(), paymentMethod: "" }])}>
                     <Plus className="h-4 w-4" /> Add Payment
                   </Button>
                 </div>
                 {payments.length === 0 && <span className="text-xs text-muted-foreground">No payments yet.</span>}
                 {payments.map((p, idx) => (
-                  <div key={idx} className="flex items-center gap-2 mb-1">
+                  <div key={idx} className="flex items-center gap-2 mb-1 flex-wrap">
                     <input
                       type="number"
                       min={0}
@@ -452,6 +449,7 @@ export function TicketView({
                         setPayments(payments.map((pay, i) => i === idx ? { ...pay, amount: val } : pay));
                       }}
                       style={{ width: 100 }}
+                      placeholder="Amount"
                     />
                     <input
                       type="datetime-local"
@@ -461,6 +459,21 @@ export function TicketView({
                         setPayments(payments.map((pay, i) => i === idx ? { ...pay, date: new Date(e.target.value).toISOString() } : pay));
                       }}
                     />
+                    <select
+                      className="border rounded px-2 py-1 text-sm"
+                      value={p.paymentMethod || ''}
+                      onChange={e => {
+                        setPayments(payments.map((pay, i) => i === idx ? { ...pay, paymentMethod: e.target.value } : pay));
+                      }}
+                    >
+                      <option value="">Select Method</option>
+                      <option value="myfatoorah">My fatoorah</option>
+                      <option value="knent">Knent</option>
+                      <option value="cash">Cash</option>
+                      <option value="tabbykib">Tabby</option>
+                      <option value="kib">KIB</option>
+                      <option value="other">Other</option>
+                    </select>
                     <Button size="icon" variant="ghost" onClick={() => setPayments(payments.filter((_, i) => i !== idx))}>
                       <X className="h-4 w-4 text-red-500" />
                     </Button>
@@ -496,77 +509,6 @@ export function TicketView({
               <div className="flex flex-col md:flex-row gap-2 justify-between items-center">
                 {/* Partial Payment Section */}
                
-                {/* <div className="flex items-center gap-2">
-                  <label className="text-sm text-muted-foreground font-medium">Payment Time:</label>
-                  <input
-                    type="datetime-local"
-                    className="border rounded px-2 py-1 text-sm"
-                    value={paymentTime}
-                    onChange={e => setPaymentTime(e.target.value)}
-                  />
-                </div> */}
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-muted-foreground font-medium">Payment Method:</label>
-                  <select
-                    className="border rounded px-2 py-1 text-sm"
-                    value={paymentMethod}
-                    onChange={e => {
-                      setPaymentMethod(e.target.value)
-                      if (e.target.value !== "other") setCustomPaymentMethod("")
-                    }}
-                  >
-                    <option value="">Select</option>
-                    <option value="myfatoorah">My fatoorah</option>
-                    <option value="knent">Knent</option>
-                    <option value="cash">Cash</option>
-                    <option value="tabbykib">Tabby</option>
-                    <option value="kib">KIB</option>
-                    <option value="other">other</option>
-                  </select>
-                  {paymentMethod === "other" && (
-                    <input
-                      type="text"
-                      className="border rounded px-2 py-1 text-sm ml-2"
-                      placeholder="Type payment method"
-                      value={customPaymentMethod}
-                      onChange={e => setCustomPaymentMethod(e.target.value)}
-                      style={{ minWidth: 80 }}
-                    />
-                  )}
-                </div>
-                <Button
-                  size="sm"
-                  className="bg-[#002540]"
-                  disabled={isPaymentSaving || (paymentTime === (ticket.paymentTime ? new Date(ticket.paymentTime).toISOString().slice(0,16) : "") && paymentMethod === (ticket.paymentMethod || "") && (!customPaymentMethod || customPaymentMethod === (ticket.paymentMethod || "")))}
-                  onClick={async () => {
-                    setIsPaymentSaving(true);
-                    try {
-                      const payload: any = {};
-                      if (paymentTime !== (ticket.paymentTime ? new Date(ticket.paymentTime).toISOString().slice(0,16) : "")) {
-                        payload.paymentTime = paymentTime ? new Date(paymentTime).toISOString() : null;
-                      }
-                      if (paymentMethod === "other") {
-                        payload.paymentMethod = customPaymentMethod || "other";
-                      } else if (paymentMethod !== (ticket.paymentMethod || "")) {
-                        payload.paymentMethod = paymentMethod;
-                      }
-                      const response = await fetch(`/api/tickets/${ticket._id}`, {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload)
-                      });
-                      if (!response.ok) throw new Error("Failed to update payment info");
-                      const updatedTicket = await response.json();
-                      toast.success("Payment info updated!");
-                      onUpdate?.(updatedTicket);
-                    } catch (error) {
-                      toast.error("Failed to update payment info");
-                    }
-                    setIsPaymentSaving(false);
-                  }}
-                >
-                  {isPaymentSaving ? <Spinner size="sm" /> : "Save"}
-                </Button>
               </div>
             </div>
           </div>

@@ -64,7 +64,6 @@ export default function SalesPage() {
         { label: 'Customer Name', value: t.customerName },
         { label: 'Contact', value: t.customerPhone || t.customerEmail || '-' },
         { label: 'Invoice Date', value: t.invoiceDate ? format(new Date(t.invoiceDate), 'yyyy-MM-dd HH:mm') : t.createdAt ? format(new Date(t.createdAt), 'yyyy-MM-dd HH:mm') : '-' },
-        { label: 'Payment Method', value: t.paymentMethod || '-' },
         { label: 'Total Amount', value: totalAmount.toFixed(3) + ' KD' },
         { label: 'Total Paid', value: totalPaid.toFixed(3) + ' KD' },
         { label: 'Remaining', value: remaining.toFixed(3) + ' KD' },
@@ -99,7 +98,10 @@ export default function SalesPage() {
             yPosition = 20
           }
           doc.setFont(undefined, 'normal')
-          const paymentText = `Payment ${pIdx + 1}: ${p.amount.toFixed(3)} KD - ${format(new Date(p.date), 'yyyy-MM-dd HH:mm')}`
+          // Debug payment object
+          console.log('Payment object:', p, 'Method:', p.paymentMethod)
+          const paymentMethod = p.paymentMethod || 'Not Set'
+          const paymentText = `Payment ${pIdx + 1}: ${p.amount.toFixed(3)} KD - ${format(new Date(p.date), 'yyyy-MM-dd HH:mm')} - ${paymentMethod}`
           doc.text(paymentText, margin + 10, yPosition)
           yPosition += 5
         })
@@ -153,7 +155,6 @@ export default function SalesPage() {
       "Customer Name",
       "Contact",
       "Invoice Date",
-      "Payment Method",
       "Total Amount",
       "Total Paid",
       "Remaining",
@@ -161,8 +162,9 @@ export default function SalesPage() {
 
     // Add payment headers
     for (let i = 1; i <= maxPayments; i++) {
-      headers.push(`Payment${i} Cost`);
+      headers.push(`Payment${i} Amount`);
       headers.push(`Payment${i} Date`);
+      headers.push(`Payment${i} Method`);
     }
 
     headers.push("Notes");
@@ -179,7 +181,6 @@ export default function SalesPage() {
         t.customerName,
         t.customerPhone || t.customerEmail || '-',
         t.invoiceDate ? format(new Date(t.invoiceDate), 'yyyy-MM-dd HH:mm') : t.createdAt ? format(new Date(t.createdAt), 'yyyy-MM-dd HH:mm') : '-',
-        t.paymentMethod || '-',
         totalAmount.toFixed(3) + ' KD',
         totalPaid.toFixed(3) + ' KD',
         remaining.toFixed(3) + ' KD',
@@ -187,14 +188,18 @@ export default function SalesPage() {
 
       // Add payment data
       if (t.payments && Array.isArray(t.payments)) {
-        t.payments.forEach((p: Payment) => {
+        t.payments.forEach((p: Payment, pIdx: number) => {
+          // Debug payment object
+          console.log(`Payment ${pIdx + 1}:`, p, 'Method:', p.paymentMethod)
           row.push(p.amount.toFixed(3) + ' KD');
           row.push(format(new Date(p.date), 'yyyy-MM-dd HH:mm'));
+          row.push(p.paymentMethod || 'Not Set');
         });
       }
       
       // Fill empty payment slots
       for (let i = (t.payments?.length || 0); i < maxPayments; i++) {
+        row.push('-');
         row.push('-');
         row.push('-');
       }
@@ -238,7 +243,16 @@ export default function SalesPage() {
       setIsLoading(false)
     }
   }
-console.log('ass tickets', tickets);
+console.log('Tickets with payments:', tickets.map(t => ({
+  id: t._id, 
+  payments: t.payments?.map((p: any, idx: number) => ({ 
+    idx, 
+    amount: p.amount, 
+    method: p.paymentMethod,
+    hasMethod: 'paymentMethod' in p 
+  }))
+})));
+console.log('First ticket payments detail:', tickets[0]?.payments);
 
   return (
     <div className="p-4 space-y-6">
@@ -294,7 +308,6 @@ console.log('ass tickets', tickets);
               <th className="p-3">Customer Name</th>
               <th className="p-3">Contact</th>
               <th className="p-3">Invoice Date</th>
-              <th className="p-3">Payment Method</th>
               <th className="p-3 text-right">Total Amount</th>
               <th className="p-3 text-right">Total Paid</th>
               <th className="p-3 text-right">Remaining</th>
@@ -303,25 +316,11 @@ console.log('ass tickets', tickets);
           </thead>
           <tbody>
             {isLoading ? (
-              <tr><td colSpan={9} className="p-6 text-center"><Spinner /></td></tr>
+              <tr><td colSpan={10} className="p-6 text-center"><Spinner /></td></tr>
             ) : tickets.length === 0 ? (
-              <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">No tickets found</td></tr>
+              <tr><td colSpan={10} className="p-6 text-center text-muted-foreground">No tickets found</td></tr>
             ) : (
               tickets.map((t: any) => {
-                // Payment fee logic (same as in ticket-view)
-                function getPaymentFee(method: string, amount: number): number {
-                  if (!method) return 0;
-                  const m = method.toLowerCase();
-                  if (m === 'myfatoorah' || m === 'maifatoora' || m === 'ماي فاتورة') return 0.275;
-                  if (m === 'knet' || m === 'knent') return 0;
-                  if (m === 'cash') return 0;
-                  if (m === 'tabby' || m === 'tabbykib') return amount * 0.0799;
-                  if (m === 'kib') return amount * 0.10;
-                  return 0;
-                }
-                const totalBefore = t.totalAmount || 0;
-                const paymentFee = getPaymentFee(t.paymentMethod, totalBefore);
-                const totalAfter = totalBefore - paymentFee;
                 return (
                   <tr key={t._id} className="border-b hover:bg-muted/50 [&>*]:p-3">
                     <td className="text-blue-600 ">
@@ -334,7 +333,6 @@ console.log('ass tickets', tickets);
                     <td>{t.customerName}</td>
                     <td>{t.customerPhone || t.customerEmail || '-'}</td>
                     <td>{t.invoiceDate ? format(new Date(t.invoiceDate), 'yyyy-MM-dd HH:mm') : t.createdAt ? format(new Date(t.createdAt), 'yyyy-MM-dd HH:mm') : '-'}</td>
-                    <td>{t.paymentMethod || '-'}</td>
                     <td className=" text-right">{(t.totalAmount || 0).toFixed(3)} KD</td>
                     <td className=" text-right">{(Array.isArray(t.payments) ? t.payments.reduce((sum: number, p: Payment) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0) : 0).toFixed(3)} KD</td>
                     

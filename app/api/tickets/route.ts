@@ -96,7 +96,8 @@ export async function GET(request: NextRequest) {
           totalAmount: t.totalAmount || 0,
           payments: Array.isArray(t.payments) ? t.payments.map((p: any) => ({
             amount: typeof p.amount === 'number' ? p.amount : 0,
-            date: p.date ? new Date(p.date).toISOString() : new Date(0).toISOString()
+            date: p.date ? new Date(p.date).toISOString() : new Date(0).toISOString(),
+            paymentMethod: p.paymentMethod || ''
           })) : [],
           services: Array.isArray(t.services) ? t.services : [],
           notes: t.notes || '',

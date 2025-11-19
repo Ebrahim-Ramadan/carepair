@@ -103,6 +103,7 @@ export type TicketService = {
 export type Payment = {
   amount: number;
   date: string; // ISO string
+  paymentMethod?: string;
 };
 
 export type Ticket = {

@@ -180,6 +180,8 @@ export function TicketView({
       const paymentTimeDisplay = ticket.paymentTime ? (isArabic ? new Date(ticket.paymentTime).toLocaleString('ar-EG') : new Date(ticket.paymentTime).toLocaleString()) : "-"
       const meta = isArabic ? [
         ["رقم الفاتورة", String(ticket.invoiceNo ?? "-")],
+        ["اسم العميل", String(ticket.customerName ?? "-")],
+        ["رقم الهاتف", String(ticket.customerPhone ?? "-")],
         ["رقم اللوحة", String(ticket.plateNumber ?? "")],
         ["تاريخ الإنشاء", ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('ar-EG') : ""],
         ["تاريخ الفاتورة", ticket.invoiceDate ? new Date(ticket.invoiceDate).toLocaleString('ar-EG') : ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('ar-EG') : ""],
@@ -187,6 +189,8 @@ export function TicketView({
         ["تاريخ الدفع", paymentTimeDisplay],
       ] : [
         ["Invoice Number", String(ticket.invoiceNo ?? "-")],
+        ["Customer Name", String(ticket.customerName ?? "-")],
+        ["Phone Number", String(ticket.customerPhone ?? "-")],
         ["Plate Number", String(ticket.plateNumber ?? "")],
         ["Created At", ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : ""],
         ["Invoice Date", ticket.invoiceDate ? new Date(ticket.invoiceDate).toLocaleString() : ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : ""],

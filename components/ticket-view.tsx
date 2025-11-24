@@ -42,8 +42,8 @@ export function TicketView({
   const [notesavingloading, setnotesavingloading] = useState(false)
   const [originalNote] = useState(ticket.notes || "")
   const [exportLanguageMenuOpen, setExportLanguageMenuOpen] = useState(false)
-  const [paymentTime, setPaymentTime] = useState(ticket.paymentTime ? new Date(ticket.paymentTime).toISOString().slice(0,16) : "")
-  const [isPaymentSaving, setIsPaymentSaving] = useState(false)
+  // const [paymentTime, setPaymentTime] = useState(ticket.paymentTime ? new Date(ticket.paymentTime).toISOString().slice(0,16) : "")
+  // const [isPaymentSaving, setIsPaymentSaving] = useState(false)
 
   const handleConditionUpdate = async (points: DamagePoint[]) => {
     try {
@@ -174,26 +174,19 @@ export function TicketView({
       doc.setLineWidth(0.5)
       doc.line(14, 75, pageWidth - 14, 75)
 
-      // Title
-      doc.setFontSize(16)
-      const title = `Ticket ${String(ticket._id ?? "")}`
-      doc.text(title, 14, 90, { align: "left" })
-
       // Ticket meta
       doc.setFontSize(10)
       const paymentMethodDisplay = ticket.paymentMethod ? ticket.paymentMethod : "-"
       const paymentTimeDisplay = ticket.paymentTime ? (isArabic ? new Date(ticket.paymentTime).toLocaleString('ar-EG') : new Date(ticket.paymentTime).toLocaleString()) : "-"
       const meta = isArabic ? [
-        ["رقم التذكرة", String(ticket._id ?? "")],
-        ["معلومات العميل", `${String(ticket.customerName ?? "")}، ${String(ticket.customerPhone ?? "")}، ${String(ticket.customerEmail ?? "-")}`],
+        ["رقم الفاتورة", String(ticket.invoiceNo ?? "-")],
         ["رقم اللوحة", String(ticket.plateNumber ?? "")],
         ["تاريخ الإنشاء", ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('ar-EG') : ""],
         ["تاريخ الفاتورة", ticket.invoiceDate ? new Date(ticket.invoiceDate).toLocaleString('ar-EG') : ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('ar-EG') : ""],
         ["طريقة الدفع", paymentMethodDisplay],
         ["تاريخ الدفع", paymentTimeDisplay],
       ] : [
-        ["Ticket ID", String(ticket._id ?? "")],
-        ["Customer Info", `${String(ticket.customerName ?? "")}, ${String(ticket.customerPhone ?? "")}, ${String(ticket.customerEmail ?? "-")}`],
+        ["Invoice Number", String(ticket.invoiceNo ?? "-")],
         ["Plate Number", String(ticket.plateNumber ?? "")],
         ["Created At", ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : ""],
         ["Invoice Date", ticket.invoiceDate ? new Date(ticket.invoiceDate).toLocaleString() : ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : ""],
@@ -203,7 +196,7 @@ export function TicketView({
 
       if (typeof autoTable === "function") {
         autoTable(doc, {
-          startY: 95,
+          startY: 85,
           theme: "plain",
           body: meta,
           styles: { fontSize: 10, font: isArabic ? "Amiri" : "helvetica", halign: "left" },
@@ -211,7 +204,7 @@ export function TicketView({
         })
       } else if ((doc as any).autoTable) {
         ;(doc as any).autoTable({
-          startY: 95,
+          startY: 85,
           theme: "plain",
           body: meta,
           styles: { fontSize: 10, font: isArabic ? "Amiri" : "helvetica", halign: "left" },

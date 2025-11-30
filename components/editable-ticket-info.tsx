@@ -32,10 +32,18 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
   const [createdAt, setCreatedAt] = useState(ticket.createdAt ? new Date(ticket.createdAt).toISOString().split('T')[0] : "")
   const [invoiceDate, setInvoiceDate] = useState(ticket.invoiceDate ? new Date(ticket.invoiceDate).toISOString().split('T')[0] : ticket.createdAt ? new Date(ticket.createdAt).toISOString().split('T')[0] : "")
 
-  // Sync isCheckup when ticket prop changes
+  // Sync all form fields when ticket prop changes
   useEffect(() => {
+    setPlateNumber(ticket.plateNumber)
+    setInvoiceNo(ticket.invoiceNo)
+    setCustomerName(ticket.customerName)
+    setCustomerPhone(ticket.customerPhone)
+    setCustomerEmail(ticket.customerEmail || "")
+    setMileage(ticket.mileage.toString())
     setIsCheckup(ticket.isCheckup || false)
-  }, [ticket.isCheckup])
+    setCreatedAt(ticket.createdAt ? new Date(ticket.createdAt).toISOString().split('T')[0] : "")
+    setInvoiceDate(ticket.invoiceDate ? new Date(ticket.invoiceDate).toISOString().split('T')[0] : ticket.createdAt ? new Date(ticket.createdAt).toISOString().split('T')[0] : "")
+  }, [ticket._id, ticket.plateNumber, ticket.invoiceNo, ticket.customerName, ticket.customerPhone, ticket.customerEmail, ticket.mileage, ticket.isCheckup, ticket.createdAt, ticket.invoiceDate])
 
   // Listen for checkup updates from other components
   useEffect(() => {

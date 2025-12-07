@@ -235,8 +235,20 @@ export default function SalesPage() {
       const res = await fetch(url, { cache: 'no-store' })
       if (!res.ok) throw new Error("Failed to fetch tickets")
       const data = await res.json()
-      // API returns array directly in sales mode 
-      setTickets(Array.isArray(data) ? data : [])
+      // API returns array directly in sales mode
+      // Sort tickets by invoice number ascending (numeric when possible)
+      const rawTickets = Array.isArray(data) ? data : []
+      const sortedTickets = rawTickets.slice().sort((a: any, b: any) => {
+        const aNum = Number(a.invoiceNo)
+        const bNum = Number(b.invoiceNo)
+        const aIsNum = !isNaN(aNum)
+        const bIsNum = !isNaN(bNum)
+        if (aIsNum && bIsNum) return aNum - bNum
+        if (aIsNum) return -1
+        if (bIsNum) return 1
+        return String(a.invoiceNo || '').localeCompare(String(b.invoiceNo || ''))
+      })
+      setTickets(sortedTickets)
     } catch (err) {
       toast.error("Failed to load tickets")
     } finally {

@@ -96,11 +96,16 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
 
   // Handle period change
   const handlePeriodChange = (value: string) => {
-    // If custom is selected, don't fetch immediately (wait for date selection)
+    // If custom is selected, show the date pickers and wait for the user to apply
     if (value === 'custom') {
+      setData(prev => ({ ...prev, filters: { ...prev.filters, period: 'custom' } }))
       return
     }
-    
+
+    // Clear local custom date inputs when switching to a predefined period
+    setStartDate(undefined)
+    setEndDate(undefined)
+
     fetchFilteredData({
       period: value,
       category: data.filters.category,

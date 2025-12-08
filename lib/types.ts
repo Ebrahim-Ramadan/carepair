@@ -17,6 +17,7 @@ export interface CreateTicketInput {
   invoiceNo: string
   invoiceDate?: string
   plateNumber: string
+  carModel?: string
   customerName: string
   customerPhone: string
   customerEmail?: string
@@ -26,6 +27,7 @@ export interface CreateTicketInput {
 export interface UpdateTicketInput {
   customerName?: string
   customerPhone?: string
+  carModel?: string
   customerEmail?: string
   mileage?: number
   vehicleConditionPoints?: DamagePoint[]
@@ -113,6 +115,7 @@ export type Ticket = {
   plateNumber: string
   customerName: string
   customerPhone: string
+  carModel?: string
   customerEmail?: string
   mileage?: number
   services: TicketService[]

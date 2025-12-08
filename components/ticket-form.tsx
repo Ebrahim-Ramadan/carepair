@@ -34,6 +34,7 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
   const [invoiceNo, setInvoiceNo] = useState("")
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0])
   const [plateNumber, setPlateNumber] = useState("")
+  const [carModel, setCarModel] = useState("")
   const [customerName, setCustomerName] = useState("")
   const [customerPhone, setCustomerPhone] = useState("")
   const [customerEmail, setCustomerEmail] = useState("")
@@ -54,6 +55,7 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
         invoiceNo,
         invoiceDate: invoiceDate ? new Date(invoiceDate).toISOString() : undefined,
         plateNumber,
+        carModel: carModel?.trim() || undefined,
         customerName,
         customerPhone,
         customerEmail,
@@ -121,6 +123,15 @@ export function TicketForm({ onSuccess }: TicketFormProps) {
               onChange={(e) => setPlateNumber(e.target.value)}
               placeholder="ABC-1234"
               required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="carModel">Car Model </Label>
+            <Input
+              id="carModel"
+              value={carModel}
+              onChange={(e) => setCarModel(e.target.value)}
+              placeholder="e.g., Toyota Camry"
             />
           </div>
           <div className="space-y-2">

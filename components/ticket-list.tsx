@@ -22,11 +22,25 @@ export function TicketList({ tickets, selectedTicket, onSelectTicket, onDeleteTi
   
   const [isExporting, setIsExporting] = useState(false)
   const [updatingCheckup, setUpdatingCheckup] = useState<string | null>(null)
-  const [localTickets, setLocalTickets] = useState(tickets)
+  const [localTickets, setLocalTickets] = useState(() => {
+    const src = tickets || []
+    return src.slice().sort((a, b) => {
+      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0
+      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0
+      // latest first
+      return bTime - aTime
+    })
+  })
 
   // Sync with prop changes
   useEffect(() => {
-    setLocalTickets(tickets)
+    const src = tickets || []
+    const sorted = src.slice().sort((a, b) => {
+      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0
+      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0
+      return bTime - aTime
+    })
+    setLocalTickets(sorted)
   }, [tickets])
 
   // Listen for checkup updates from other components

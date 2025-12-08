@@ -26,6 +26,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
   const [invoiceNo, setInvoiceNo] = useState(ticket.invoiceNo)
   const [customerName, setCustomerName] = useState(ticket.customerName)
   const [customerPhone, setCustomerPhone] = useState(ticket.customerPhone)
+  const [carModel, setCarModel] = useState(ticket.carModel || "")
   const [customerEmail, setCustomerEmail] = useState(ticket.customerEmail || "")
   const [mileage, setMileage] = useState(ticket.mileage.toString())
   const [isCheckup, setIsCheckup] = useState(ticket.isCheckup || false)
@@ -38,6 +39,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
     setInvoiceNo(ticket.invoiceNo)
     setCustomerName(ticket.customerName)
     setCustomerPhone(ticket.customerPhone)
+    setCarModel(ticket.carModel || "")
     setCustomerEmail(ticket.customerEmail || "")
     setMileage(ticket.mileage.toString())
     setIsCheckup(ticket.isCheckup || false)
@@ -84,6 +86,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
     // Reset form to original values
     setInvoiceNo(ticket.invoiceNo)
     setPlateNumber(ticket.plateNumber)
+    setCarModel(ticket.carModel || "")
     setCustomerName(ticket.customerName)
     setCustomerPhone(ticket.customerPhone)
     setCustomerEmail(ticket.customerEmail || "")
@@ -107,6 +110,7 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
         invoiceNo: invoiceNo?.trim(),
         invoiceDate: invoiceDate ? new Date(invoiceDate).toISOString() : undefined,
         plateNumber: plateNumber.trim(),
+        carModel: carModel?.trim() || undefined,
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
         customerEmail: customerEmail.trim() || undefined,
@@ -201,6 +205,15 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
                   onChange={(e) => setPlateNumber(e.target.value)}
                   placeholder="ABC-1234"
                   required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-carModel">Car Model </Label>
+                <Input
+                  id="edit-carModel"
+                  value={carModel}
+                  onChange={(e) => setCarModel(e.target.value)}
+                  placeholder="e.g., Toyota Camry"
                 />
               </div>
               <div className="space-y-2">
@@ -368,6 +381,12 @@ export function EditableTicketInfo({ ticket, onUpdate }: EditableTicketInfoProps
               <Gauge className="h-4 w-4 text-muted-foreground" />
               <span className="text-foreground">{ticket.mileage?.toLocaleString()} km</span>
             </div>
+            {ticket.carModel && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">Model:</span>
+                <span className="text-foreground">{ticket.carModel}</span>
+              </div>
+            )}
             {/* <div className="flex items-center gap-2 text-sm">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span className="text-foreground">

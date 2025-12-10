@@ -282,7 +282,7 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
               />
               <div className="mt-4 flex items-center justify-between">
                 <a
-                  href={`/?page=${Math.max(1, page - 1)}`}
+                  href={`/inventory/tickets?page=${Math.max(1, page - 1)}`}
                   className={`text-sm ${page <= 1 ? "pointer-events-none opacity-50" : "text-primary hover:underline"}`}
                   aria-disabled={page <= 1}
                 >
@@ -290,7 +290,7 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
                 </a>
                 <span className="text-xs">Page {page} of {totalPages}</span>
                 <a
-                  href={`/?page=${Math.min(totalPages, page + 1)}`}
+                  href={`/inventory/tickets?page=${Math.min(totalPages, page + 1)}`}
                   className={`text-sm ${page >= totalPages ? "pointer-events-none opacity-50" : "text-primary hover:underline"}`}
                   aria-disabled={page >= totalPages}
                 >

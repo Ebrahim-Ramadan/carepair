@@ -64,11 +64,17 @@ export async function getAnalyticsData({
   
   if (startDate && endDate) {
     // Custom date range
+    // Interpret start/end and include the full end day
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    end.setHours(23, 59, 59, 999)
+
+    // Support documents where `createdAt` may be stored as a Date OR as an ISO string
     dateFilter = {
-      createdAt: {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
-      }
+      $or: [
+        { createdAt: { $gte: start, $lte: end } },
+        { createdAt: { $gte: start.toISOString(), $lte: end.toISOString() } }
+      ]
     }
   } else {
     // Predefined periods

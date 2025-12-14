@@ -243,10 +243,13 @@ export default function SalesPage() {
         const bNum = Number(b.invoiceNo)
         const aIsNum = !isNaN(aNum)
         const bIsNum = !isNaN(bNum)
-        if (aIsNum && bIsNum) return aNum - bNum
+        // If both are numeric, sort by numeric value descending (latest/highest first)
+        if (aIsNum && bIsNum) return bNum - aNum
+        // If only one is numeric, keep numeric ones before non-numeric
         if (aIsNum) return -1
         if (bIsNum) return 1
-        return String(a.invoiceNo || '').localeCompare(String(b.invoiceNo || ''))
+        // Both non-numeric: sort lexicographically descending
+        return String(b.invoiceNo || '').localeCompare(String(a.invoiceNo || ''))
       })
       setTickets(sortedTickets)
     } catch (err) {

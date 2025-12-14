@@ -184,7 +184,7 @@ export function TicketList({ tickets, selectedTicket, onSelectTicket, onDeleteTi
 )}
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 space-y-1">
-                <div className={`font-mono  ${selectedTicket?._id === ticket._id ? "text-base font-bold text-[#002540]" : "text-sm font-semibold"}`}>{ticket.plateNumber}</div>
+                <div className={`  ${selectedTicket?._id === ticket._id ? "text-base font-bold text-[#002540]" : "text-sm font-semibold"}`}>{ticket.plateNumber}</div>
                 <div className="text-sm text-muted-foreground">{ticket.customerName}</div>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3" />

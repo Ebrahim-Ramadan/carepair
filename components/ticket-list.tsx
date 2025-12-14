@@ -24,22 +24,27 @@ export function TicketList({ tickets, selectedTicket, onSelectTicket, onDeleteTi
   const [updatingCheckup, setUpdatingCheckup] = useState<string | null>(null)
   const [localTickets, setLocalTickets] = useState(() => {
     const src = tickets || []
-    return src.slice().sort((a, b) => {
-      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0
-      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0
-      // latest first
-      return bTime - aTime
-    })
+    const getTime = (t: any) => {
+      const dateStr = t?.invoiceDate || t?.createdAt
+      if (!dateStr) return 0
+      const time = new Date(dateStr).getTime()
+      return isNaN(time) ? 0 : time
+    }
+
+    return src.slice().sort((a, b) => getTime(b) - getTime(a))
   })
 
   // Sync with prop changes
   useEffect(() => {
     const src = tickets || []
-    const sorted = src.slice().sort((a, b) => {
-      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0
-      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0
-      return bTime - aTime
-    })
+    const getTime = (t: any) => {
+      const dateStr = t?.invoiceDate || t?.createdAt
+      if (!dateStr) return 0
+      const time = new Date(dateStr).getTime()
+      return isNaN(time) ? 0 : time
+    }
+
+    const sorted = src.slice().sort((a, b) => getTime(b) - getTime(a))
     setLocalTickets(sorted)
   }, [tickets])
 
@@ -188,7 +193,7 @@ export function TicketList({ tickets, selectedTicket, onSelectTicket, onDeleteTi
                 <div className="text-sm text-muted-foreground">{ticket.customerName}</div>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3" />
-                  {new Date(ticket.createdAt).toLocaleDateString()}
+                  {new Date(ticket.invoiceDate || ticket.createdAt).toLocaleDateString()}
                 </div>
               </div>
               <div className="flex items-center gap-1">

@@ -36,15 +36,28 @@ export async function GET(request: NextRequest) {
         case 'year':
           start.setFullYear(now.getFullYear() - 1)
           break
-        case 'custom':
-          if (startDate && endDate) {
-            start = new Date(startDate)
-            const end = new Date(endDate)
-            end.setHours(23, 59, 59, 999)
-            dateFilter = { createdAt: { $gte: start, $lte: end } }
+          case 'custom':
+            if (startDate && endDate) {
+              start = new Date(startDate)
+              const end = new Date(endDate)
+              end.setHours(23, 59, 59, 999)
+
+              // invoiceDate range (Date and ISO-string) and fallback to createdAt when invoiceDate missing
+              const invoiceRangeDate = { invoiceDate: { $gte: start, $lte: end } }
+              const invoiceRangeString = { invoiceDate: { $gte: start.toISOString(), $lte: end.toISOString() } }
+              const createdRangeDate = { createdAt: { $gte: start, $lte: end } }
+              const createdRangeString = { createdAt: { $gte: start.toISOString(), $lte: end.toISOString() } }
+
+              dateFilter = {
+                $or: [
+                  invoiceRangeDate,
+                  invoiceRangeString,
+                  { $and: [ { $or: [ { invoiceDate: { $exists: false } }, { invoiceDate: null }, { invoiceDate: "" } ] }, { $or: [ createdRangeDate, createdRangeString ] } ] }
+                ]
+              }
+              break
+            }
             break
-          }
-          break
         case 'all':
         default:
           dateFilter = {}
@@ -52,7 +65,19 @@ export async function GET(request: NextRequest) {
       }
 
       if (!dateFilter) {
-        dateFilter = { createdAt: { $gte: start, $lte: now } }
+        // For predefined ranges, include tickets whose invoiceDate is above threshold, otherwise use createdAt
+        const invoiceGteDate = { invoiceDate: { $gte: start } }
+        const invoiceGteString = { invoiceDate: { $gte: start.toISOString() } }
+        const createdGteDate = { createdAt: { $gte: start, $lte: now } }
+        const createdGteString = { createdAt: { $gte: start.toISOString(), $lte: now.toISOString() } }
+
+        dateFilter = {
+          $or: [
+            invoiceGteDate,
+            invoiceGteString,
+            { $and: [ { $or: [ { invoiceDate: { $exists: false } }, { invoiceDate: null }, { invoiceDate: "" } ] }, { $or: [ createdGteDate, createdGteString ] } ] }
+          ]
+        }
       }
     }
 

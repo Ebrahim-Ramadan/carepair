@@ -63,47 +63,62 @@ export async function getAnalyticsData({
   const now = new Date()
   
   if (startDate && endDate) {
-    // Custom date range
-    // Interpret start/end and include the full end day
+    // Custom date range: interpret start/end and include the full end day
     const start = new Date(startDate)
     const end = new Date(endDate)
     end.setHours(23, 59, 59, 999)
 
-    // Support documents where `createdAt` may be stored as a Date OR as an ISO string
+    // Build ranges for invoiceDate and createdAt (both Date and ISO-string forms)
+    const invoiceRangeDate = { invoiceDate: { $gte: start, $lte: end } }
+    const invoiceRangeString = { invoiceDate: { $gte: start.toISOString(), $lte: end.toISOString() } }
+    const createdRangeDate = { createdAt: { $gte: start, $lte: end } }
+    const createdRangeString = { createdAt: { $gte: start.toISOString(), $lte: end.toISOString() } }
+
+    // Use invoiceDate when present; otherwise fall back to createdAt
     dateFilter = {
       $or: [
-        { createdAt: { $gte: start, $lte: end } },
-        { createdAt: { $gte: start.toISOString(), $lte: end.toISOString() } }
+        invoiceRangeDate,
+        invoiceRangeString,
+        { $and: [ { $or: [ { invoiceDate: { $exists: false } }, { invoiceDate: null }, { invoiceDate: "" } ] }, { $or: [ createdRangeDate, createdRangeString ] } ] }
       ]
     }
   } else {
-    // Predefined periods
+    // Predefined periods: compute a threshold and apply similar logic
+    let threshold: Date | null = null
     switch(period) {
       case 'week':
-        dateFilter = { 
-          createdAt: { $gte: subDays(now, 7) } 
-        }
+        threshold = subDays(now, 7)
         break
       case 'month':
-        dateFilter = { 
-          createdAt: { $gte: subDays(now, 30) } 
-        }
+        threshold = subDays(now, 30)
         break
       case 'quarter':
-        dateFilter = { 
-          createdAt: { $gte: subDays(now, 90) } 
-        }
+        threshold = subDays(now, 90)
         break
       case 'year':
-        dateFilter = { 
-          createdAt: { $gte: subMonths(now, 12) } 
-        }
+        threshold = subMonths(now, 12)
         break
       case 'all':
       default:
-        // No date filter - get all tickets
-        dateFilter = {}
+        threshold = null
         break
+    }
+
+    if (threshold) {
+      const invoiceGteDate = { invoiceDate: { $gte: threshold } }
+      const invoiceGteString = { invoiceDate: { $gte: threshold.toISOString() } }
+      const createdGteDate = { createdAt: { $gte: threshold } }
+      const createdGteString = { createdAt: { $gte: threshold.toISOString() } }
+
+      dateFilter = {
+        $or: [
+          invoiceGteDate,
+          invoiceGteString,
+          { $and: [ { $or: [ { invoiceDate: { $exists: false } }, { invoiceDate: null }, { invoiceDate: "" } ] }, { $or: [ createdGteDate, createdGteString ] } ] }
+        ]
+      }
+    } else {
+      dateFilter = {}
     }
   }
   

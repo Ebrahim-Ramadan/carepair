@@ -210,8 +210,19 @@ export async function getAnalyticsData({
     }
     
     // Track revenue by day
-    const createdDate = new Date(ticket.createdAt)
-    const dateString = format(createdDate, 'yyyy-MM-dd')
+    // Prefer invoiceDate when available (may be Date or ISO string),
+    // otherwise fall back to createdAt. This makes chart tooltips show
+    // the invoice date when present instead of the createdAt date.
+    let sourceDate: Date
+    if (ticket.invoiceDate) {
+      sourceDate = new Date(ticket.invoiceDate)
+      if (isNaN(sourceDate.getTime())) {
+        sourceDate = new Date(ticket.createdAt)
+      }
+    } else {
+      sourceDate = new Date(ticket.createdAt)
+    }
+    const dateString = format(sourceDate, 'yyyy-MM-dd')
     
     if (!revenueByDayMap.has(dateString)) {
       revenueByDayMap.set(dateString, { revenue: 0, count: 0 })

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -35,7 +36,6 @@ type SearchResult = {
 }
 
 export function SearchClient() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const initialQuery = searchParams.get("q") || ""
   const initialPage = parseInt(searchParams.get("page") || "1")
@@ -283,15 +283,13 @@ export function SearchClient() {
                         </div>
                       </div>
                       
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push(`/?ticketId=${ticket._id}`)}
-                        className="w-full gap-2 sm:w-auto"
+                      <a
+                        href={`/inventory/tickets?ticketId=${ticket._id}`}
+                        className="w-full gap-2 sm:w-auto inline-flex items-center justify-center"
                       >
                         <ExternalLink className="h-3 w-3" />
-                        View
-                      </Button>
+                        <span>View</span>
+                      </a>
                     </div>
                   </div>
                 ))}

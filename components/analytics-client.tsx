@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { AnalyticsData, AnalyticsFilter } from "@/lib/analytics"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -39,7 +39,9 @@ import {
   ShoppingBag,
   RefreshCw,
   Filter,
+  Download,
 } from "lucide-react"
+import * as XLSX from 'xlsx'
 
 type AnalyticsClientProps = {
   initialData: AnalyticsData
@@ -64,6 +66,8 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
   const [endDate, setEndDate] = useState<Date | undefined>(
     data.filters.endDate ? parseISO(data.filters.endDate) : undefined
   )
+
+  const printableRef = useRef<HTMLDivElement | null>(null)
 
   // Fetch data with new filters
   const fetchFilteredData = async (newFilters: AnalyticsFilter) => {
@@ -156,6 +160,179 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
       startDate: undefined,
       endDate: undefined
     })
+  }
+
+  // Export PDF using jspdf + jspdf-autotable (no charts)
+  const handleExportPDF = async () => {
+    try {
+      setIsLoading(true)
+      const jsPDFModule = await import('jspdf')
+      const autoTableModule = await import('jspdf-autotable')
+
+      const JsPDFClass = (jsPDFModule as any).default ?? jsPDFModule
+      const autoTable = (autoTableModule as any).default ?? autoTableModule
+
+      const doc = new JsPDFClass('p', 'mm', 'a4')
+      const pageWidth = doc.internal.pageSize.getWidth()
+
+      // Title
+      doc.setFontSize(18)
+      doc.setFont('helvetica', 'bold')
+      const title = `Business Sales - ${data.filters.period || 'range'}`
+      doc.text(title, pageWidth / 2, 18, { align: 'center' })
+
+      // Filters/meta
+      doc.setFontSize(10)
+      const metaRows = [
+        ['Period', data.filters.period || 'all'],
+        ['Category', data.filters.category || 'all'],
+        ['Start', data.filters.startDate || '-'],
+        ['End', data.filters.endDate || '-'],
+      ]
+      autoTable(doc, {
+        startY: 26,
+        theme: 'plain',
+        body: metaRows,
+        styles: { fontSize: 10, halign: 'left' },
+        columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 'auto' } }
+      })
+
+      // Summary key metrics
+      const afterMetaY = (doc as any).lastAutoTable?.finalY ?? 26
+      const summaryRows = [
+        ['Total Revenue', formatCurrency(data.totalRevenue)],
+        ['Total Tickets', String(data.totalTickets)],
+        ['Average Ticket Value', formatCurrency(data.averageTicketValue)],
+      ]
+      autoTable(doc, {
+        startY: afterMetaY + 6,
+        theme: 'plain',
+        body: summaryRows,
+        styles: { fontSize: 10, halign: 'left' },
+        columnStyles: { 0: { cellWidth: 60 } }
+      })
+
+      // Service Categories table
+      const catsStartY = (doc as any).lastAutoTable?.finalY ?? afterMetaY + 10
+      const catHead = [['Category ID', 'Name', 'Count', 'Revenue']]
+      const catBody = data.serviceCategories.map(c => [c.id, c.name, String(c.count), formatCurrency(c.revenue)])
+      autoTable(doc, {
+        head: catHead,
+        body: catBody,
+        startY: catsStartY + 8,
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [2, 119, 189], textColor: 255 }
+      })
+
+      // Top Services table
+      const servicesStartY = (doc as any).lastAutoTable?.finalY ?? catsStartY + 8
+      const svcHead = [['Service ID', 'Name', 'Count', 'Revenue', 'Category']]
+      const svcBody = data.topServices.map(s => [s.serviceId, s.serviceName, String(s.count), formatCurrency(s.revenue), s.categoryId])
+      autoTable(doc, {
+        head: svcHead,
+        body: svcBody,
+        startY: servicesStartY + 8,
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [99, 102, 241], textColor: 255 }
+      })
+
+      // Daily revenue table
+      const dailyStartY = (doc as any).lastAutoTable?.finalY ?? servicesStartY + 8
+      const dayHead = [['Date', 'Revenue', 'Tickets', 'Avg. Ticket']]
+      const dayBody = data.revenueByDay.map(d => [d.date, formatCurrency(d.revenue), String(d.ticketCount), formatCurrency(d.revenue / Math.max(1, d.ticketCount))])
+      autoTable(doc, {
+        head: dayHead,
+        body: dayBody,
+        startY: dailyStartY + 8,
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [16, 185, 129], textColor: 255 }
+      })
+
+      const filename = `analytics-${data.filters.period || 'range'}.pdf`
+      doc.save(filename)
+      toast.success('PDF exported')
+    } catch (error) {
+      console.error('PDF export error', error)
+      toast.error('Failed to export PDF')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Export Excel: build a workbook from the data and tables
+  const handleExportExcel = () => {
+    try {
+      setIsLoading(true)
+      const wb = XLSX.utils.book_new()
+
+      // Sheet 1: Filters / Meta
+      const meta = [
+        ['Filter', 'Value'],
+        ['Period', data.filters.period || data.period || 'all'],
+        ['Category', data.filters.category || 'all'],
+        ['Start Date', data.filters.startDate || '-'],
+        ['End Date', data.filters.endDate || '-'],
+      ]
+      const wsMeta = XLSX.utils.aoa_to_sheet(meta)
+      XLSX.utils.book_append_sheet(wb, wsMeta, 'Filters')
+
+      // Sheet 2: Summary key metrics
+      const summary = [
+        ['Metric', 'Value'],
+        ['Total Revenue (tickets)', data.totalRevenue],
+        ['Total Tickets', data.totalTickets],
+        ['Average Ticket Value', data.averageTicketValue],
+        ['Period', data.period]
+      ]
+      const wsSummary = XLSX.utils.aoa_to_sheet(summary)
+      XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary')
+
+      // Sheet 3: Service Categories
+      const catHeader = ['Category ID', 'Name', 'Count', 'Revenue']
+      const catRows = data.serviceCategories.map(c => [c.id, c.name, c.count, c.revenue])
+      const wsCats = XLSX.utils.aoa_to_sheet([catHeader, ...catRows])
+      XLSX.utils.book_append_sheet(wb, wsCats, 'Categories')
+
+      // Sheet 4: Top Services
+      const svcHeader = ['Service ID', 'Service Name', 'Count', 'Revenue', 'Category ID']
+      const svcRows = data.topServices.map(s => [s.serviceId, s.serviceName, s.count, s.revenue, s.categoryId])
+      const wsSvcs = XLSX.utils.aoa_to_sheet([svcHeader, ...svcRows])
+      XLSX.utils.book_append_sheet(wb, wsSvcs, 'Top Services')
+
+      // Sheet 5: Service Performance (as rendered)
+      const perfHeader = ['Service Name', 'Category', 'Count', 'Revenue', 'Avg. Price', 'Cost', 'Net Profit']
+      const perfRows = data.topServices.map(s => {
+        const revenue = typeof s.revenue === 'number' ? s.revenue : Number(s.revenue ?? 0)
+        const count = typeof s.count === 'number' && s.count > 0 ? s.count : 1
+        const avgPrice = count ? revenue / count : 0
+        const cost = typeof s.cost === 'number' ? s.cost : Number(s.cost ?? 0)
+        const netProfit = revenue - cost
+        return [s.serviceName, s.categoryId, s.count, revenue, avgPrice, cost, netProfit]
+      })
+      const wsPerf = XLSX.utils.aoa_to_sheet([perfHeader, ...perfRows])
+      XLSX.utils.book_append_sheet(wb, wsPerf, 'Service Performance')
+
+      // Sheet 6: Common Repair Parts
+      const partsHeader = ['Part Name', 'Count', 'Percentage']
+      const partsRows = data.commonRepairParts.map(p => [p.name, p.count, p.percentage])
+      const wsParts = XLSX.utils.aoa_to_sheet([partsHeader, ...partsRows])
+      XLSX.utils.book_append_sheet(wb, wsParts, 'Repair Parts')
+
+      // Sheet 7: Daily Revenue
+      const dayHeader = ['Date', 'Revenue', 'Ticket Count', 'Avg. Ticket']
+      const dayRows = data.revenueByDay.map(d => [d.date, d.revenue, d.ticketCount, d.ticketCount ? d.revenue / d.ticketCount : 0])
+      const wsDays = XLSX.utils.aoa_to_sheet([dayHeader, ...dayRows])
+      XLSX.utils.book_append_sheet(wb, wsDays, 'Daily')
+
+      const filename = `analytics-${data.filters.period || 'range'}.xlsx`
+      XLSX.writeFile(wb, filename)
+      toast.success('Excel exported')
+    } catch (error) {
+      console.error('Excel export error', error)
+      toast.error('Failed to export Excel')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Format currency
@@ -262,16 +439,41 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
             </div>
           )}
           
-          {/* Reset filters */}
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={handleResetFilters}
-            disabled={isLoading}
-            title="Reset filters"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          {/* Export & Reset actions */}
+          <div className="flex items-center space-x-2">
+         
+
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={handleResetFilters}
+              disabled={isLoading}
+              title="Reset filters"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+               <Button
+              variant="default"
+              size="sm"
+              onClick={handleExportPDF}
+              disabled={isLoading}
+              title="Export PDF"
+            >
+              <Download className="h-4 w-4" />
+              PDF
+            </Button>
+
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleExportExcel}
+              disabled={isLoading}
+              title="Export Excel"
+            >
+              <Download className="h-4 w-4" />
+              Excel
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -282,6 +484,7 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
         </div>
       )}
 
+      <div ref={printableRef}>
       {/* Summary Cards */}
       {!isLoading && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -676,6 +879,7 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
           </TabsContent>
         </Tabs>
       )}
+      </div>
     </div>
   )
 }

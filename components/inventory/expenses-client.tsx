@@ -249,7 +249,7 @@ export function ExpensesClient() {
   return (
     <div className="space-y-6">
       {/* Header + Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-2">
         <h2 className="text-2xl font-bold">Expenses</h2>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -315,7 +315,7 @@ export function ExpensesClient() {
           />
         </div>
 
-        <div className="flex items-end">
+        <div className="flex items-end flex items-end w-full justify-end">
           <Button
             variant="ghost"
             size="sm"

@@ -216,8 +216,8 @@ export function ExpensesClient() {
           <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={isExporting !== null}>
             {isExporting === "pdf" ? "Exporting..." : "Export PDF"}
           </Button>
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="mr-1.5 h-4 w-4" />
+          <Button onClick={() => setIsDialogOpen(true)} size='sm'>
+            <Plus className="h-4 w-4" />
             New Expense
           </Button>
         </div>

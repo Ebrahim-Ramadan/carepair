@@ -18,11 +18,11 @@ export async function POST(request: Request) {
     const db = client.db("car_repair");
     const body = await request.json();
     
-    const { name, quantity, cost, note } = body;
-    
-    if (!name || !quantity || !cost) {
+    const { name, quantity, cost, category, note } = body;
+
+    if (!name || !quantity || !cost || !category) {
       return NextResponse.json(
-        { error: "Name, quantity and cost are required" },
+        { error: "Name, quantity, cost and category are required" },
         { status: 400 }
       );
     }
@@ -31,6 +31,7 @@ export async function POST(request: Request) {
       name,
       quantity: Number(quantity),
       cost: Number(cost),
+      category,
       note: note || "",
       createdAt: new Date(),
     };

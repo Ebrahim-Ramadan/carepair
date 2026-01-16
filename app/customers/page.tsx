@@ -13,11 +13,19 @@ export const metadata: Metadata = {
 type SearchParams = {
   page?: string
   sortBy?: string
+  category?: string
+  period?: string
+  startDate?: string
+  endDate?: string
 }
 
 async function CustomersData({ searchParams }: { searchParams: SearchParams }) {
   const page = searchParams?.page || '1'
   const sortBy = searchParams?.sortBy || 'latest'
+  const category = searchParams?.category || 'all'
+  const period = searchParams?.period
+  const startDate = searchParams?.startDate
+  const endDate = searchParams?.endDate
 
   try {
     // Build a stable URL for undici/Node fetch: prefer absolute URL when host present.
@@ -28,7 +36,14 @@ async function CustomersData({ searchParams }: { searchParams: SearchParams }) {
     const inferredProto = forwardedProto || (host && (host.includes('localhost') || process.env.NODE_ENV === 'development') ? 'http' : 'https')
 
     const base = host ? `${inferredProto}://${host}` : ''
-    const url = `${base}/api/customers?page=${page}&sortBy=${sortBy}&limit=10`
+    const params = new URLSearchParams()
+    if (page) params.set('page', page)
+    if (sortBy) params.set('sortBy', sortBy)
+    if (category && category !== 'all') params.set('category', category)
+    if (period) params.set('period', period)
+    if (startDate) params.set('startDate', startDate)
+    if (endDate) params.set('endDate', endDate)
+    const url = `${base}/api/customers?${params.toString()}`
 
     if (process.env.NODE_ENV !== 'production') console.log('Fetching customers from:', url)
 
@@ -62,7 +77,7 @@ async function CustomersData({ searchParams }: { searchParams: SearchParams }) {
     // Support APIs that return either an array directly or an object with `customers` key
     const customers = Array.isArray(data) ? data : data.customers
 
-    return <CustomersClient initialCustomers={customers} />
+    return <CustomersClient initialCustomers={customers} initialFilters={{ category, period, startDate, endDate }} />
   } catch (error) {
     console.error('Detailed customers fetch error:', error)
     return (

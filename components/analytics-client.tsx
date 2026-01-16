@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { AnalyticsData, AnalyticsFilter } from "@/lib/analytics"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -43,6 +43,11 @@ import {
 } from "lucide-react"
 import * as XLSX from 'xlsx'
 
+type Category = {
+  _id: string
+  name: string
+}
+
 type AnalyticsClientProps = {
   initialData: AnalyticsData
 }
@@ -60,6 +65,9 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
   
   const [data, setData] = useState<AnalyticsData>(initialData)
   const [isLoading, setIsLoading] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [categoryOpen, setCategoryOpen] = useState(false)
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false)
   const [startDate, setStartDate] = useState<Date | undefined>(
     data.filters.startDate ? parseISO(data.filters.startDate) : undefined
   )
@@ -68,6 +76,23 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
   )
 
   const printableRef = useRef<HTMLDivElement | null>(null)
+
+  // Fetch categories when select opens
+  useEffect(() => {
+    if (categoryOpen && categories.length === 0) {
+      setIsLoadingCategories(true)
+      fetch('/api/categories')
+        .then(res => res.json())
+        .then(data => {
+          setCategories(data)
+          setIsLoadingCategories(false)
+        })
+        .catch(err => {
+          console.error('Error fetching categories:', err)
+          setIsLoadingCategories(false)
+        })
+    }
+  }, [categoryOpen, categories.length])
 
   // Fetch data with new filters
   const fetchFilteredData = async (newFilters: AnalyticsFilter) => {
@@ -391,6 +416,8 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
           {/* Category filter */}
           <div className="flex items-center">
             <Select 
+              open={categoryOpen}
+              onOpenChange={setCategoryOpen}
               defaultValue={data.filters.category || 'all'} 
               onValueChange={handleCategoryChange}
               disabled={isLoading}
@@ -402,12 +429,20 @@ export function AnalyticsClient({ initialData }: AnalyticsClientProps) {
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel>Service Category</SelectLabel>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="protection">Protection</SelectItem>
-                  <SelectItem value="tanting">Tanting</SelectItem>
-                  <SelectItem value="painting">Painting</SelectItem>
-                  <SelectItem value="detailing">Detailing</SelectItem>
-                  <SelectItem value="repair">Repair</SelectItem>
+                  {isLoadingCategories ? (
+                    <div className="flex items-center justify-center p-2">
+                      <Spinner size="sm" />
+                    </div>
+                  ) : (
+                    <>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category._id} value={category.name}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
                 </SelectGroup>
               </SelectContent>
             </Select>

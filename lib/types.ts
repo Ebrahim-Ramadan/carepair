@@ -139,6 +139,7 @@ export type TicketSummary = {
   plateNumber: string
   createdAt: string
   invoiceDate?: string
+  invoiceNo?: string
 }
 
 export type MonthlyRecord = {

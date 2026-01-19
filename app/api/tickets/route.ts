@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
 
     // Use limited projection only if list=true and not in sales mode
     const projection = listOnly && !salesMode
-      ? { _id: 1, plateNumber: 1, customerName: 1, createdAt: 1, isCheckup: 1 }
+      ? { _id: 1, invoiceNo: 1, customerName: 1, createdAt: 1, isCheckup: 1 }
       : undefined
 
     let query = db.collection("tickets").find(dateFilter, projection ? { projection } : {}).sort({ createdAt: -1 })

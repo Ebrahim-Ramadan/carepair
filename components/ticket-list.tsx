@@ -272,7 +272,7 @@ export function TicketList({
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0 space-y-1.5">
                     <div className={`font-medium ${isSelected ? "text-lg text-primary" : "text-base"}`}>
-                      {date.toLocaleDateString()}
+                      {ticket.invoiceNo}
                     </div>
                     <div className="text-sm text-muted-foreground truncate">
                       {ticket.customerName || "—"}

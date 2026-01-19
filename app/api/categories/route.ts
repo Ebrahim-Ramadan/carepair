@@ -6,7 +6,7 @@ import { ObjectId } from 'mongodb';
 export async function GET() {
   try {
     const client = await clientPromise;
-    const db = client.db();
+    const db = client.db("car_repair");
     const categories = await db.collection('categories').find({}).toArray();
     return NextResponse.json(categories.map(({ _id, name }) => ({ _id: _id.toString(), name: name ?? '' })));
   } catch (error) {
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const { name } = await req.json();
     if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     const client = await clientPromise;
-    const db = client.db();
+    const db = client.db("car_repair");
     const result = await db.collection('categories').insertOne({ name });
     return NextResponse.json({ _id: result.insertedId.toString(), name });
   } catch (error) {
@@ -34,7 +34,7 @@ export async function PUT(req: NextRequest) {
     const { id, name } = await req.json();
     if (!id || !name) return NextResponse.json({ error: 'ID and name are required' }, { status: 400 });
     const client = await clientPromise;
-    const db = client.db();
+    const db = client.db("car_repair");
     const result = await db.collection('categories').findOneAndUpdate(
       { _id: new ObjectId(id) },
       { $set: { name } },
@@ -53,7 +53,7 @@ export async function DELETE(req: NextRequest) {
     const { id } = await req.json();
     if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     const client = await clientPromise;
-    const db = client.db();
+    const db = client.db("car_repair");
     await db.collection('categories').deleteOne({ _id: new ObjectId(id) });
     return NextResponse.json({ success: true });
   } catch (error) {

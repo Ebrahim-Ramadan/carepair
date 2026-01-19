@@ -71,6 +71,7 @@ export default function CategoriesPage() {
       <h1 className="text-2xl font-bold mb-4">Categories</h1>
       <div className="flex gap-2 mb-6">
         <input
+        autoFocus
           className="border px-2 py-1 rounded w-full"
           placeholder="New category name"
           value={newCategory}

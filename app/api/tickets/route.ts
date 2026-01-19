@@ -81,19 +81,26 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Use limited projection only if list=true and not in sales mode
     const projection = listOnly && !salesMode
       ? { _id: 1, invoiceNo: 1, customerName: 1, createdAt: 1, isCheckup: 1 }
       : undefined
 
-    let query = db.collection("tickets").find(dateFilter, projection ? { projection } : {}).sort({ createdAt: -1 })
-    
-    // Apply pagination only if not in sales mode
+    const pipeline: any[] = [
+      { $match: dateFilter },
+      { $addFields: { _invoiceNum: { $convert: { input: "$invoiceNo", to: "int", onError: -1, onNull: -1 } } } },
+      { $sort: { _invoiceNum: -1, createdAt: -1 } },
+    ]
+
     if (!salesMode) {
-      query = query.skip(skip).limit(pageSize)
+      pipeline.push({ $skip: skip })
+      pipeline.push({ $limit: pageSize })
     }
 
-    const tickets = await query.toArray()
+    if (projection) {
+      pipeline.push({ $project: projection })
+    }
+
+    const tickets = await db.collection("tickets").aggregate(pipeline).toArray()
     
     let total = 0
     if (!salesMode) {

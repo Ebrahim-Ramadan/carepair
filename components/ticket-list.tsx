@@ -32,11 +32,21 @@ export function TicketList({
   // Sort helper (must be declared before use)
   const sortTickets = (src: TicketSummary[]) =>
     [...(src || [])].sort((a, b) => {
-      const getTime = (t: TicketSummary) => {
-        const dateStr = t.invoiceDate || t.createdAt
-        return dateStr ? new Date(dateStr).getTime() : 0
+      const extractNum = (t: TicketSummary) => {
+        const s = t.invoiceNo ?? ""
+        const m = s.match(/\d+/)
+        return m ? parseInt(m[0], 10) : -Infinity
       }
-      return getTime(b) - getTime(a)
+      const na = extractNum(a)
+      const nb = extractNum(b)
+      if (na === nb) {
+        const getTime = (t: TicketSummary) => {
+          const dateStr = t.invoiceDate || t.createdAt
+          return dateStr ? new Date(dateStr).getTime() : 0
+        }
+        return getTime(b) - getTime(a)
+      }
+      return nb - na
     })
 
   const [localTickets, setLocalTickets] = useState<TicketSummary[]>(() => sortTickets(tickets))

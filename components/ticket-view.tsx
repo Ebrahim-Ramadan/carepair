@@ -18,7 +18,7 @@ import LazyLoad from "./ui/lazyload"
 type TicketViewProps = {
   ticket: Ticket
   onUpdate?: (t: Ticket) => void
-  onRemoveService?: (id: string) => void
+  onRemoveService?: (id: string, addedAt?: string) => void
   deletingServiceIds?: string[]
   servicesRef?: React.RefObject<HTMLDivElement>
   onOpenAddService?: () => void
@@ -397,8 +397,8 @@ export function TicketView({
                       <ServiceCard
                         key={(service as any).serviceId ?? (service as any).serviceName}
                         service={service}
-                        onRemove={() => onRemoveService?.((service as any).serviceId)}
-                        isDeleting={deletingServiceIds.includes((service as any).serviceId)}
+                        onRemove={() => onRemoveService?.(((service as any).serviceId ?? (service as any).serviceName), (service as any).addedAt)}
+                        isDeleting={deletingServiceIds.includes(`${(service as any).serviceId ?? (service as any).serviceName}|${(service as any).addedAt ?? ''}`)}
                       />
                     ))}
                   </div>

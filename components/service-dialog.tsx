@@ -128,7 +128,17 @@ export function ServiceDialog({
         })
         if (!response.ok) throw new Error('Failed to fetch services')
         const data = await response.json()
-        setServices(data)
+        const normalized = (Array.isArray(data) ? data : []).map((s: any) => ({
+          id: s.id ?? (s._id ? String(s._id) : undefined),
+          nameEn: s.nameEn ?? s.name ?? '',
+          nameAr: s.nameAr ?? '',
+          descriptionEn: s.descriptionEn ?? '',
+          descriptionAr: s.descriptionAr ?? '',
+          price: typeof s.price === 'number' ? s.price : Number(s.price ?? 0),
+          category: s.category ?? 'protection',
+          isCustom: !!s.isCustom,
+        }))
+        setServices(normalized.filter((s: any) => !!s.id))
       } catch (error) {
         console.error('Error fetching services:', error)
       } finally {

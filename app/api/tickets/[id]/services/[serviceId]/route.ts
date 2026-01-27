@@ -10,6 +10,17 @@ export async function DELETE(
     const client = await clientPromise
     const db = client.db("car_repair")
 
+    const identifier = params.serviceId
+    if (!identifier || identifier === 'undefined') {
+      return NextResponse.json(
+        { error: 'Service ID is required' },
+        { status: 400 }
+      )
+    }
+
+    const url = new URL(request.url)
+    const addedAt = url.searchParams.get('addedAt')
+
     // Get the ticket and service to calculate correct total
     const ticket = await db.collection("tickets").findOne(
       { _id: new ObjectId(params.id) }
@@ -22,10 +33,13 @@ export async function DELETE(
       )
     }
 
-    // Find the service to be removed to subtract its price from total
-    const serviceToRemove = ticket.services.find(
-      (s: any) => s.serviceId === params.serviceId
+    // Locate the specific service instance (support multiple same IDs)
+    const matchByIdOrName = (s: any) =>
+      (s.serviceId?.toString() === identifier) || (s.serviceName === identifier)
+    const index = ticket.services.findIndex((s: any) =>
+      matchByIdOrName(s) && (!addedAt || s.addedAt === addedAt)
     )
+    const serviceToRemove = index >= 0 ? ticket.services[index] : undefined
 
     if (!serviceToRemove) {
       return NextResponse.json(
@@ -34,16 +48,16 @@ export async function DELETE(
       )
     }
 
+    // Build new services array removing only the matched instance
+    const remainingServices = [...(ticket.services || [])]
+    if (index >= 0) remainingServices.splice(index, 1)
+    const removedPrice = serviceToRemove.finalPrice || serviceToRemove.price || 0
+    const newTotal = Math.max(0, (ticket.totalAmount || 0) - removedPrice)
+
     const result = await db.collection("tickets").findOneAndUpdate(
       { _id: new ObjectId(params.id) },
       { 
-        $pull: { 
-          services: { serviceId: params.serviceId } 
-        },
-        // Update total amount by subtracting the removed service's price
-        $set: {
-          totalAmount: (ticket.totalAmount || 0) - (serviceToRemove.finalPrice || serviceToRemove.price)
-        }
+        $set: { services: remainingServices, totalAmount: newTotal }
       },
       { returnDocument: 'after' }
     )

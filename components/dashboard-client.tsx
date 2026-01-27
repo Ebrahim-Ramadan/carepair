@@ -209,17 +209,20 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
     }
   }
 
-  const handleRemoveService = async (serviceId: string) => {
+  const handleRemoveService = async (serviceId: string, addedAt?: string) => {
     if (!selectedTicket || !selectedTicket._id) return
     
     // Add service ID to loading state
-    setDeletingServiceIds(prev => [...prev, serviceId])
+    const key = `${serviceId}|${addedAt ?? ''}`
+    setDeletingServiceIds(prev => [...prev, key])
     
     try {
       // Show loading toast
       const loadingToast = toast.loading('Removing service...')
       
-      const response = await fetch(`/api/tickets/${selectedTicket._id}/services/${serviceId}`, {
+      const url = new URL(`/api/tickets/${selectedTicket._id}/services/${encodeURIComponent(serviceId)}`, window.location.origin)
+      if (addedAt) url.searchParams.set('addedAt', addedAt)
+      const response = await fetch(url.toString(), {
         method: 'DELETE',
       })
       
@@ -238,7 +241,7 @@ export function DashboardClient({ initialTickets, page = 1, totalPages = 1, tota
       toast.error('Failed to remove service')
     } finally {
       // Remove service ID from loading state whether successful or not
-      setDeletingServiceIds(prev => prev.filter(id => id !== serviceId))
+      setDeletingServiceIds(prev => prev.filter(id => id !== key))
     }
   }
 

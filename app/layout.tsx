@@ -119,7 +119,7 @@ export default function RootLayout({
             </div>
           </div>
         </header>
-        <main className="w-full pb-12">{children}</main>
+        {/* <main className="w-full pb-12">{children}</main> */}
         <Footer />
         <Toaster position="bottom-right" richColors />
       </body>

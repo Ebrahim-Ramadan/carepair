@@ -110,9 +110,9 @@ export default function RootLayout({
                   className="h-14 w-auto rounded-full"
                 />
               </Link>
-              <div className="flex-1">
+              {/* <div className="flex-1">
                 <MainNav isAdmin={isAdmin} />
-              </div>
+              </div> */}
               <div>
                 {currentUser && <AccountMenu email={currentUser} />}
               </div>
